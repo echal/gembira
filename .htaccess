@@ -1,0 +1,42 @@
+# Keamanan GEMBIRA - Hanya akses localhost
+# Blokir semua akses kecuali localhost
+
+# Set production environment
+SetEnv APP_ENV prod
+SetEnv APP_DEBUG 0
+
+RewriteEngine On
+
+# Izinkan akses hanya dari localhost dan 127.0.0.1
+<RequireAll>
+    Require local
+    Require ip 127.0.0.1
+    Require ip ::1
+</RequireAll>
+
+# Blokir akses dari IP lain
+<RequireNone>
+    Require all denied
+</RequireNone>
+
+# Symfony framework routing
+RewriteCond %{REQUEST_URI}::$0 ^(/.+)/(.*)::\2$
+RewriteRule .* - [E=BASE:%1]
+
+RewriteCond %{HTTP:Authorization} .+
+RewriteRule ^ - [E=HTTP_AUTHORIZATION:%0]
+
+RewriteCond %{ENV:REDIRECT_STATUS} =""
+RewriteRule ^index\.php(?:/(.*)|$) %{ENV:BASE}/$1 [R=301,L]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ %{ENV:BASE}/index.php [L]
+
+# Security headers
+Header always set X-Frame-Options "SAMEORIGIN"
+Header always set X-Content-Type-Options "nosniff"
+Header always set X-XSS-Protection "1; mode=block"
+Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+# Disable server signature
+ServerTokens Prod

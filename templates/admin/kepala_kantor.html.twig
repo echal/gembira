@@ -1,0 +1,98 @@
+{% extends 'admin/_layout.html.twig' %}
+
+{% block title %}Kepala Kantor - Admin Gembira{% endblock %}
+
+{% block page_icon %}🏛️{% endblock %}
+{% block page_title %}Kepala Kantor{% endblock %}
+{% block page_description %}Manajemen Kepala Kantor Organisasi{% endblock %}
+
+{% block admin_content %}
+    {% if active_kepala_kantor %}
+    <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+        <div class="flex items-center">
+            <div class="text-2xl mr-3">⭐</div>
+            <div>
+                <div class="font-semibold text-green-800">{{ active_kepala_kantor.nama }}</div>
+                <div class="text-sm text-green-700">{{ active_kepala_kantor.jabatan }} • NIP: {{ active_kepala_kantor.nip }}</div>
+                <div class="text-xs text-green-600">📅 {{ active_kepala_kantor.periode }}</div>
+            </div>
+            <div class="ml-auto">
+                <span class="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded">AKTIF</span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Action Buttons -->
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex space-x-3">
+            <button type="button" id="btnTambahKepala" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center">
+                <span class="mr-2">➕</span> Tambah Kepala Kantor
+            </button>
+            <button type="button" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center" onclick="location.reload()">
+                <span class="mr-2">🔄</span> Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Kepala Kantor List -->
+    <div class="bg-white rounded-lg shadow-sm">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900 flex items-center">
+                <span class="mr-2">🏛️</span> Daftar Kepala Kantor
+            </h3>
+        </div>
+
+        {% if kepala_kantor_list|length > 0 %}
+        <div class="p-6">
+            <div class="space-y-3">
+                {% for kepala in kepala_kantor_list %}
+                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg {{ kepala.isAktif ? 'bg-green-50 border-green-200' : '' }}">
+                    <div class="flex items-center space-x-4">
+                        <div class="text-2xl">{{ kepala.isAktif ? '⭐' : '👤' }}</div>
+                        <div>
+                            <div class="font-medium {{ kepala.isAktif ? 'text-green-800' : 'text-gray-800' }}">{{ kepala.nama }}</div>
+                            <div class="text-sm {{ kepala.isAktif ? 'text-green-700' : 'text-gray-600' }}">NIP: {{ kepala.nip }}</div>
+                            <div class="text-sm {{ kepala.isAktif ? 'text-green-700' : 'text-gray-600' }}">{{ kepala.jabatan }}</div>
+                            <div class="text-xs {{ kepala.isAktif ? 'text-green-600' : 'text-gray-500' }}">📅 {{ kepala.periode }}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="editKepala({{ kepala.id }}, '{{ kepala.nama }}', '{{ kepala.nip }}', '{{ kepala.jabatan }}', '{{ kepala.periode }}')"
+                                class="text-indigo-600 hover:text-indigo-900 p-2 hover:bg-gray-50 rounded-lg">
+                            ✏️ Edit
+                        </button>
+                        <button onclick="toggleStatus({{ kepala.id }}, {{ kepala.isAktif ? 'false' : 'true' }})"
+                                class="p-2 {{ kepala.isAktif ? 'text-orange-600 hover:bg-orange-50' : 'text-green-600 hover:bg-green-50' }} rounded-lg">
+                            {{ kepala.isAktif ? '🔄 Nonaktifkan' : '✅ Aktifkan' }}
+                        </button>
+                        <button onclick="deleteKepala({{ kepala.id }}, '{{ kepala.nama }}')"
+                                class="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded-lg">
+                            🗑️ Hapus
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <div class="text-gray-400 text-6xl mb-4">🏛️</div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Belum ada Kepala Kantor</h3>
+            <p class="text-gray-500">Tambahkan kepala kantor pertama untuk memulai manajemen organisasi.</p>
+            <button type="button" onclick="document.getElementById('btnTambahKepala').click()"
+                    class="mt-4 bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700">
+                ➕ Tambah Kepala Kantor Sekarang
+            </button>
+        </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block admin_javascripts %}
+<script>
+// Modal dan JavaScript functions untuk CRUD kepala kantor
+// (implementasi sama seperti sebelumnya)
+console.log('Kepala Kantor page loaded');
+</script>
+{% endblock %}

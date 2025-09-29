@@ -1,0 +1,789 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Tambah Event - Admin Gembira{% endblock %}
+
+{% block body %}
+<!-- Layout dengan Sidebar Fixed -->
+<div class="flex min-h-screen bg-gray-100">
+    <!-- Mobile Menu Overlay -->
+    <div id="mobile-menu-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden"></div>
+
+    <!-- Sidebar Fixed -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform -translate-x-full transition-transform duration-300 ease-in-out lg:translate-x-0">
+        {% include 'admin/_sidebar.html.twig' %}
+    </aside>
+
+    <!-- Main Content: Full width mobile, margin-left desktop -->
+    <main class="flex-1 flex flex-col overflow-hidden ml-0 lg:ml-64 w-full">
+        <!-- Header -->
+        <div class="bg-white shadow-sm border-b border-gray-200 px-4 sm:px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <!-- Mobile menu button -->
+                    <button id="mobile-menu-button" type="button" class="lg:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 mr-4">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+
+                    <div>
+                        <h1 class="text-xl sm:text-2xl font-bold text-gray-800">➕ Tambah Event</h1>
+                        <p class="text-gray-600 text-sm sm:text-base">Buat event atau kegiatan baru</p>
+                    </div>
+                </div>
+                <a href="{{ path('app_admin_event_index') }}"
+                   class="bg-gray-500 hover:bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg font-medium flex items-center text-sm sm:text-base">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    <span class="hidden sm:inline">Kembali</span>
+                    <span class="sm:hidden">Back</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Form Content dengan Padding Optimal -->
+        <div class="flex-1 overflow-y-auto p-6">
+            <!-- Form Card -->
+            <div class="max-w-6xl mx-auto bg-white rounded-lg shadow-sm border overflow-hidden">
+                <div class="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
+                    <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                        <span class="text-2xl mr-3">📝</span>
+                        Form Event Baru
+                    </h2>
+                    <p class="text-sm text-gray-600 mt-1">Lengkapi form di bawah untuk membuat event baru</p>
+                </div>
+
+                <div class="p-6">
+                    {{ form_start(form, {'attr': {'class': 'space-y-8'}}) }}
+
+                    <!-- Informasi Dasar Section -->
+                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 md:p-6 border border-blue-200">
+                        <h3 class="text-lg font-semibold text-blue-800 mb-4 md:mb-5 flex items-center">
+                            <span class="text-xl mr-3">📋</span>
+                            Informasi Dasar Event
+                        </h3>
+
+                        <div class="grid grid-cols-1 gap-4 md:gap-6">
+                            <!-- Judul Event -->
+                            <div class="lg:col-span-2">
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                    <span class="text-red-500 mr-1">*</span>{{ form_label(form.judulEvent) }}
+                                </label>
+                                {{ form_widget(form.judulEvent, {'attr': {'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white shadow-sm', 'placeholder': 'Masukkan judul event yang menarik'}}) }}
+                                {{ form_errors(form.judulEvent) }}
+                            </div>
+
+                            <!-- Deskripsi -->
+                            <div class="lg:col-span-2">
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                    {{ form_label(form.deskripsi) }}
+                                </label>
+                                {{ form_widget(form.deskripsi, {'attr': {'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white shadow-sm', 'rows': 4, 'placeholder': 'Deskripsikan event secara detail...'}}) }}
+                                {{ form_errors(form.deskripsi) }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Waktu & Lokasi Section -->
+                    <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 md:p-6 border border-green-200">
+                        <h3 class="text-lg font-semibold text-green-800 mb-4 md:mb-5 flex items-center">
+                            <span class="text-xl mr-3">🕒</span>
+                            Waktu & Lokasi
+                        </h3>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                            <!-- Tanggal Mulai -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                    <span class="text-red-500 mr-1">*</span>{{ form_label(form.tanggalMulai) }}
+                                </label>
+                                {{ form_widget(form.tanggalMulai, {'attr': {'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white shadow-sm'}}) }}
+                                {{ form_errors(form.tanggalMulai) }}
+                            </div>
+
+                            <!-- Tanggal Selesai -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                    {{ form_label(form.tanggalSelesai) }}
+                                </label>
+                                {{ form_widget(form.tanggalSelesai, {'attr': {'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white shadow-sm'}}) }}
+                                {{ form_errors(form.tanggalSelesai) }}
+                            </div>
+
+                            <!-- Lokasi -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                    {{ form_label(form.lokasi) }}
+                                </label>
+                                {{ form_widget(form.lokasi, {'attr': {'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white shadow-sm', 'placeholder': 'Ruang meeting, alamat, atau platform online'}}) }}
+                                {{ form_errors(form.lokasi) }}
+                            </div>
+
+                            <!-- Link Meeting -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                    {{ form_label(form.linkMeeting) }}
+                                </label>
+                                {{ form_widget(form.linkMeeting, {'attr': {'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white shadow-sm', 'placeholder': 'https://zoom.us/j/... atau https://meet.google.com/...'}}) }}
+                                {{ form_errors(form.linkMeeting) }}
+                                <div class="mt-2 text-xs text-gray-600">Link untuk meeting online (Zoom, Google Meet, Teams, dll.)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pengaturan Event Section -->
+                    <div class="bg-gradient-to-r from-purple-50 to-violet-50 rounded-lg p-4 md:p-6 border border-purple-200">
+                        <h3 class="text-lg font-semibold text-purple-800 mb-4 md:mb-5 flex items-center">
+                            <span class="text-xl mr-3">⚙️</span>
+                            Pengaturan Event
+                        </h3>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                            <!-- Status -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                    {{ form_label(form.status) }}
+                                </label>
+                                {{ form_widget(form.status, {'attr': {'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm'}}) }}
+                                {{ form_errors(form.status) }}
+                            </div>
+
+                            <!-- Kategori -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                    {{ form_label(form.kategoriEvent) }}
+                                </label>
+                                {{ form_widget(form.kategoriEvent, {'attr': {'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm'}}) }}
+                                {{ form_errors(form.kategoriEvent) }}
+                            </div>
+
+                            <!-- Warna -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                    {{ form_label(form.warna) }}
+                                </label>
+                                <div class="flex items-center space-x-4">
+                                    {{ form_widget(form.warna, {'attr': {'class': 'h-12 w-20 border border-gray-300 rounded-lg cursor-pointer shadow-sm transition-all duration-200 hover:shadow-md'}}) }}
+                                    <div class="flex-1">
+                                        <div class="text-xs text-gray-600 font-medium">Warna untuk kalender</div>
+                                        <div class="text-xs text-gray-500">Klik untuk memilih warna</div>
+                                    </div>
+                                </div>
+                                {{ form_errors(form.warna) }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pengaturan Absensi Section -->
+                    <div class="bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg p-4 md:p-6 border border-orange-200">
+                        <h3 class="text-lg font-semibold text-orange-800 mb-4 md:mb-5 flex items-center">
+                            <span class="text-xl mr-3">✅</span>
+                            Pengaturan Absensi
+                        </h3>
+
+                        <!-- Butuh Absensi -->
+                        <div class="mb-6">
+                            <div class="bg-white p-5 rounded-lg border border-orange-200 shadow-sm">
+                                <label class="flex items-center space-x-4 cursor-pointer">
+                                    {{ form_widget(form.butuhAbsensi, {'attr': {'class': 'w-6 h-6 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 focus:ring-2 transition-all duration-200'}}) }}
+                                    <div>
+                                        <span class="text-sm font-semibold text-gray-700">{{ form_label(form.butuhAbsensi) }}</span>
+                                        <div class="text-xs text-gray-600 mt-1">Centang jika event ini membutuhkan absensi dari peserta</div>
+                                    </div>
+                                </label>
+                                {{ form_errors(form.butuhAbsensi) }}
+                            </div>
+                        </div>
+
+                        <!-- Waktu Absensi Fields -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                            <!-- Jam Mulai Absensi -->
+                            <div class="absensi-field" style="display: none;">
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                    {{ form_label(form.jamMulaiAbsensi) }}
+                                </label>
+                                {{ form_widget(form.jamMulaiAbsensi, {'attr': {'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white shadow-sm'}}) }}
+                                {{ form_errors(form.jamMulaiAbsensi) }}
+                                <div class="mt-2 text-xs text-gray-600">Jam mulai absensi (contoh: 14:00)</div>
+                            </div>
+
+                            <!-- Jam Selesai Absensi -->
+                            <div class="absensi-field" style="display: none;">
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                    {{ form_label(form.jamSelesaiAbsensi) }}
+                                </label>
+                                {{ form_widget(form.jamSelesaiAbsensi, {'attr': {'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 bg-white shadow-sm'}}) }}
+                                {{ form_errors(form.jamSelesaiAbsensi) }}
+                                <div class="mt-2 text-xs text-gray-600">Jam selesai absensi (contoh: 15:00)</div>
+                            </div>
+                        </div>
+                    </div>
+
+            <!-- Target Audience Section -->
+            <div class="bg-gradient-to-r from-sky-50 to-blue-50 rounded-lg p-4 md:p-6 border border-sky-200">
+                <h3 class="text-lg font-semibold text-sky-800 mb-4 md:mb-5 flex items-center">
+                    <span class="text-xl mr-3">🎯</span>
+                    Target Notifikasi Event
+                </h3>
+                
+                <!-- Debug info untuk memastikan unit kerja dimuat -->
+                {% if unitChoicesCount is defined %}
+                <div class="mb-4 text-xs text-sky-700 bg-sky-100 px-3 py-2 rounded-lg border border-sky-200">
+                    <span class="font-semibold">📊 Debug:</span> {{ unitChoicesCount }} unit kerja tersedia
+                </div>
+                {% endif %}
+
+                <!-- Target Audience Radio -->
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-gray-700 mb-4">
+                        {{ form_label(form.targetAudience) }}
+                    </label>
+                    <div class="space-y-3">
+                        {% for choice in form.targetAudience %}
+                            <label class="flex items-center space-x-4 p-4 rounded-lg border border-gray-200 hover:bg-white cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md hover:border-sky-300">
+                                {{ form_widget(choice, {'attr': {'class': 'w-5 h-5 text-sky-600 bg-gray-100 border-gray-300 focus:ring-sky-500 focus:ring-2 transition-all duration-200'}}) }}
+                                <span class="text-sm font-medium text-gray-700">{{ choice.vars.label }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                    {{ form_errors(form.targetAudience) }}
+                    <div class="mt-3 text-xs text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                        💬 Pilih "Semua Unit Kerja" untuk mengirim ke seluruh unit, atau pilih unit-unit tertentu di bawah
+                    </div>
+                </div>
+
+                <!-- Daftar Unit Kerja - Selalu Tampil -->
+                <div id="target-units-container" class="block">
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-sm font-semibold text-gray-700 flex items-center">
+                                <span class="text-base mr-2">🏢</span>
+                                Daftar Unit Kerja
+                                <span class="text-xs text-sky-600 ml-2 font-normal">(Pilih unit yang akan menerima notifikasi)</span>
+                            </h4>
+                            <div class="flex items-center space-x-2">
+                                <button type="button" onclick="toggleAllUnits(true)" class="text-xs text-sky-600 hover:text-sky-800 font-medium border border-sky-300 hover:border-sky-500 px-3 py-1.5 rounded-lg transition-all duration-200 hover:bg-sky-50">
+                                    ✅ Pilih Semua
+                                </button>
+                                <button type="button" onclick="toggleAllUnits(false)" class="text-xs text-gray-600 hover:text-gray-800 font-medium border border-gray-300 hover:border-gray-500 px-3 py-1.5 rounded-lg transition-all duration-200 hover:bg-gray-50">
+                                    ❌ Batal Semua
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="text-xs text-gray-600 bg-yellow-50 p-3 rounded-lg border border-yellow-200 mb-4">
+                            <div class="flex items-start space-x-2">
+                                <span class="text-yellow-600 mt-0.5">ℹ️</span>
+                                <div>
+                                    <span class="font-semibold">Tips:</span> Jika memilih "Semua Unit Kerja" di atas, semua unit akan otomatis tercentang. Anda juga bisa memilih unit tertentu secara manual.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Loading state -->
+                    <div id="unit-loading" class="hidden text-center py-8 text-sky-600 bg-sky-50 rounded-lg border border-sky-200">
+                        <div class="inline-flex items-center">
+                            <svg class="animate-spin -ml-1 mr-3 h-6 w-6 text-sky-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span class="font-medium">Memuat daftar unit kerja...</span>
+                        </div>
+                    </div>
+
+                    <!-- Unit kerja checkboxes dengan styling yang lebih baik -->
+                    <div id="unit-choices-container" class="space-y-2">
+                        {% if form.targetUnits is defined and form.targetUnits.children|length > 0 %}
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto border border-gray-300 rounded-lg p-4 bg-white shadow-sm">
+                                {% for choice in form.targetUnits %}
+                                    <label class="flex items-center space-x-3 p-3 rounded-lg hover:bg-sky-50 cursor-pointer transition-all duration-200 border border-gray-200 hover:border-sky-300 hover:shadow-sm group">
+                                        {{ form_widget(choice, {'attr': {'class': 'w-5 h-5 text-sky-600 bg-gray-100 border-gray-300 rounded focus:ring-sky-500 focus:ring-2 transition-all duration-200'}}) }}
+                                        <span class="text-sm text-gray-700 font-medium group-hover:text-sky-700 transition-colors">
+                                            <span class="text-base mr-2">🏢</span>{{ choice.vars.label }}
+                                        </span>
+                                    </label>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="col-span-full text-center py-10 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                                <div class="text-4xl mb-4">📊</div>
+                                <p class="mb-4 font-semibold text-lg">Tidak ada unit kerja yang tersedia</p>
+                                <button type="button" onclick="loadUnitKerjaAjax()" class="bg-sky-500 hover:bg-sky-600 text-white px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md">
+                                    🔄 Muat Ulang Unit Kerja
+                                </button>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    {{ form_errors(form.targetUnits) }}
+
+                    <!-- Status indicator untuk jumlah unit kerja yang dipilih -->
+                    <div id="unit-selection-status" class="mt-4 text-sm text-gray-700 bg-white px-4 py-3 rounded-lg border border-gray-200 shadow-sm">
+                        <span class="font-semibold">📊 Status:</span> <span id="selected-count" class="font-bold text-sky-600">0</span> unit kerja dipilih
+                    </div>
+
+                    <div class="mt-4 text-xs text-gray-700 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <div class="flex items-start space-x-3">
+                            <span class="text-blue-500 mt-0.5 text-base">💡</span>
+                            <div>
+                                <div class="font-semibold text-blue-800 mb-2">Petunjuk Penggunaan:</div>
+                                <div class="leading-relaxed">Pilih satu atau lebih unit kerja yang akan menerima notifikasi event ini. Pegawai dari unit kerja yang dipilih akan mendapat notifikasi otomatis melalui sistem.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg p-6 border border-gray-200">
+                <div class="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0 sm:space-x-6">
+                    <a href="{{ path('app_admin_event_index') }}"
+                       class="w-full sm:w-auto bg-gray-400 hover:bg-gray-500 text-white px-8 py-3 rounded-lg font-semibold text-center transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                        Batal
+                    </a>
+                    <button type="submit"
+                            class="w-full sm:w-auto bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white px-8 py-3 rounded-lg font-semibold flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Simpan Event
+                    </button>
+                </div>
+            </div>
+
+            {{ form_end(form) }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Toggle field absensi berdasarkan checkbox
+function toggleAbsensiFields(isChecked) {
+    const absensiFields = document.querySelectorAll('.absensi-field');
+    absensiFields.forEach(field => {
+        if (isChecked) {
+            field.style.display = 'block';
+        } else {
+            field.style.display = 'none';
+        }
+    });
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const absensiCheckbox = document.querySelector('input[name="event[butuhAbsensi]"]');
+    if (absensiCheckbox) {
+        // Set initial state
+        toggleAbsensiFields(absensiCheckbox.checked);
+        
+        // Add event listener
+        absensiCheckbox.addEventListener('change', function() {
+            toggleAbsensiFields(this.checked);
+        });
+    }
+});
+</script>
+
+<style>
+/* Custom styling for form elements */
+.form-error {
+    color: #dc2626;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+input:invalid {
+    border-color: #f87171;
+}
+
+input:valid {
+    border-color: #10b981;
+}
+
+/* Color picker styling */
+input[type="color"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+/* Enhanced mobile responsiveness */
+@media (max-width: 640px) {
+    /* Smaller containers on mobile */
+    .form-section {
+        margin-bottom: 1.5rem;
+    }
+
+    /* Reduce grid gap on mobile */
+    .form-grid {
+        gap: 1rem;
+    }
+
+    /* Stack all grid items on mobile */
+    .form-grid > div {
+        grid-column: span 1 !important;
+    }
+
+    /* Reduce padding in form sections */
+    .form-section-content {
+        padding: 1rem;
+    }
+
+    /* Adjust form inputs for mobile */
+    input, select, textarea {
+        font-size: 16px; /* Prevent zoom on iOS */
+        padding: 0.75rem;
+    }
+
+    /* Smaller buttons on mobile */
+    .form-button {
+        padding: 0.75rem 1.5rem;
+        font-size: 0.875rem;
+    }
+
+    /* Unit kerja grid on mobile */
+    #unit-choices-container {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+        max-height: 60vh;
+        padding: 1rem;
+    }
+
+    /* Reduce section titles on mobile */
+    .section-title {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Tablet adjustments */
+    .lg\:grid-cols-3 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .lg\:grid-cols-2 {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 1024px) {
+    /* Large tablet/small desktop adjustments */
+    .xl\:grid-cols-3 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Sidebar transition improvements */
+#sidebar {
+    transition-property: transform;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+}
+
+/* Layout fixes untuk sidebar dan main content */
+@media (min-width: 1024px) {
+    /* Desktop: sidebar fixed, main content dengan margin */
+    #sidebar {
+        position: fixed;
+        transform: translateX(0) !important;
+    }
+
+    main {
+        margin-left: 16rem; /* w-64 = 16rem */
+        width: calc(100% - 16rem);
+    }
+}
+
+@media (max-width: 1023px) {
+    /* Mobile/Tablet: sidebar hidden, main content full width */
+    #sidebar {
+        transform: translateX(-100%);
+    }
+
+    #sidebar.show {
+        transform: translateX(0);
+    }
+
+    main {
+        margin-left: 0;
+        width: 100%;
+    }
+}
+
+/* Ensure main content doesn't overlap */
+.main-content {
+    min-height: 100vh;
+    transition: margin-left 300ms ease-in-out;
+}
+</style>
+
+<script>
+// Form validation and UX improvements
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const tanggalMulai = document.querySelector('[name="event[tanggalMulai]"]');
+    const tanggalSelesai = document.querySelector('[name="event[tanggalSelesai]"]');
+    
+    // Target audience handling
+    const targetAudienceRadios = document.querySelectorAll('[name="event[targetAudience]"]');
+    const targetUnitsContainer = document.getElementById('target-units-container');
+    const targetUnitsCheckboxes = document.querySelectorAll('[name="event[targetUnits][]"]');
+
+    // Debug logging
+    console.log('🎯 Target audience radios found:', targetAudienceRadios.length);
+    console.log('📦 Target units container found:', !!targetUnitsContainer);
+    console.log('☑️ Initial target units checkboxes found:', targetUnitsCheckboxes.length);
+    
+    // Set minimum date to today
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 16);
+    
+    if (tanggalMulai) {
+        tanggalMulai.min = todayStr;
+        
+        tanggalMulai.addEventListener('change', function() {
+            if (tanggalSelesai) {
+                tanggalSelesai.min = this.value;
+                
+                // Clear tanggal selesai if it's before tanggal mulai
+                if (tanggalSelesai.value && tanggalSelesai.value < this.value) {
+                    tanggalSelesai.value = '';
+                    alert('Tanggal selesai tidak boleh sebelum tanggal mulai');
+                }
+            }
+        });
+    }
+    
+    // Real-time validation
+    if (tanggalSelesai) {
+        tanggalSelesai.addEventListener('change', function() {
+            if (tanggalMulai.value && this.value < tanggalMulai.value) {
+                this.value = '';
+                alert('Tanggal selesai tidak boleh sebelum tanggal mulai');
+            }
+        });
+    }
+    
+    // Enhanced target audience handler - daftar unit kerja selalu tampil
+    function handleTargetAudienceChange() {
+        const selectedValue = document.querySelector('[name="event[targetAudience]"]:checked')?.value;
+        console.log('🎯 Selected target audience:', selectedValue);
+
+        const unitCheckboxes = document.querySelectorAll('[name="event[targetUnits][]"]');
+        console.log('📊 Found unit checkboxes:', unitCheckboxes.length);
+
+        if (selectedValue === 'all') {
+            // Jika pilih "Semua Unit Kerja", centang semua checkbox
+            console.log('✅ Auto-checking all unit kerja');
+            unitCheckboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+        } else if (selectedValue === 'custom') {
+            // Jika pilih "Unit Kerja Tertentu", biarkan user memilih manual
+            console.log('📋 Manual selection mode - keeping current selections');
+            // Tidak mengubah status checkbox yang sudah dipilih
+        }
+
+        // Update counter setelah perubahan
+        updateSelectedCount();
+    }
+    
+    // Add event listeners to radio buttons
+    targetAudienceRadios.forEach((radio, index) => {
+        console.log(`🔗 Adding event listener to radio ${index}, value:`, radio.value);
+        radio.addEventListener('change', function() {
+            console.log(`📻 Radio changed - Value: ${this.value}, Checked: ${this.checked}`);
+            handleTargetAudienceChange();
+        });
+    });
+
+    // Initialize target audience handling
+    console.log('🚀 Initializing target audience handling...');
+    handleTargetAudienceChange();
+
+    // Attach checkbox listeners if checkboxes already exist
+    attachCheckboxListeners();
+
+    // Add helper untuk memilih/deselect semua unit kerja
+    window.toggleAllUnits = function(selectAll) {
+        const checkboxes = document.querySelectorAll('[name="event[targetUnits][]"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = selectAll;
+        });
+        updateSelectedCount();
+        console.log(`📋 ${selectAll ? 'Selected' : 'Deselected'} all ${checkboxes.length} unit kerja`);
+    };
+
+    // Function untuk update counter
+    function updateSelectedCount() {
+        const selectedCheckboxes = document.querySelectorAll('[name="event[targetUnits][]"]:checked');
+        const countElement = document.getElementById('selected-count');
+        if (countElement) {
+            countElement.textContent = selectedCheckboxes.length;
+        }
+    }
+
+    // Add event listeners untuk update counter ketika checkbox diklik
+    function attachCheckboxListeners() {
+        const checkboxes = document.querySelectorAll('[name="event[targetUnits][]"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateSelectedCount);
+        });
+        updateSelectedCount(); // Update initial count
+    }
+
+    // Form submission validation - use existing form variable
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const targetAudience = document.querySelector('[name="event[targetAudience]"]:checked')?.value;
+            const selectedUnits = document.querySelectorAll('[name="event[targetUnits][]"]:checked');
+
+            // Validasi: pastikan minimal ada satu unit kerja yang dipilih
+            if (selectedUnits.length === 0) {
+                e.preventDefault();
+                alert('🚫 Anda harus memilih minimal satu unit kerja yang akan menerima notifikasi event ini. Silakan pilih unit kerja terlebih dahulu.');
+                return false;
+            }
+
+            console.log(`✅ Form validation passed - Target: ${targetAudience}, Selected units: ${selectedUnits.length}`);
+        });
+    }
+});
+
+// # TEMPLATE FORM FIX: Global function untuk load unit kerja via AJAX
+async function loadUnitKerjaAjax() {
+    const loadingElement = document.getElementById('unit-loading');
+    const containerElement = document.getElementById('unit-choices-container');
+    
+    try {
+        // Show loading state
+        loadingElement.classList.remove('hidden');
+        
+        console.log('🔄 Loading unit kerja via AJAX...');
+        const response = await fetch('/admin/event/api/unit-kerja');
+        const result = await response.json();
+        
+        if (result.success && result.data.length > 0) {
+            console.log(`✅ Loaded ${result.data.length} unit kerja via AJAX`);
+            
+            // Clear existing content
+            containerElement.innerHTML = '';
+            
+            // Generate checkboxes dynamically dengan struktur grid yang baru
+            const gridContainer = document.createElement('div');
+            gridContainer.className = 'grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto border border-gray-300 rounded-lg p-4 bg-white shadow-sm';
+
+            result.data.forEach(unit => {
+                const checkboxHtml = `
+                    <label class="flex items-center space-x-3 p-3 rounded-lg hover:bg-sky-50 cursor-pointer transition-all duration-200 border border-gray-200 hover:border-sky-300 hover:shadow-sm group">
+                        <input type="checkbox"
+                               name="event[targetUnits][]"
+                               value="${unit.id}"
+                               class="w-5 h-5 text-sky-600 bg-gray-100 border-gray-300 rounded focus:ring-sky-500 focus:ring-2 transition-all duration-200">
+                        <span class="text-sm text-gray-700 font-medium group-hover:text-sky-700 transition-colors">
+                            <span class="text-base mr-2">🏢</span>${unit.nama_unit}
+                        </span>
+                    </label>
+                `;
+                gridContainer.insertAdjacentHTML('beforeend', checkboxHtml);
+            });
+
+            containerElement.appendChild(gridContainer);
+            
+            // Update targetUnitsCheckboxes reference
+            window.targetUnitsCheckboxes = document.querySelectorAll('[name="event[targetUnits][]"]');
+
+            // Attach event listeners to new checkboxes
+            attachCheckboxListeners();
+            
+        } else {
+            console.log('⚠️ No unit kerja data received');
+            containerElement.innerHTML = `
+                <div class="col-span-full text-center py-8 text-yellow-600 bg-yellow-50 rounded-lg border-2 border-dashed border-yellow-300">
+                    <div class="text-3xl mb-3">⚠️</div>
+                    <p class="mb-4 font-medium">Tidak dapat memuat unit kerja</p>
+                    <button type="button" onclick="loadUnitKerjaAjax()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                        🔄 Coba Lagi
+                    </button>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('❌ Error loading unit kerja:', error);
+        containerElement.innerHTML = `
+            <div class="col-span-full text-center py-8 text-red-600 bg-red-50 rounded-lg border-2 border-dashed border-red-300">
+                <div class="text-3xl mb-3">❌</div>
+                <p class="mb-2 font-medium">Gagal memuat unit kerja</p>
+                <p class="text-sm text-gray-600 mb-4">${error.message}</p>
+                <button type="button" onclick="loadUnitKerjaAjax()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    🔄 Coba Lagi
+                </button>
+            </div>
+        `;
+    } finally {
+        // Hide loading state
+        loadingElement.classList.add('hidden');
+    }
+}
+
+// Mobile menu functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('mobile-menu-overlay');
+
+    function toggleMobileMenu() {
+        const isOpen = sidebar.classList.contains('show');
+
+        if (isOpen) {
+            // Close menu
+            sidebar.classList.remove('show');
+            sidebar.style.transform = 'translateX(-100%)';
+            overlay.classList.add('hidden');
+        } else {
+            // Open menu
+            sidebar.classList.add('show');
+            sidebar.style.transform = 'translateX(0)';
+            overlay.classList.remove('hidden');
+        }
+    }
+
+    // Toggle menu on button click
+    if (mobileMenuButton) {
+        mobileMenuButton.addEventListener('click', toggleMobileMenu);
+    }
+
+    // Close menu on overlay click
+    if (overlay) {
+        overlay.addEventListener('click', toggleMobileMenu);
+    }
+
+    // Close menu on ESC key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !sidebar.classList.contains('-translate-x-full')) {
+            toggleMobileMenu();
+        }
+    });
+
+    // Close menu when resizing to large screen
+    window.addEventListener('resize', function() {
+        if (window.innerWidth >= 1024) { // lg breakpoint
+            sidebar.classList.remove('show');
+            sidebar.style.transform = '';
+            overlay.classList.add('hidden');
+        }
+    });
+});
+</script>
+{% endblock %}

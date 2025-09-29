@@ -1,0 +1,44 @@
+{% extends 'base.html.twig' %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {% block admin_stylesheets %}{% endblock %}
+{% endblock %}
+
+{% block body %}
+<!-- Admin Layout dengan Sidebar -->
+<div class="flex h-screen bg-gray-100">
+    <!-- Include Sidebar -->
+    {{ include('admin/_sidebar.html.twig') }}
+
+    <!-- Main Content Area -->
+    <div class="flex-1 overflow-y-auto">
+        <!-- Header -->
+        <div class="bg-white shadow-sm px-6 py-4 border-b">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <span class="text-2xl mr-3">{% block page_icon %}📋{% endblock %}</span>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">{% block page_title %}Admin Panel{% endblock %}</h2>
+                        <p class="text-sm text-gray-600">{% block page_description %}Kelola sistem aplikasi Gembira{% endblock %}</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <div class="text-sm text-gray-600">{{ "now"|date('d/m/Y H:i') }}</div>
+                    {% block header_actions %}{% endblock %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6">
+            {% block admin_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {% block admin_javascripts %}{% endblock %}
+{% endblock %}

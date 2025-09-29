@@ -1,0 +1,136 @@
+{% extends 'admin/_layout.html.twig' %}
+
+{% block title %}Admin Dashboard - Gembira{% endblock %}
+
+{% block page_icon %}🏠{% endblock %}
+{% block page_title %}Dashboard Admin{% endblock %}
+{% block page_description %}Panel kontrol untuk mengelola sistem absensi Gembira{% endblock %}
+
+{% block admin_content %}
+    <!-- Welcome Message -->
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div class="text-center">
+            <div class="text-4xl mb-3">🎯</div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Selamat datang, {{ admin.namaLengkap }}!</h3>
+            <p class="text-gray-600">Dashboard admin untuk mengelola sistem absensi Gembira</p>
+        </div>
+    </div>
+
+    <!-- Statistik Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <!-- Total Jadwal -->
+        <div class="bg-white rounded-lg shadow-sm p-4 text-center hover:shadow-md transition-shadow">
+            <div class="text-2xl mb-2">📋</div>
+            <div class="text-xl font-bold text-purple-600">{{ statistik.total_jadwal ?? 0 }}</div>
+            <div class="text-xs text-gray-600">Total Jadwal</div>
+        </div>
+
+        <!-- Jadwal Aktif -->
+        <div class="bg-white rounded-lg shadow-sm p-4 text-center hover:shadow-md transition-shadow">
+            <div class="text-2xl mb-2">✅</div>
+            <div class="text-xl font-bold text-green-600">{{ statistik.jadwal_aktif ?? 0 }}</div>
+            <div class="text-xs text-gray-600">Jadwal Aktif</div>
+        </div>
+
+        <!-- Jadwal dengan QR -->
+        <div class="bg-white rounded-lg shadow-sm p-4 text-center hover:shadow-md transition-shadow">
+            <div class="text-2xl mb-2">📱</div>
+            <div class="text-xl font-bold text-blue-600">{{ statistik.jadwal_perlu_qr ?? 0 }}</div>
+            <div class="text-xs text-gray-600">Pakai QR Code</div>
+        </div>
+
+        <!-- Jadwal dengan Kamera -->
+        <div class="bg-white rounded-lg shadow-sm p-4 text-center hover:shadow-md transition-shadow">
+            <div class="text-2xl mb-2">📷</div>
+            <div class="text-xl font-bold text-orange-600">{{ statistik.jadwal_perlu_kamera ?? 0 }}</div>
+            <div class="text-xs text-gray-600">Pakai Kamera</div>
+        </div>
+    </div>
+
+    <!-- Aktivitas Terbaru -->
+    <div class="bg-white rounded-lg shadow-sm">
+        <div class="bg-gray-50 px-4 py-3 border-b rounded-t-lg">
+            <div class="flex items-center justify-between">
+                <h4 class="text-lg font-semibold text-gray-800 flex items-center">
+                    <span class="text-xl mr-2">📋</span>
+                    Aktivitas Terbaru
+                </h4>
+                <a href="{{ path('app_admin_laporan_kehadiran') }}" class="text-sm text-purple-600 hover:text-purple-800 font-medium">
+                    Lihat Semua →
+                </a>
+            </div>
+        </div>
+        <div class="p-4">
+            {% if aktivitas_terbaru is not empty %}
+                <div class="space-y-4">
+                    {% for absensi in aktivitas_terbaru %}
+                    <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <div class="text-2xl flex-shrink-0">
+                            {% if absensi.status == 'hadir' %}
+                                ✅
+                            {% elseif absensi.status == 'tidak_hadir' %}
+                                ❌
+                            {% elseif absensi.status == 'izin' %}
+                                📝
+                            {% elseif absensi.status == 'sakit' %}
+                                🤒
+                            {% else %}
+                                📋
+                            {% endif %}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-800">
+                                {{ absensi.pegawai.nama }} {{ absensi.status == 'hadir' ? 'berhasil absensi' : 'melakukan absensi' }} {{ absensi.konfigurasiJadwal.namaJadwal }}
+                            </p>
+                            <p class="text-xs text-gray-600">
+                                {% set waktu_diff = date().diff(absensi.waktuAbsensi) %}
+                                {% if waktu_diff.days > 0 %}
+                                    {{ waktu_diff.days }} hari yang lalu
+                                {% elseif waktu_diff.h > 0 %}
+                                    {{ waktu_diff.h }} jam yang lalu
+                                {% elseif waktu_diff.i > 0 %}
+                                    {{ waktu_diff.i }} menit yang lalu
+                                {% else %}
+                                    Baru saja
+                                {% endif %}
+                            </p>
+                        </div>
+                        {% if absensi.statusValidasi == 'pending' %}
+                        <div class="flex-shrink-0">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                ⏳ Perlu Validasi
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-8">
+                    <div class="text-4xl mb-2">📭</div>
+                    <p class="text-gray-500 text-sm">Belum ada aktivitas absensi hari ini</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <a href="{{ path('app_admin_jadwal_absensi') }}" class="bg-purple-500 hover:bg-purple-600 text-white p-4 rounded-lg text-center transition-colors">
+            <div class="text-2xl mb-2">⏰</div>
+            <div class="font-medium">Jadwal Absensi</div>
+        </a>
+        <a href="{{ path('app_admin_validasi_absen') }}" class="bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-lg text-center transition-colors">
+            <div class="text-2xl mb-2">✅</div>
+            <div class="font-medium">Validasi Absen</div>
+        </a>
+        <a href="{{ path('app_admin_laporan_kehadiran') }}" class="bg-green-500 hover:bg-green-600 text-white p-4 rounded-lg text-center transition-colors">
+            <div class="text-2xl mb-2">📊</div>
+            <div class="font-medium">Laporan</div>
+        </a>
+        <a href="{{ path('app_admin_pengaturan') }}" class="bg-gray-500 hover:bg-gray-600 text-white p-4 rounded-lg text-center transition-colors">
+            <div class="text-2xl mb-2">⚙️</div>
+            <div class="font-medium">Pengaturan</div>
+        </a>
+    </div>
+{% endblock %}

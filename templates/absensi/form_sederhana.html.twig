@@ -1,0 +1,252 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ page_title }} - Absensi Gembira{% endblock %}
+
+{% block body %}
+<!-- Header -->
+<div class="bg-gradient-to-r from-sky-400 to-sky-500 text-white sticky top-0 z-40">
+    <div class="container mx-auto px-4 py-4">
+        <div class="flex items-center">
+            <a href="{{ path('app_absensi_dashboard') }}" class="text-white mr-3 p-2 hover:bg-sky-600 rounded-lg">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <div class="flex-1">
+                <h1 class="text-lg font-bold">{{ jadwal.emoji }} {{ jadwal.namaJadwal }}</h1>
+                <p class="text-sky-200 text-sm">{{ 'now'|date('d F Y - H:i') }} WITA</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="min-h-screen bg-gray-100 pb-20">
+    <!-- Form Container -->
+    <div class="px-4 py-8">
+        <div class="bg-white rounded-xl shadow-sm p-8 mb-6">
+            <div class="text-center">
+                <!-- Large emoji display -->
+                <div class="text-8xl mb-6">{{ jadwal.emoji }}</div>
+                
+                <!-- Title and description -->
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">{{ jadwal.namaJadwal }}</h2>
+                <p class="text-gray-600 mb-8">Konfirmasi kehadiran Anda untuk kegiatan ini</p>
+                
+                <!-- Information card -->
+                <div class="bg-gray-50 rounded-lg p-6 mb-8 text-left">
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Pegawai:</span>
+                            <span class="font-medium">{{ pegawai.nama }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">NIP:</span>
+                            <span class="font-medium">{{ pegawai.nip }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Jabatan:</span>
+                            <span class="font-medium">{{ pegawai.jabatan }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Unit Kerja:</span>
+                            <span class="font-medium">{{ pegawai.namaUnitKerja }}</span>
+                        </div>
+                        <hr class="my-3">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Waktu Absensi:</span>
+                            <span class="font-medium" id="waktu-sekarang">{{ 'now'|date('H:i:s') }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Tanggal:</span>
+                            <span class="font-medium">{{ 'now'|date('d F Y') }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Confirmation message -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
+                    <div class="flex items-start">
+                        <div class="text-blue-500 mr-3 mt-0.5">ℹ️</div>
+                        <div class="text-left">
+                            <h4 class="text-blue-800 font-medium mb-1">Konfirmasi Absensi</h4>
+                            <p class="text-blue-600 text-sm">
+                                Dengan mengklik tombol "Konfirmasi Kehadiran", Anda menyatakan hadir pada kegiatan 
+                                <strong>{{ jadwal.namaJadwal }}</strong> pada waktu yang tercantum di atas.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fixed Bottom Bar -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t p-4 safe-area-pb">
+        <form method="POST">
+            <input type="hidden" name="_token" value="{{ csrf_token('absensi_sederhana') }}">
+            
+            <button type="submit" class="w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white py-4 rounded-xl font-semibold text-lg shadow-lg transition-colors touch-manipulation min-h-[56px]">
+                ✅ Konfirmasi Kehadiran
+            </button>
+        </form>
+    </div>
+
+    <!-- Loading Modal -->
+    <div id="loading-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl p-6 text-center max-w-sm mx-4">
+            <div class="animate-spin w-12 h-12 border-4 border-sky-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p class="text-lg font-medium">Mengirim absensi...</p>
+            <p class="text-sm text-gray-600 mt-2">Mohon tunggu sebentar</p>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="success-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl p-6 text-center max-w-sm mx-4">
+            <div class="text-6xl mb-4">✅</div>
+            <h3 class="text-xl font-bold text-green-600 mb-2">Absensi Berhasil!</h3>
+            <div id="success-message" class="text-sm text-gray-700 mb-4"></div>
+            <div class="space-y-2">
+                <button onclick="window.location.href='{{ path('app_user_laporan') }}?success=1'" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-medium">
+                    📊 Lihat di Laporan
+                </button>
+                <button onclick="window.location.href='{{ path('app_absensi_dashboard') }}'" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-medium">
+                    🏠 Kembali ke Dashboard
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="error-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl p-6 text-center max-w-sm mx-4">
+            <div class="text-6xl mb-4">❌</div>
+            <h3 class="text-xl font-bold text-red-600 mb-2">Absensi Gagal</h3>
+            <div id="error-message" class="text-sm text-gray-700 mb-4"></div>
+            <button onclick="document.getElementById('error-modal').classList.add('hidden')" class="w-full bg-gray-600 hover:bg-gray-700 text-white py-3 rounded-lg font-medium">
+                Tutup
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Mobile Touch Optimization */
+.touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Improve button accessibility */
+button:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+/* Safe area padding for iPhone */
+.safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom, 1rem);
+}
+
+/* Smooth transitions */
+.transition-colors {
+    transition: background-color 0.2s ease-in-out;
+}
+
+/* Button press feedback */
+button:active {
+    transform: scale(0.98);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Update time every second
+    function updateTime() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('id-ID');
+        const timeElement = document.getElementById('waktu-sekarang');
+        if (timeElement) {
+            timeElement.textContent = timeString;
+        }
+    }
+    
+    // Update time immediately and then every second
+    updateTime();
+    setInterval(updateTime, 1000);
+    
+    // Add form submission handler with AJAX
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const loadingModal = document.getElementById('loading-modal');
+            loadingModal.classList.remove('hidden');
+            
+            const formData = new FormData(form);
+            
+            try {
+                const response = await fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.berhasil) {
+                    showSuccessModal(result.pesan, result.waktu_absensi);
+                } else {
+                    showErrorModal(result.pesan);
+                }
+            } catch (error) {
+                showErrorModal('❌ Terjadi kesalahan koneksi. Silakan coba lagi.');
+                console.error(error);
+            } finally {
+                loadingModal.classList.add('hidden');
+            }
+        });
+    }
+    
+    // Success modal handler
+    window.showSuccessModal = function(message, waktuAbsensi) {
+        const modal = document.getElementById('success-modal');
+        const messageDiv = document.getElementById('success-message');
+        messageDiv.innerHTML = message + '<br><strong>Waktu: ' + waktuAbsensi + '</strong>';
+        modal.classList.remove('hidden');
+    };
+    
+    // Error modal handler
+    window.showErrorModal = function(message) {
+        const modal = document.getElementById('error-modal');
+        const messageDiv = document.getElementById('error-message');
+        messageDiv.innerHTML = message;
+        modal.classList.remove('hidden');
+    };
+    
+    // Add toast notification function
+    window.showToast = function(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `fixed top-20 left-4 right-4 z-40 px-4 py-3 rounded-xl text-white text-sm font-medium shadow-lg ${
+            type === 'success' ? 'bg-green-600' : 
+            type === 'error' ? 'bg-red-600' : 
+            type === 'warning' ? 'bg-orange-600' : 'bg-blue-600'
+        }`;
+        toast.textContent = message;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 4000);
+    };
+});
+</script>
+{% endblock %}

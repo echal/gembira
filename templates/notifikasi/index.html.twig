@@ -1,0 +1,402 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Notifikasi - Gembira{% endblock %}
+
+{% block body %}
+<!-- Header -->
+<div class="bg-gradient-to-r from-sky-400 to-sky-500 text-white sticky top-0 z-40 shadow-lg">
+    <div class="container mx-auto px-4 py-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <a href="{{ path('app_dashboard') }}" class="text-white mr-3 p-2 hover:bg-sky-600 rounded-lg">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </a>
+                <div>
+                    <h1 class="text-lg font-bold">🔔 Notifikasi</h1>
+                    <p class="text-sky-200 text-sm">Pengumuman & Event</p>
+                </div>
+            </div>
+            
+            <!-- User Info -->
+            <div class="text-right">
+                <div class="text-sm font-medium">{{ pegawai.nama }}</div>
+                <div class="text-xs text-sky-200">{{ pegawai.nip }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="min-h-screen bg-gradient-to-b from-sky-50 to-sky-100 pb-20">
+    <div class="container mx-auto px-4 py-6">
+        
+        <!-- Statistics Card -->
+        <div class="bg-white rounded-xl shadow-sm p-4 mb-6 border border-sky-200">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="bg-sky-100 text-sky-600 p-3 rounded-full mr-4">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM4 4h9v8H4V4zM4 16h4v4H4v-4z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-800">Ringkasan Notifikasi</h2>
+                        <p class="text-sm text-gray-600">Total {{ userNotifications|length }} notifikasi</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    {% if jumlah_belum_dibaca > 0 %}
+                        <div class="text-center">
+                            <span class="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full">
+                                {{ jumlah_belum_dibaca }} Belum Dibaca
+                            </span>
+                        </div>
+                        <button onclick="markAllAsRead()" 
+                                class="bg-sky-100 text-sky-600 hover:bg-sky-200 px-3 py-2 rounded-lg text-sm font-medium transition-colors">
+                            Tandai Semua Sudah Dibaca
+                        </button>
+                    {% else %}
+                        <div class="text-center">
+                            <span class="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
+                                ✅ Semua Sudah Dibaca
+                            </span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Notifikasi List -->
+        <div class="bg-white rounded-xl shadow-sm border border-sky-200">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-800">Daftar Notifikasi</h3>
+            </div>
+            
+            {% if userNotifications|length > 0 %}
+                <div class="divide-y divide-gray-100" id="notifikasi-list">
+                    {% for un in userNotifications %}
+                    {% set n = un.notifikasi %}
+                    <div class="p-4 hover:bg-sky-50 transition-colors {{ not un.isRead ? 'border-l-4' : '' }} {{ un.priorityClass }}" 
+                         id="notifikasi-{{ n.id }}">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <!-- Header Notifikasi -->
+                                <div class="flex items-center mb-2">
+                                    <span class="text-lg mr-2">{{ un.priorityIcon }}</span>
+                                    <span class="text-lg mr-2">{{ n.tipeIcon }}</span>
+                                    <h4 class="font-semibold text-gray-800 {{ not un.isRead ? 'text-sky-800 font-bold' : '' }}">
+                                        {{ n.judul }}
+                                    </h4>
+                                    {% if not un.isRead %}
+                                        <span class="ml-2 w-2 h-2 bg-red-400 rounded-full animate-pulse"></span>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Isi Pesan -->
+                                <div class="text-sm text-gray-600 mb-3 leading-relaxed">
+                                    {{ n.pesan|nl2br }}
+                                </div>
+                                
+                                <!-- Metadata -->
+                                <div class="flex items-center space-x-3 text-xs text-gray-500">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full {{ n.tipeBadgeClass }}">
+                                        {{ n.tipeIcon }} {{ n.tipe|title }}
+                                    </span>
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full {{ un.priority == 'high' ? 'bg-red-100 text-red-700' : un.priority == 'normal' ? 'bg-sky-100 text-sky-700' : 'bg-gray-100 text-gray-700' }}">
+                                        {{ un.priorityIcon }} {{ un.priority|title }}
+                                    </span>
+                                    <span>📅 {{ un.timeAgo }}</span>
+                                    {% if un.readAt %}
+                                        <span class="text-green-600">✅ Dibaca {{ un.readAt.format('d/m/Y H:i') }}</span>
+                                    {% endif %}
+                                    {% if n.event %}
+                                        <a href="{{ path('app_user_kalender') }}" 
+                                           class="text-sky-600 hover:text-sky-800 hover:underline">
+                                            📅 Lihat di Kalender
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="ml-4 flex-shrink-0">
+                                {% if not un.isRead %}
+                                    <button onclick="markAsRead({{ n.id }})" 
+                                            class="text-sky-600 hover:text-sky-800 text-sm font-medium transition-colors" 
+                                            title="Tandai sudah dibaca">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                    </button>
+                                {% else %}
+                                    <span class="text-green-600" title="Sudah dibaca">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <!-- Empty State -->
+                <div class="text-center py-12">
+                    <div class="text-6xl mb-4">🔔</div>
+                    <h4 class="text-lg font-semibold text-gray-700 mb-2">Tidak ada notifikasi</h4>
+                    <p class="text-gray-500 text-sm">
+                        Notifikasi event baru dan pengumuman akan muncul di sini.
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Bottom Navigation Bar -->
+<div class="fixed bottom-0 left-0 right-0 bg-sky-400 shadow-2xl border-t border-sky-500 z-50">
+    <div class="grid grid-cols-5 text-center">
+        <!-- Home -->
+        <a href="{{ path('app_dashboard') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
+            <div class="text-lg mb-1">🏠</div>
+            <div class="text-xs">Home</div>
+        </a>
+        
+        <!-- Laporan -->
+        <a href="{{ path('app_user_laporan') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
+            <div class="text-lg mb-1">📊</div>
+            <div class="text-xs">Laporan</div>
+        </a>
+        
+        <!-- Kalender -->
+        <a href="{{ path('app_user_kalender') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
+            <div class="text-lg mb-1">📅</div>
+            <div class="text-xs">Kalender</div>
+        </a>
+        
+        <!-- Notifikasi - Active -->
+        <a href="{{ path('app_notifikasi_index') }}" class="flex flex-col items-center py-3 px-2 text-white bg-sky-600 rounded-lg mx-1 relative">
+            <div class="text-lg mb-1">🔔</div>
+            <div class="text-xs font-medium">Notifikasi</div>
+            {% if jumlah_belum_dibaca > 0 %}
+                <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {{ jumlah_belum_dibaca > 9 ? '9+' : jumlah_belum_dibaca }}
+                </span>
+            {% endif %}
+        </a>
+        
+        <!-- Akun Saya -->
+        <a href="{{ path('app_profile_change_password') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
+            <div class="text-lg mb-1">👤</div>
+            <div class="text-xs">Akun Saya</div>
+        </a>
+    </div>
+</div>
+
+<!-- Navigasi Bawah - TETAP PERTAHANKAN -->
+<div class="fixed bottom-0 left-0 right-0 bg-sky-400 shadow-2xl border-t border-sky-500 z-50">
+    <div class="grid grid-cols-5 text-center">
+        <!-- Home -->
+        <a href="{{ path('app_dashboard') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
+            <div class="text-lg mb-1">🏠</div>
+            <div class="text-xs">Home</div>
+        </a>
+        
+        <!-- Laporan -->
+        <a href="{{ path('app_user_laporan') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
+            <div class="text-lg mb-1">📊</div>
+            <div class="text-xs">Laporan</div>
+        </a>
+        
+        <!-- Kalender -->
+        <a href="{{ path('app_user_kalender') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
+            <div class="text-lg mb-1">📅</div>
+            <div class="text-xs">Kalender</div>
+        </a>
+        
+        <!-- Notifikasi - Active -->
+        <a href="{{ path('app_notifikasi_index') }}" class="flex flex-col items-center py-3 px-2 text-white bg-sky-600 rounded-lg mx-1">
+            <div class="text-lg mb-1">🔔</div>
+            <div class="text-xs font-medium">Notifikasi</div>
+        </a>
+        
+        <!-- Akun Saya -->
+        <a href="{{ path('app_profile_change_password') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
+            <div class="text-lg mb-1">👤</div>
+            <div class="text-xs">Akun Saya</div>
+        </a>
+    </div>
+</div>
+
+<script>
+class NotifikasiApp {
+    constructor() {
+        this.init();
+    }
+
+    init() {
+        // Auto refresh unread count setiap 30 detik
+        setInterval(() => {
+            this.updateUnreadCount();
+        }, 30000);
+    }
+
+    async markAsRead(notifikasiId) {
+        try {
+            const response = await fetch(`/notifikasi/api/mark-read/${notifikasiId}`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // Update tampilan notifikasi
+                const notifElement = document.getElementById(`notifikasi-${notifikasiId}`);
+                if (notifElement) {
+                    notifElement.classList.remove('border-l-4', 'border-l-red-400', 'bg-red-50', 'border-l-sky-400', 'bg-sky-50', 'border-l-gray-400', 'bg-gray-50');
+                    
+                    // Hapus indikator belum dibaca
+                    const indicator = notifElement.querySelector('.bg-red-400');
+                    if (indicator) {
+                        indicator.remove();
+                    }
+                    
+                    // Update button
+                    const button = notifElement.querySelector('button[onclick*="markAsRead"]');
+                    if (button) {
+                        button.outerHTML = `
+                            <span class="text-green-600" title="Sudah dibaca">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </span>
+                        `;
+                    }
+                }
+                
+                this.updateUnreadCount();
+                this.showToast('Notifikasi ditandai sudah dibaca', 'success');
+            } else {
+                this.showToast('Gagal menandai notifikasi', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            this.showToast('Terjadi kesalahan', 'error');
+        }
+    }
+
+    async markAllAsRead() {
+        if (!confirm('Tandai semua notifikasi sebagai sudah dibaca?')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch('/notifikasi/api/mark-all-read', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // Refresh halaman untuk update tampilan
+                location.reload();
+            } else {
+                this.showToast('Gagal menandai semua notifikasi', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            this.showToast('Terjadi kesalahan', 'error');
+        }
+    }
+
+    async updateUnreadCount() {
+        try {
+            const response = await fetch('/notifikasi/api/count');
+            const result = await response.json();
+            
+            // Update badge di navigation
+            const badge = document.querySelector('.bg-red-500');
+            if (result.count > 0) {
+                if (!badge) {
+                    // Buat badge baru
+                    const notifLink = document.querySelector('[href*="notifikasi"]');
+                    const badgeElement = document.createElement('span');
+                    badgeElement.className = 'absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center';
+                    badgeElement.textContent = result.count > 9 ? '9+' : result.count;
+                    notifLink.appendChild(badgeElement);
+                } else {
+                    badge.textContent = result.count > 9 ? '9+' : result.count;
+                }
+            } else if (badge) {
+                badge.remove();
+            }
+        } catch (error) {
+            console.error('Error updating unread count:', error);
+        }
+    }
+
+    showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `fixed top-20 left-4 right-4 z-50 px-4 py-3 rounded-xl text-white text-sm font-medium shadow-lg ${
+            type === 'success' ? 'bg-green-600' : 
+            type === 'error' ? 'bg-red-600' : 'bg-sky-600'
+        }`;
+        toast.textContent = message;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }
+}
+
+// Global functions for onclick handlers
+function markAsRead(id) {
+    window.notifikasiApp.markAsRead(id);
+}
+
+function markAllAsRead() {
+    window.notifikasiApp.markAllAsRead();
+}
+
+// Initialize app
+document.addEventListener('DOMContentLoaded', () => {
+    window.notifikasiApp = new NotifikasiApp();
+});
+</script>
+
+<style>
+/* Transition animations untuk notifikasi */
+.transition-colors {
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Loading state untuk tombol */
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Responsive improvements */
+@media (max-width: 640px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    .text-xs {
+        font-size: 0.75rem;
+    }
+}
+</style>
+{% endblock %}

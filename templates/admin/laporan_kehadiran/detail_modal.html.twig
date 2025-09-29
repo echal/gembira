@@ -1,0 +1,321 @@
+{#
+    Template Modal Detail Absensi untuk Admin
+    Menampilkan informasi lengkap absensi dalam bahasa Indonesia yang mudah dipahami
+    Includes GPS location, system info, dan validation status untuk maintenance
+#}
+
+<!-- Modal Detail Absensi -->
+<div class="bg-white rounded-lg p-6 max-w-4xl mx-auto">
+    <!-- Header Modal -->
+    <div class="flex items-center justify-between mb-6 border-b border-gray-200 pb-4">
+        <h2 class="text-xl font-bold text-gray-900 flex items-center">
+            📋 Detail Absensi - {{ detail.pegawai.nama }}
+        </h2>
+        <span class="text-sm text-gray-500">ID: #{{ detail.id }}</span>
+    </div>
+
+    <!-- Content dalam Grid Layout untuk Mobile Responsive -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Kolom Kiri: Data Pegawai dan Absensi -->
+        <div class="space-y-6">
+            
+            <!-- Data Pegawai -->
+            <div class="bg-blue-50 rounded-lg p-4">
+                <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
+                    👤 Data Pegawai
+                </h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Nama:</span>
+                        <span class="font-medium">{{ detail.pegawai.nama }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">NIP:</span>
+                        <span class="font-mono text-blue-600">{{ detail.pegawai.nip }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Jabatan:</span>
+                        <span>{{ detail.pegawai.jabatan }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Unit Kerja:</span>
+                        <span>{{ detail.pegawai.unit_kerja }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Absensi -->
+            <div class="bg-green-50 rounded-lg p-4">
+                <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
+                    ⏰ Data Absensi
+                </h3>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Tanggal:</span>
+                        <span class="font-medium">{{ detail.absensi.tanggal }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Waktu:</span>
+                        <span class="font-mono text-green-600">
+                            {{ detail.absensi.waktu_absensi.waktu_formatted }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Status:</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ detail.absensi.status_kehadiran.class }}">
+                            {{ detail.absensi.status_kehadiran.icon }} {{ detail.absensi.status_kehadiran.text }}
+                        </span>
+                    </div>
+                    <div class="text-xs text-gray-500 italic">
+                        {{ detail.absensi.status_kehadiran.keterangan }}
+                    </div>
+                    
+                    <!-- Keterangan Tambahan -->
+                    {% if detail.absensi.keterangan != 'Tidak ada keterangan' %}
+                    <div class="mt-3 p-2 bg-yellow-50 rounded">
+                        <span class="text-gray-600">Keterangan:</span>
+                        <p class="text-sm text-gray-800 mt-1">{{ detail.absensi.keterangan }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Informasi Jadwal -->
+            <div class="bg-purple-50 rounded-lg p-4">
+                <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
+                    {{ detail.absensi.jadwal_info.emoji }} Jadwal Kerja
+                </h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Nama Jadwal:</span>
+                        <span class="font-medium">{{ detail.absensi.jadwal_info.nama }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Jam Kerja:</span>
+                        <span class="font-mono">{{ detail.absensi.jadwal_info.jam_mulai }} - {{ detail.absensi.jadwal_info.jam_selesai }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Sistem:</span>
+                        <span class="text-xs">{{ detail.absensi.jadwal_info.sistem }}</span>
+                    </div>
+                    <div class="text-xs text-gray-500 italic">
+                        {{ detail.absensi.jadwal_info.keterangan }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kolom Kanan: Teknical Details & GPS -->
+        <div class="space-y-6">
+            
+            <!-- QR Code Info -->
+            <div class="bg-indigo-50 rounded-lg p-4">
+                <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
+                    {{ detail.absensi.qr_code_info.icon }} QR Code
+                </h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Menggunakan QR:</span>
+                        <span class="font-medium {{ detail.absensi.qr_code_info.menggunakan_qr ? 'text-green-600' : 'text-gray-500' }}">
+                            {{ detail.absensi.qr_code_info.menggunakan_qr ? 'Ya' : 'Tidak' }}
+                        </span>
+                    </div>
+                    {% if detail.absensi.qr_code_info.menggunakan_qr %}
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Kode QR:</span>
+                        <span class="font-mono text-xs bg-white px-2 py-1 rounded">{{ detail.absensi.qr_code_info.kode_qr }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Status:</span>
+                        <span class="text-xs">{{ detail.absensi.qr_code_info.status }}</span>
+                    </div>
+                    <div class="text-xs text-gray-500 italic">
+                        {{ detail.absensi.qr_code_info.keterangan }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- GPS Location -->
+            <div class="bg-red-50 rounded-lg p-4">
+                <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
+                    🗺️ Lokasi GPS
+                </h3>
+                {% if detail.lokasi.gps_tersedia %}
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Status GPS:</span>
+                        <span class="text-green-600 font-medium">✅ Tersedia</span>
+                    </div>
+                    {% if detail.lokasi.koordinat_array %}
+                    <div class="bg-white rounded p-2">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Latitude:</span>
+                            <span class="font-mono text-xs">{{ detail.lokasi.koordinat_array.latitude }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Longitude:</span>
+                            <span class="font-mono text-xs">{{ detail.lokasi.koordinat_array.longitude }}</span>
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button type="button" 
+                                onclick="showMapModal('{{ detail.lokasi.koordinat_array.latitude }}', '{{ detail.lokasi.koordinat_array.longitude }}', '{{ detail.pegawai.nama }}')"
+                                class="flex-1 bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700">
+                            🗺️ Lihat Peta
+                        </button>
+                        <a href="{{ detail.lokasi.koordinat_array.google_maps_url }}" target="_blank" 
+                           class="flex-1 bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700 text-center">
+                            📍 Google Maps
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="text-xs text-gray-500 bg-white p-2 rounded">
+                        Koordinat: {{ detail.lokasi.koordinat }}
+                        <br><span class="text-red-500">Format koordinat tidak valid</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="text-center text-gray-500 text-sm py-4">
+                    📍 GPS tidak tersedia<br>
+                    <span class="text-xs">Absensi dilakukan tanpa lokasi GPS</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Data Teknis (untuk maintenance admin) -->
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
+                    🔧 Data Teknis
+                    <span class="ml-2 text-xs bg-gray-200 px-2 py-1 rounded">Untuk Admin</span>
+                </h3>
+                <div class="space-y-2 text-xs">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Sistem:</span>
+                        <span>{{ detail.teknis.system_type }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">IP Address:</span>
+                        <span class="font-mono">{{ detail.teknis.ip_address }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Created:</span>
+                        <span>{{ detail.teknis.created_at }}</span>
+                    </div>
+                    <!-- User Agent - collapsed by default -->
+                    <details class="mt-2">
+                        <summary class="cursor-pointer text-gray-600 hover:text-gray-800">User Agent Info</summary>
+                        <div class="mt-2 p-2 bg-white rounded text-xs break-all">
+                            {{ detail.teknis.user_agent }}
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            <!-- Status Validasi -->
+            <div class="bg-yellow-50 rounded-lg p-4">
+                <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
+                    🔍 Status Validasi
+                </h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Status:</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ detail.validasi.status.class }}">
+                            {{ detail.validasi.status.icon }} {{ detail.validasi.status.text }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Validator:</span>
+                        <span class="text-xs">{{ detail.validasi.validator }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Tanggal Validasi:</span>
+                        <span class="text-xs">{{ detail.validasi.tanggal_validasi }}</span>
+                    </div>
+                    {% if detail.validasi.catatan_admin != 'Tidak ada catatan' %}
+                    <div class="mt-3 p-2 bg-white rounded">
+                        <span class="text-gray-600 text-xs">Catatan Admin:</span>
+                        <p class="text-sm text-gray-800 mt-1">{{ detail.validasi.catatan_admin }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer dengan Foto Absensi jika tersedia -->
+    {% if detail.absensi.foto_tersedia %}
+    <div class="mt-6 pt-4 border-t border-gray-200">
+        <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
+            📷 Foto Absensi
+        </h3>
+        <div class="text-center">
+            <button type="button" 
+                    onclick="showPhotoModal('{{ detail.absensi.foto_path }}', '{{ detail.pegawai.nama }}')"
+                    class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700 inline-flex items-center">
+                📷 Lihat Foto Absensi
+            </button>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Footer Action Buttons -->
+    <div class="mt-6 pt-4 border-t border-gray-200 flex justify-end space-x-3">
+        <button type="button" 
+                onclick="closeModal('detailModal')" 
+                class="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700">
+            Tutup Detail
+        </button>
+        <!-- Future: Tambahan aksi validasi atau edit bisa ditambahkan di sini -->
+    </div>
+</div>
+
+{# 
+    CSS Customizations untuk modal detail
+    Menggunakan utility classes dari Tailwind CSS yang sudah ada
+    Tambahan responsiveness untuk mobile view
+#}
+<style>
+/* Custom styling khusus untuk modal detail */
+.detail-modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .detail-modal-content {
+        max-height: 95vh;
+        padding: 1rem;
+    }
+    
+    .grid-cols-1 {
+        grid-template-columns: 1fr;
+    }
+    
+    .text-xs {
+        font-size: 0.7rem;
+    }
+}
+
+/* Custom scrollbar untuk area yang bisa di-scroll */
+.detail-modal-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.detail-modal-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.detail-modal-content::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.detail-modal-content::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+</style>

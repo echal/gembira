@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Bulanan Kehadiran - {{ bulan }} {{ tahun }}</title>
+    <style>
+        /* CSS untuk print/PDF yang konsisten dengan gaya admin */
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            margin: 20px;
+            color: #333;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+        }
+        
+        .header h1 {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 5px 0;
+            text-transform: uppercase;
+        }
+        
+        .header h2 {
+            font-size: 16px;
+            margin: 5px 0;
+        }
+        
+        .info-section {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .info-left, .info-right {
+            width: 48%;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 11px;
+        }
+        
+        th, td {
+            border: 1px solid #333;
+            padding: 8px 4px;
+            text-align: center;
+        }
+        
+        th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+            font-size: 10px;
+        }
+        
+        td.text-left {
+            text-align: left;
+            padding-left: 8px;
+        }
+        
+        .status-excellent {
+            background-color: #d1f2eb;
+            color: #00695c;
+            font-weight: bold;
+        }
+        
+        .status-good {
+            background-color: #fff3cd;
+            color: #856404;
+            font-weight: bold;
+        }
+        
+        .status-poor {
+            background-color: #f8d7da;
+            color: #721c24;
+            font-weight: bold;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+        }
+        
+        .signature {
+            text-align: center;
+            width: 200px;
+        }
+        
+        .summary-stats {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .summary-stats h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            font-size: 11px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 8px;
+            background: white;
+            border-radius: 3px;
+        }
+        
+        .stat-number {
+            font-size: 16px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        /* CSS untuk print */
+        @media print {
+            body { margin: 0; }
+            .no-print { display: none; }
+        }
+        
+        /* Responsive untuk mobile */
+        @media (max-width: 768px) {
+            body { margin: 10px; font-size: 10px; }
+            .info-section { flex-direction: column; }
+            .info-left, .info-right { width: 100%; margin-bottom: 10px; }
+            table { font-size: 9px; }
+            th, td { padding: 4px 2px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Laporan -->
+    <div class="header">
+        <h1>KANTOR WILAYAH KEMENTERIAN AGAMA</h1>
+        <h1>PROVINSI SULAWESI BARAT</h1>
+        <h2>LAPORAN BULANAN KEHADIRAN</h2>
+        <h2>{{ bulan|upper }} {{ tahun }}</h2>
+    </div>
+
+    <!-- Informasi Laporan -->
+    <div class="info-section">
+        <div class="info-left">
+            <strong>Periode:</strong> {{ bulan }} {{ tahun }}<br>
+            <strong>Unit Kerja:</strong> {{ unit_kerja == 'Semua_Unit' ? 'Semua Unit Kerja' : unit_kerja }}<br>
+            <strong>Total Pegawai:</strong> {{ total_pegawai }} orang
+        </div>
+        <div class="info-right">
+            <strong>Tanggal Export:</strong> {{ tanggal_export|date('d F Y H:i') }} WITA<br>
+            <strong>Digenerate oleh:</strong> Sistem Gembira<br>
+            <strong>Format:</strong> Laporan Bulanan (PDF)
+        </div>
+    </div>
+
+    <!-- Ringkasan Statistik -->
+    <div class="summary-stats">
+        <h3>📊 Ringkasan Statistik</h3>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number">{{ statistik_pegawai|length }}</div>
+                <div>Pegawai</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">
+                    {% set total_hadir = 0 %}
+                    {% for data in statistik_pegawai %}
+                        {% set total_hadir = total_hadir + data.hadir %}
+                    {% endfor %}
+                    {{ total_hadir }}
+                </div>
+                <div>Total Hadir</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">
+                    {% set total_izin = 0 %}
+                    {% for data in statistik_pegawai %}
+                        {% set total_izin = total_izin + (data.izin ?? 0) %}
+                    {% endfor %}
+                    {{ total_izin }}
+                </div>
+                <div>Total Izin</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">
+                    {% set total_alpha = 0 %}
+                    {% for data in statistik_pegawai %}
+                        {% set total_alpha = total_alpha + (data.alpha ?? data.tidak_hadir ?? 0) %}
+                    {% endfor %}
+                    {{ total_alpha }}
+                </div>
+                <div>Total Alpha</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabel Data Kehadiran -->
+    <table>
+        <thead>
+            <tr>
+                <th width="5%">No</th>
+                <th width="20%">Nama Pegawai</th>
+                <th width="12%">NIP</th>
+                <th width="15%">Unit Kerja</th>
+                <th width="15%">Jabatan</th>
+                <th width="8%">Hadir</th>
+                <th width="8%">Izin</th>
+                <th width="8%">Alpha</th>
+                <th width="9%">Persentase</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for data in statistik_pegawai %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td class="text-left">{{ data.nama }}</td>
+                    <td>{{ data.nip }}</td>
+                    <td class="text-left">{{ data.unit_kerja ?? 'Tidak Ada Unit' }}</td>
+                    <td class="text-left">{{ data.jabatan ?? 'Tidak Diketahui' }}</td>
+                    <td>{{ data.hadir }}</td>
+                    <td>{{ data.izin ?? 0 }}</td>
+                    <td>{{ data.alpha ?? data.tidak_hadir ?? 0 }}</td>
+                    <td class="{% if data.persentase_kehadiran >= 90 %}status-excellent{% elseif data.persentase_kehadiran >= 75 %}status-good{% else %}status-poor{% endif %}">
+                        {{ data.persentase_kehadiran }}%
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="9" style="text-align: center; padding: 20px;">
+                        Tidak ada data kehadiran untuk periode yang dipilih
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Footer dengan TTD -->
+    <div class="footer">
+        <div class="signature">
+            <div style="margin-bottom: 60px;">
+                Mengetahui,<br>
+                <strong>Kepala Kantor Wilayah</strong>
+            </div>
+            <div style="border-top: 1px solid #333; padding-top: 5px;">
+                <strong>( ............................ )</strong><br>
+                NIP. ............................
+            </div>
+        </div>
+        
+        <div class="signature">
+            <div style="margin-bottom: 60px;">
+                Makassar, {{ tanggal_export|date('d F Y') }}<br>
+                <strong>Kepala Sub Bagian Kepegawaian</strong>
+            </div>
+            <div style="border-top: 1px solid #333; padding-top: 5px;">
+                <strong>( ............................ )</strong><br>
+                NIP. ............................
+            </div>
+        </div>
+    </div>
+
+    <!-- Keterangan -->
+    <div style="margin-top: 30px; font-size: 10px; color: #666;">
+        <strong>Keterangan:</strong><br>
+        • Laporan ini menampilkan rekap kehadiran pegawai dalam periode {{ bulan }} {{ tahun }}<br>
+        • Status Kehadiran: Luar Biasa (≥90%), Bagus (75-89%), Perlu Perhatian (<75%)<br>
+        • Alpha = Tidak hadir tanpa keterangan<br>
+        • Dokumen ini digenerate secara otomatis dari Sistem Gembira pada {{ tanggal_export|date('d/m/Y H:i') }} WITA
+    </div>
+
+    <!-- Print Instructions (tidak akan muncul saat di-print) -->
+    <div class="no-print" style="position: fixed; top: 10px; right: 10px; background: #007bff; color: white; padding: 10px; border-radius: 5px; font-size: 12px;">
+        <strong>💡 Tips:</strong><br>
+        • Tekan <kbd>Ctrl+P</kbd> untuk print<br>
+        • Pilih "Save as PDF" untuk simpan PDF<br>
+        • Gunakan orientasi Landscape
+    </div>
+</body>
+</html>

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Bulanan {{ bulan }} {{ tahun }} - {{ unit_kerja }}</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            margin: 0;
+            padding: 20px;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #000;
+        }
+
+        .header {
+            margin-bottom: 30px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding-left: 140px;
+        }
+
+        .header-logo {
+            width: 80px;
+            height: 80px;
+            margin-right: 60px;
+            flex-shrink: 0;
+        }
+
+        .header-text {
+            text-align: center;
+            flex-grow: 1;
+            margin-right: 200px;
+        }
+
+        .header-text h1 {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .header-text h2 {
+            font-size: 16px;
+            margin: 10px 0;
+        }
+
+        .header-text .subtitle {
+            font-size: 14px;
+            margin: 5px 0;
+        }
+
+        .info-section {
+            margin-bottom: 20px;
+        }
+
+        .info-table {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .info-table td {
+            padding: 3px 0;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9px;
+            margin-bottom: 20px;
+            table-layout: fixed;
+        }
+
+        .data-table th,
+        .data-table td {
+            border: 1px solid #000;
+            padding: 3px 1px;
+            text-align: center;
+            vertical-align: middle;
+            word-wrap: break-word;
+            overflow: hidden;
+        }
+
+        .data-table th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            font-size: 8px;
+        }
+
+        .data-table td.text-left {
+            text-align: left;
+        }
+
+        .persentase-excellent {
+            background-color: #d4edda;
+            color: #155724;
+            font-weight: bold;
+        }
+
+        .persentase-good {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .persentase-warning {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .signature-section {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .signature-box {
+            text-align: center;
+            width: 250px;
+        }
+
+        .signature-line {
+            border-bottom: 1px solid #000;
+            margin-top: 60px;
+            margin-bottom: 5px;
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 10px;
+            color: #666;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+        }
+
+        @media print {
+            body {
+                padding: 10px;
+                font-size: 10px;
+            }
+
+            .header {
+                padding-left: 100px;
+            }
+
+            .header-text {
+                margin-right: 140px;
+            }
+
+            .header-text h1 {
+                font-size: 16px;
+            }
+
+            .header-logo {
+                width: 70px;
+                height: 70px;
+                margin-right: 45px;
+            }
+
+            .data-table {
+                font-size: 8px;
+            }
+        }
+
+        /* Fallback untuk logo jika tidak bisa dimuat */
+        .header-logo {
+            object-fit: contain;
+        }
+
+        /* Responsif untuk mobile */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                text-align: center;
+                padding-left: 20px;
+            }
+
+            .header-logo {
+                margin-right: 0;
+                margin-bottom: 10px;
+                width: 60px;
+                height: 60px;
+            }
+
+            .header-text {
+                margin-right: 0;
+            }
+
+            .header-text h1 {
+                font-size: 14px;
+            }
+
+            .header-text .subtitle {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Kanwil -->
+    <div class="header">
+        <img src="{{ asset('images/logo-kemenag.png') }}" alt="Logo Kemenag" class="header-logo">
+        <div class="header-text">
+            <h1>KANTOR WILAYAH KEMENTERIAN AGAMA</h1>
+            <h1>PROVINSI SULAWESI BARAT</h1>
+            <div class="subtitle">Laporan Kehadiran Bulanan Pegawai</div>
+            <div class="subtitle">Periode: {{ bulan }} {{ tahun }}</div>
+            {% if unit_kerja != 'Semua_Unit' %}
+            <div class="subtitle">Unit Kerja: {{ unit_kerja }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Info Section -->
+    <div class="info-section">
+        <table class="info-table">
+            <tr>
+                <td style="width: 150px;"><strong>Tanggal Export:</strong></td>
+                <td>{{ tanggal_export|date('d/m/Y H:i') }} WITA</td>
+            </tr>
+            <tr>
+                <td><strong>Total Pegawai:</strong></td>
+                <td>{{ total_pegawai }} Orang{% if unit_kerja != 'Semua_Unit' %} pada {{ unit_kerja }}{% endif %}</td>
+            </tr>
+            <tr>
+                <td><strong>Periode Laporan:</strong></td>
+                <td>{{ bulan }} {{ tahun }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Data Table -->
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th rowspan="2" style="width: 4%;">No</th>
+                <th rowspan="2" style="width: 18%;">Nama Pegawai</th>
+                <th rowspan="2" style="width: 13%;">NIP</th>
+                <th rowspan="2" style="width: 15%;">Unit Kerja</th>
+                <th colspan="2" style="width: 16%;">Absen Apel Pagi</th>
+                <th colspan="2" style="width: 16%;">Absen Ibadah Pagi</th>
+                <th rowspan="2" style="width: 8%;">Total Alpha</th>
+                <th rowspan="2" style="width: 10%;">Persentase</th>
+            </tr>
+            <tr>
+                <th style="width: 8%;">Total</th>
+                <th style="width: 8%;">Hadir</th>
+                <th style="width: 8%;">Total</th>
+                <th style="width: 8%;">Hadir</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set total_apel_pagi = 0 %}
+            {% set total_apel_pagi_hadir = 0 %}
+            {% set total_ibadah_pagi = 0 %}
+            {% set total_ibadah_pagi_hadir = 0 %}
+            {% set total_alpha_semua = 0 %}
+            {% set total_jadwal_semua = 0 %}
+
+            {% for data in statistik_pegawai %}
+                {% set total_apel_pagi = total_apel_pagi + data.apel_pagi_total %}
+                {% set total_apel_pagi_hadir = total_apel_pagi_hadir + data.apel_pagi_hadir %}
+                {% set total_ibadah_pagi = total_ibadah_pagi + data.ibadah_pagi_total %}
+                {% set total_ibadah_pagi_hadir = total_ibadah_pagi_hadir + data.ibadah_pagi_hadir %}
+                {% set total_alpha_semua = total_alpha_semua + data.total_alpha %}
+                {% set total_jadwal_semua = total_jadwal_semua + data.total_jadwal %}
+
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td class="text-left">{{ data.nama }}</td>
+                    <td>{{ data.nip }}</td>
+                    <td class="text-left">{{ data.unit_kerja }}</td>
+                    <td>{{ data.apel_pagi_total }}</td>
+                    <td>{{ data.apel_pagi_hadir }}</td>
+                    <td>{{ data.ibadah_pagi_total }}</td>
+                    <td>{{ data.ibadah_pagi_hadir }}</td>
+                    <td>{{ data.total_alpha }}</td>
+                    <td
+                        {% if data.persentase_kehadiran >= 90 %}
+                            class="persentase-excellent"
+                        {% elseif data.persentase_kehadiran >= 75 %}
+                            class="persentase-good"
+                        {% else %}
+                            class="persentase-warning"
+                        {% endif %}
+                    >
+                        {{ data.persentase_kehadiran }}%
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="10" style="text-align: center; font-style: italic; color: #666;">
+                        Tidak ada data kehadiran untuk periode yang dipilih
+                    </td>
+                </tr>
+            {% endfor %}
+
+            <!-- Summary Row -->
+            {% if statistik_pegawai is not empty %}
+            <tr style="background-color: #f8f9fa; font-weight: bold;">
+                <td colspan="4" style="text-align: right;">TOTAL:</td>
+                <td>{{ total_apel_pagi }}</td>
+                <td>{{ total_apel_pagi_hadir }}</td>
+                <td>{{ total_ibadah_pagi }}</td>
+                <td>{{ total_ibadah_pagi_hadir }}</td>
+                <td>{{ total_alpha_semua }}</td>
+                <td>
+                    {% if total_jadwal_semua > 0 %}
+                        {{ ((total_apel_pagi_hadir + total_ibadah_pagi_hadir) / total_jadwal_semua * 100)|round(1) }}%
+                    {% else %}
+                        0%
+                    {% endif %}
+                </td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+
+    <!-- Legend -->
+    <div style="margin-top: 20px; font-size: 10px;">
+        <strong>Keterangan:</strong><br>
+        • Absen Apel Pagi: Absensi berdasarkan jadwal "Apel Pagi"<br>
+        • Absen Ibadah Pagi: Absensi berdasarkan jadwal "Ibadah Pagi"<br>
+        • Total Alpha: Jumlah ketidakhadiran dari kedua jadwal<br>
+        • Persentase: (Total Hadir / Total Jadwal) × 100%<br><br>
+        <strong>Status Kehadiran:</strong><br>
+        <span class="persentase-excellent" style="padding: 2px 4px;">≥ 90% (Luar Biasa)</span>
+        <span class="persentase-good" style="padding: 2px 4px; margin-left: 10px;">75-89% (Bagus)</span>
+        <span class="persentase-warning" style="padding: 2px 4px; margin-left: 10px;">&lt; 75% (Perlu Perhatian)</span>
+    </div>
+
+    <!-- Signature Section -->
+    <div class="signature-section">
+        <div class="signature-box">
+            <div>Mengetahui,</div>
+            <div style="margin-top: 5px;"><strong>Kepala Kantor Wilayah</strong></div>
+            {% if kepala_kantor %}
+            <div style="margin-top: 5px;">({{ kepala_kantor.nama }})</div>
+            <div class="signature-line"></div>
+            <div style="font-size: 10px;">NIP. {{ kepala_kantor.nip }}</div>
+            {% else %}
+            <div class="signature-line"></div>
+            <div style="font-size: 10px;">NIP. ________________</div>
+            {% endif %}
+        </div>
+
+        <div class="signature-box">
+            {% set months = {
+                1: 'Januari', 2: 'Februari', 3: 'Maret', 4: 'April',
+                5: 'Mei', 6: 'Juni', 7: 'Juli', 8: 'Agustus',
+                9: 'September', 10: 'Oktober', 11: 'November', 12: 'Desember'
+            } %}
+            {% set tanggal_indonesia = tanggal_export|date('j') ~ ' ' ~ months[tanggal_export|date('n')] ~ ' ' ~ tanggal_export|date('Y') %}
+            <div>Mamuju, {{ tanggal_indonesia }}</div>
+            <div style="margin-top: 5px;"><strong>{{ jabatan_kepala_bidang ?? 'Kepala Bagian Tata Usaha' }}</strong></div>
+            {% if kepala_bidang %}
+            <div style="margin-top: 5px;">({{ kepala_bidang.nama }})</div>
+            <div class="signature-line"></div>
+            <div style="font-size: 10px;">NIP. {{ kepala_bidang.nip }}</div>
+            {% else %}
+            <div style="margin-top: 5px;">(Nama Kepala Bidang)</div>
+            <div class="signature-line"></div>
+            <div style="font-size: 10px;">NIP. ________________</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <div style="text-align: center;">
+            Laporan ini dibuat secara otomatis oleh Sistem Informasi Kehadiran Gembira<br>
+            Dicetak pada: {{ tanggal_export|date('d/m/Y H:i:s') }} WITA
+        </div>
+    </div>
+</body>
+</html>

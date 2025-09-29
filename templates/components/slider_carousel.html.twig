@@ -1,0 +1,166 @@
+{% if sliders|length > 0 %}
+<!-- Banner Carousel untuk Slider dari Database -->
+<div class="bg-gradient-to-r from-sky-300 to-sky-400 py-4 shadow-sm">
+    <div class="container mx-auto px-4">
+        <div class="relative overflow-hidden rounded-lg">
+            <div class="flex transition-transform duration-500 ease-in-out" id="slider-carousel">
+                {% for slider in sliders %}
+                <div class="min-w-full relative">
+                    {% if slider.imagePath %}
+                    <!-- Slide dengan Gambar -->
+                    <div class="bg-white bg-opacity-90 backdrop-blur-sm rounded-lg p-4 text-center">
+                        <div class="flex items-center justify-center space-x-3">
+                            <div class="flex-shrink-0">
+                                <img src="/uploads/sliders/{{ slider.imagePath }}?v={{ slider.createdAt|date('YmdHis') }}" 
+                                     alt="{{ slider.title }}"
+                                     class="w-8 h-8 object-cover rounded"
+                                     onload="this.style.opacity=1" 
+                                     onerror="this.style.display='none'">
+                            </div>
+                            <div class="flex-1">
+                                {% if slider.title %}
+                                <p class="font-semibold text-sky-800">{{ slider.title }}</p>
+                                {% endif %}
+                                {% if slider.description %}
+                                <p class="text-sm text-sky-600">{{ slider.description }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <!-- Slide Hanya Teks - Format sama dengan banner original -->
+                    <div class="bg-white bg-opacity-90 backdrop-blur-sm rounded-lg p-4 text-center">
+                        <div class="flex items-center justify-center space-x-3">
+                            <div class="text-2xl">📢</div>
+                            <div>
+                                {% if slider.title %}
+                                <p class="font-semibold text-sky-800">{{ slider.title }}</p>
+                                {% endif %}
+                                {% if slider.description %}
+                                <p class="text-sm text-sky-600">{{ slider.description }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Indikator Slide -->
+            {% if sliders|length > 1 %}
+            <div class="flex justify-center mt-3 space-x-2">
+                {% for slider in sliders %}
+                <button class="w-2 h-2 rounded-full bg-white bg-opacity-60 transition-all" 
+                        onclick="goToSliderSlide({{ loop.index0 }})" 
+                        id="slider-indicator-{{ loop.index0 }}">
+                </button>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Slider Carousel JavaScript
+let currentSliderSlide = 0;
+const totalSliderSlides = {{ sliders|length }};
+
+function goToSliderSlide(index) {
+    currentSliderSlide = index;
+    const slider = document.getElementById('slider-carousel');
+    if (slider) {
+        const translateX = -currentSliderSlide * 100;
+        slider.style.transform = `translateX(${translateX}%)`;
+        
+        // Update indikator
+        for (let i = 0; i < totalSliderSlides; i++) {
+            const indicator = document.getElementById(`slider-indicator-${i}`);
+            if (indicator) {
+                if (i === currentSliderSlide) {
+                    indicator.classList.remove('bg-white', 'bg-opacity-60');
+                    indicator.classList.add('bg-white', 'bg-opacity-100');
+                } else {
+                    indicator.classList.remove('bg-white', 'bg-opacity-100');
+                    indicator.classList.add('bg-white', 'bg-opacity-60');
+                }
+            }
+        }
+    }
+}
+
+function nextSliderSlide() {
+    if (totalSliderSlides > 1) {
+        currentSliderSlide = (currentSliderSlide + 1) % totalSliderSlides;
+        goToSliderSlide(currentSliderSlide);
+    }
+}
+
+function prevSliderSlide() {
+    if (totalSliderSlides > 1) {
+        currentSliderSlide = currentSliderSlide === 0 ? totalSliderSlides - 1 : currentSliderSlide - 1;
+        goToSliderSlide(currentSliderSlide);
+    }
+}
+
+// Auto-scroll untuk slider jika lebih dari 1 slide
+if (totalSliderSlides > 1) {
+    setInterval(nextSliderSlide, 6000); // 6 detik
+}
+
+// Initialize slide pertama saat DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+    goToSliderSlide(0);
+    
+    // Touch/swipe support untuk mobile
+    let startX = 0;
+    let currentX = 0;
+    const sliderCarousel = document.getElementById('slider-carousel');
+    
+    if (sliderCarousel && totalSliderSlides > 1) {
+        const sliderContainer = sliderCarousel.parentElement;
+        
+        sliderContainer.addEventListener('touchstart', function(e) {
+            startX = e.touches[0].clientX;
+        });
+        
+        sliderContainer.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+            currentX = e.touches[0].clientX;
+        });
+        
+        sliderContainer.addEventListener('touchend', function(e) {
+            const diffX = startX - currentX;
+            const minSwipeDistance = 50;
+            
+            if (Math.abs(diffX) > minSwipeDistance) {
+                if (diffX > 0) {
+                    // Swipe left - next slide
+                    nextSliderSlide();
+                } else {
+                    // Swipe right - prev slide
+                    prevSliderSlide();
+                }
+            }
+        });
+    }
+});
+</script>
+
+{% else %}
+<!-- Fallback - Banner Static jika tidak ada slider -->
+<div class="bg-gradient-to-r from-sky-300 to-sky-400 py-4 shadow-sm">
+    <div class="container mx-auto px-4">
+        <div class="bg-white bg-opacity-90 backdrop-blur-sm rounded-lg p-4 text-center">
+            <div class="flex items-center justify-center space-x-3">
+                <div class="text-2xl">📢</div>
+                <div>
+                    <p class="font-semibold text-sky-800">Selamat Datang di GEMBIRA</p>
+                    <p class="text-sm text-sky-600">Gerakan Munajat Bersama Untuk Kinerja</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

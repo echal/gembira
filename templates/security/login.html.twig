@@ -1,0 +1,208 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Login - Gembira{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center px-4">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+        <!-- Logo & Header -->
+        <div class="text-center mb-8">
+            <div class="mb-4 flex justify-center">
+                <img src="{{ asset('images/logo-kemenag.png') }}" alt="Logo Kementerian Agama" class="h-16 w-auto">
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">Login Gembira</h1>
+            <p class="text-gray-600 text-sm">Gerakan Munajat Bersama Untuk Kinerja</p>
+        </div>
+
+        {% if error %}
+            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+                <div class="flex items-center">
+                    <div class="text-xl mr-3">❌</div>
+                    <div>
+                        <div class="font-medium">Login Gagal</div>
+                        <div class="text-sm">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% for message in app.flashes('maintenance_error') %}
+            <div class="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-3 rounded-lg mb-6">
+                <div class="flex items-center">
+                    <div class="text-xl mr-3">🔧</div>
+                    <div>
+                        <div class="font-medium">Mode Maintenance Aktif</div>
+                        <div class="text-sm">{{ message }}</div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+
+        {% if maintenance_mode_enabled %}
+            <div class="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg mb-6">
+                <div class="flex items-center">
+                    <div class="text-xl mr-3">🔧</div>
+                    <div class="flex-1">
+                        <div class="font-medium">Sistem dalam Mode Maintenance</div>
+                        <div class="text-sm">{{ maintenance_message }}</div>
+                        <div class="text-xs mt-1 text-yellow-600">Hanya admin yang dapat login saat ini.</div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Login Form -->
+        <form method="post" action="{{ path('app_login') }}" class="space-y-6">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+            
+            <!-- NIP/Username Field -->
+            <div>
+                <label for="inputNip" class="block text-sm font-medium text-gray-700 mb-2">
+                    👤 NIP / Username
+                </label>
+                <input type="text" 
+                       id="inputNip" 
+                       name="_username" 
+                       value="{{ last_username }}" 
+                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-base" 
+                       placeholder="Masukkan NIP (Pegawai) atau Username (Admin)"
+                       required
+                       autocomplete="username">
+            </div>
+
+            <!-- Password Field -->
+            <div>
+                <label for="inputPassword" class="block text-sm font-medium text-gray-700 mb-2">
+                    🔒 Password
+                </label>
+                <input type="password" 
+                       id="inputPassword" 
+                       name="_password" 
+                       class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-base" 
+                       placeholder="Masukkan password Anda"
+                       required
+                       autocomplete="current-password">
+            </div>
+
+            <!-- Remember Me -->
+            <div class="flex items-center">
+                <input type="checkbox" 
+                       id="remember_me" 
+                       name="_remember_me" 
+                       class="h-4 w-4 text-sky-500 focus:ring-sky-500 border-gray-300 rounded"
+                       checked>
+                <label for="remember_me" class="ml-2 block text-sm text-gray-700">
+                    Ingat login saya di HP ini (30 hari)
+                </label>
+            </div>
+
+            <!-- Login Button -->
+            <button type="submit" 
+                    class="w-full bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg transition-colors touch-manipulation min-h-[56px]">
+                🚀 Masuk ke Aplikasi
+            </button>
+        </form>
+
+        <!-- Footer Info -->
+        <div class="mt-8 pt-6 border-t border-gray-200">
+            <div class="text-center text-xs text-gray-500">
+                © Sistim Informasi dan Data
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Mobile Touch Optimization */
+.touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent zoom on input focus (iOS Safari) */
+input[type="text"], input[type="password"] {
+    font-size: 16px;
+}
+
+/* Improve button accessibility */
+button:focus-visible {
+    outline: 2px solid #0ea5e9;
+    outline-offset: 2px;
+}
+</style>
+
+<script>
+class LoginApp {
+    constructor() {
+        this.usernameInput = document.getElementById('inputNip');
+        this.passwordInput = document.getElementById('inputPassword');
+        this.rememberCheckbox = document.getElementById('remember_me');
+        this.form = document.querySelector('form');
+        
+        this.init();
+    }
+    
+    init() {
+        this.loadSavedCredentials();
+        this.form.addEventListener('submit', (e) => this.handleLogin(e));
+    }
+    
+    loadSavedCredentials() {
+        try {
+            const savedUsername = localStorage.getItem('gembira_username');
+            const savedRememberMe = localStorage.getItem('gembira_remember_me');
+            
+            if (savedUsername) {
+                this.usernameInput.value = savedUsername;
+                this.passwordInput.focus(); // Focus password jika username sudah ada
+            }
+            
+            if (savedRememberMe === 'true') {
+                this.rememberCheckbox.checked = true;
+            }
+        } catch (error) {
+            console.log('LocalStorage tidak tersedia atau error:', error);
+        }
+    }
+    
+    handleLogin(e) {
+        // Simpan username jika remember me di-check
+        if (this.rememberCheckbox.checked) {
+            try {
+                localStorage.setItem('gembira_username', this.usernameInput.value);
+                localStorage.setItem('gembira_remember_me', 'true');
+                localStorage.setItem('gembira_last_login', new Date().toISOString());
+            } catch (error) {
+                console.log('Tidak dapat menyimpan ke localStorage:', error);
+            }
+        } else {
+            // Hapus data tersimpan jika user tidak ingin diingat
+            try {
+                localStorage.removeItem('gembira_username');
+                localStorage.removeItem('gembira_remember_me');
+                localStorage.removeItem('gembira_last_login');
+            } catch (error) {
+                console.log('Tidak dapat menghapus dari localStorage:', error);
+            }
+        }
+    }
+}
+
+// Initialize app saat DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+    new LoginApp();
+});
+
+// Auto-fill username jika tersedia
+window.addEventListener('load', () => {
+    const usernameInput = document.getElementById('inputNip');
+    if (usernameInput && usernameInput.value) {
+        // Jika ada username tersimpan, fokus ke password
+        const passwordInput = document.getElementById('inputPassword');
+        if (passwordInput && !passwordInput.value) {
+            passwordInput.focus();
+        }
+    }
+});
+</script>
+{% endblock %}

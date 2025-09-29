@@ -1,0 +1,398 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Jadwal Absensi - User Gembira{% endblock %}
+
+{% block body %}
+<!-- Header -->
+<div class="bg-blue-600 text-white sticky top-0 z-40">
+    <div class="container mx-auto px-4 py-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <a href="{{ path('app_dashboard') }}" class="text-white mr-3 p-2 hover:bg-blue-700 rounded-lg">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </a>
+                <div>
+                    <h1 class="text-xl font-bold">📋 Jadwal Absensi</h1>
+                    <p class="text-blue-200 text-sm">Lihat dan kelola jadwal absensi</p>
+                </div>
+            </div>
+            
+            <!-- User Info -->
+            <div class="text-right">
+                <div class="text-sm font-medium">{{ user.nama ?? user.namaLengkap ?? user.userIdentifier }}</div>
+                <div class="text-xs text-blue-200">{{ user instanceof admin ? 'Admin' : 'User' }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mx-auto px-4 py-6">
+    <!-- RBAC Info Banner -->
+    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+        <div class="flex">
+            <div class="ml-3">
+                <p class="text-sm text-yellow-700">
+                    <strong>ℹ️ Informasi Akses:</strong> 
+                    {% if is_granted('ROLE_ADMIN') %}
+                        Sebagai Admin, Anda dapat mengubah semua field termasuk <strong>Jam Mulai</strong> dan <strong>Jam Selesai</strong>.
+                    {% else %}
+                        Sebagai User, Anda dapat melihat semua informasi dan mengubah <strong>Hari yang Diizinkan</strong> dan <strong>Keterangan</strong>, 
+                        namun <strong>Jam Mulai</strong> dan <strong>Jam Selesai</strong> hanya dapat diubah oleh Admin.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Jadwal List -->
+    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div class="bg-gray-50 px-4 py-3 border-b">
+            <h3 class="text-lg font-semibold">📅 Daftar Jadwal Absensi</h3>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kegiatan</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hari</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Waktu</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">QR Code</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="jadwalTableBody" class="divide-y divide-gray-200">
+                    {% for jadwal in jadwal_absensi %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3">
+                            <div class="flex items-center">
+                                <span class="text-2xl mr-2">{{ jadwal.emojiJenisAbsensi }}</span>
+                                <div>
+                                    <div class="font-medium text-gray-900">{{ jadwal.namaJenisAbsensi }}</div>
+                                    {% if jadwal.keterangan %}
+                                    <div class="text-sm text-gray-500">{{ jadwal.keterangan }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-900">
+                            {{ jadwal.hariDiizinkanText }}
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-900">
+                            <span class="font-mono">{{ jadwal.jamMulai|date('H:i') }} - {{ jadwal.jamSelesai|date('H:i') }}</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            {% if jadwal.isAktif %}
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">Aktif</span>
+                            {% else %}
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold bg-red-100 text-red-800 rounded-full">Non-aktif</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3">
+                            {% if jadwal.requiresQrCode %}
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">Required</span>
+                            {% else %}
+                                <span class="text-sm text-gray-500">Tidak perlu</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="flex space-x-2">
+                                <button onclick="viewJadwal({{ jadwal.id }})" 
+                                        class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg" 
+                                        title="Lihat Detail">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                </button>
+                                <button onclick="editJadwal({{ jadwal.id }})" 
+                                        class="p-2 text-gray-600 hover:bg-gray-50 rounded-lg" 
+                                        title="{{ is_granted('ROLE_ADMIN') ? 'Edit Jadwal' : 'Edit Jadwal (Terbatas)' }}">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+                            <div class="text-4xl mb-2">📅</div>
+                            <p>Belum ada jadwal absensi</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editJadwalModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4 max-h-screen overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold">
+                {% if is_granted('ROLE_ADMIN') %}
+                    ✏️ Edit Jadwal Absensi
+                {% else %}
+                    👁️ Lihat & Edit Jadwal (Terbatas)
+                {% endif %}
+            </h3>
+            <button onclick="closeEditModal()" class="text-gray-500 hover:text-gray-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <form id="editJadwalForm" onsubmit="updateJadwal(event)">
+            <input type="hidden" name="jadwal_id" id="editJadwalId">
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Jenis Absensi</label>
+                <input type="text" id="editJenisAbsensi" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100" readonly>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Hari Yang Diizinkan</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="flex items-center">
+                        <input type="checkbox" name="edit_hari_diizinkan[]" value="1" class="mr-2"> Senin
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" name="edit_hari_diizinkan[]" value="2" class="mr-2"> Selasa
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" name="edit_hari_diizinkan[]" value="3" class="mr-2"> Rabu
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" name="edit_hari_diizinkan[]" value="4" class="mr-2"> Kamis
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" name="edit_hari_diizinkan[]" value="5" class="mr-2"> Jumat
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" name="edit_hari_diizinkan[]" value="6" class="mr-2"> Sabtu
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" name="edit_hari_diizinkan[]" value="7" class="mr-2"> Minggu
+                    </label>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Jam Mulai
+                        <span id="time-readonly-indicator-start" class="hidden text-xs text-orange-600">(Hanya Admin)</span>
+                    </label>
+                    <input type="time" name="edit_jam_mulai" id="editJamMulai" class="w-full px-3 py-2 border border-gray-300 rounded-lg" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Jam Selesai
+                        <span id="time-readonly-indicator-end" class="hidden text-xs text-orange-600">(Hanya Admin)</span>
+                    </label>
+                    <input type="time" name="edit_jam_selesai" id="editJamSelesai" class="w-full px-3 py-2 border border-gray-300 rounded-lg" required>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Keterangan</label>
+                <textarea name="edit_keterangan" id="editKeterangan" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Catatan tambahan..."></textarea>
+            </div>
+
+            <div class="flex space-x-3 pt-4">
+                <button type="button" onclick="closeEditModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-3 rounded-lg font-medium">
+                    Batal
+                </button>
+                <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium">
+                    {% if is_granted('ROLE_ADMIN') %}
+                        Simpan Perubahan
+                    {% else %}
+                        Simpan (Kecuali Waktu)
+                    {% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div id="loadingModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-60 flex items-center justify-center">
+    <div class="bg-white rounded-xl p-6 text-center max-w-sm mx-4">
+        <div class="animate-spin w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p class="text-lg font-medium">Menyimpan...</p>
+    </div>
+</div>
+
+<script>
+class UserJadwalManager {
+    constructor() {
+        this.currentJadwal = null;
+        this.isAdmin = {{ is_granted('ROLE_ADMIN') ? 'true' : 'false' }};
+    }
+
+    async viewJadwal(id) {
+        try {
+            const response = await fetch(`/user-jadwal/jadwal-absensi/${id}/view`);
+            const jadwal = await response.json();
+            
+            // Just show basic info for view mode
+            alert(`Jadwal: ${jadwal.nama_jenis_absensi}\nHari: ${jadwal.hari_diizinkan.map(h => this.getDayName(h)).join(', ')}\nWaktu: ${jadwal.jam_mulai} - ${jadwal.jam_selesai}\nStatus: ${jadwal.is_aktif ? 'Aktif' : 'Non-aktif'}`);
+            
+        } catch (error) {
+            this.showAlert('Gagal memuat data jadwal', 'error');
+        }
+    }
+
+    async editJadwal(id) {
+        try {
+            const response = await fetch(`/user-jadwal/jadwal-absensi/${id}/view`);
+            const jadwal = await response.json();
+            
+            this.currentJadwal = jadwal;
+            this.populateEditForm(jadwal);
+            this.handleRBACFields(jadwal);
+            
+            document.getElementById('editJadwalModal').classList.remove('hidden');
+            
+        } catch (error) {
+            this.showAlert('Gagal memuat data jadwal', 'error');
+        }
+    }
+
+    populateEditForm(jadwal) {
+        document.getElementById('editJadwalId').value = jadwal.id;
+        document.getElementById('editJenisAbsensi').value = jadwal.nama_jenis_absensi;
+        document.getElementById('editJamMulai').value = jadwal.jam_mulai;
+        document.getElementById('editJamSelesai').value = jadwal.jam_selesai;
+        document.getElementById('editKeterangan').value = jadwal.keterangan || '';
+        
+        // Set checkboxes for hari
+        const checkboxes = document.querySelectorAll('[name="edit_hari_diizinkan[]"]');
+        checkboxes.forEach(cb => {
+            cb.checked = jadwal.hari_diizinkan.includes(cb.value);
+        });
+    }
+
+    handleRBACFields(jadwal) {
+        const jamMulaiField = document.getElementById('editJamMulai');
+        const jamSelesaiField = document.getElementById('editJamSelesai');
+        const startIndicator = document.getElementById('time-readonly-indicator-start');
+        const endIndicator = document.getElementById('time-readonly-indicator-end');
+        
+        if (!jadwal.can_edit_time) {
+            // User cannot edit time - make fields readonly
+            jamMulaiField.readOnly = true;
+            jamSelesaiField.readOnly = true;
+            jamMulaiField.classList.add('bg-gray-100', 'border-gray-200', 'cursor-not-allowed');
+            jamSelesaiField.classList.add('bg-gray-100', 'border-gray-200', 'cursor-not-allowed');
+            
+            // Show indicators
+            startIndicator.classList.remove('hidden');
+            endIndicator.classList.remove('hidden');
+            
+            // Add tooltips
+            jamMulaiField.title = 'Hanya admin yang dapat mengubah jam mulai';
+            jamSelesaiField.title = 'Hanya admin yang dapat mengubah jam selesai';
+        } else {
+            // Admin can edit time
+            jamMulaiField.readOnly = false;
+            jamSelesaiField.readOnly = false;
+            jamMulaiField.classList.remove('bg-gray-100', 'border-gray-200', 'cursor-not-allowed');
+            jamSelesaiField.classList.remove('bg-gray-100', 'border-gray-200', 'cursor-not-allowed');
+            
+            // Hide indicators
+            startIndicator.classList.add('hidden');
+            endIndicator.classList.add('hidden');
+            
+            jamMulaiField.removeAttribute('title');
+            jamSelesaiField.removeAttribute('title');
+        }
+    }
+
+    async updateJadwal(event) {
+        event.preventDefault();
+        
+        document.getElementById('loadingModal').classList.remove('hidden');
+        
+        const form = document.getElementById('editJadwalForm');
+        const formData = new FormData(form);
+        const jadwalId = document.getElementById('editJadwalId').value;
+        
+        try {
+            const response = await fetch(`/user-jadwal/jadwal-absensi/${jadwalId}/update-limited`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showAlert(result.message, 'success');
+                this.closeEditModal();
+                // Reload page to show updated data
+                window.location.reload();
+            } else {
+                this.showAlert(result.message, 'error');
+                
+                // Show specific error for permission denied
+                if (result.error_type === 'permission_denied') {
+                    this.showAlert('⚠️ Peringatan Keamanan: Percobaan mengubah field yang tidak diizinkan telah dicatat.', 'warning');
+                }
+            }
+            
+        } catch (error) {
+            this.showAlert('Terjadi kesalahan jaringan', 'error');
+        } finally {
+            document.getElementById('loadingModal').classList.add('hidden');
+        }
+    }
+
+    closeEditModal() {
+        document.getElementById('editJadwalModal').classList.add('hidden');
+        document.getElementById('editJadwalForm').reset();
+        this.currentJadwal = null;
+    }
+
+    getDayName(dayNumber) {
+        const days = {'1': 'Senin', '2': 'Selasa', '3': 'Rabu', '4': 'Kamis', '5': 'Jumat', '6': 'Sabtu', '7': 'Minggu'};
+        return days[dayNumber] || dayNumber;
+    }
+
+    showAlert(message, type = 'info') {
+        const colors = {
+            'success': 'bg-green-600',
+            'error': 'bg-red-600', 
+            'warning': 'bg-orange-600',
+            'info': 'bg-blue-600'
+        };
+        
+        const alert = document.createElement('div');
+        alert.className = `fixed top-4 right-4 z-70 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg max-w-md`;
+        alert.textContent = message;
+        
+        document.body.appendChild(alert);
+        
+        setTimeout(() => {
+            alert.remove();
+        }, 5000);
+    }
+}
+
+// Initialize manager
+const jadwalManager = new UserJadwalManager();
+
+// Global functions for template compatibility
+function viewJadwal(id) { jadwalManager.viewJadwal(id); }
+function editJadwal(id) { jadwalManager.editJadwal(id); }
+function updateJadwal(event) { jadwalManager.updateJadwal(event); }
+function closeEditModal() { jadwalManager.closeEditModal(); }
+</script>
+{% endblock %}

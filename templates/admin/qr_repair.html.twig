@@ -1,0 +1,348 @@
+{% extends 'admin/_layout.html.twig' %}
+
+{% block title %}QR Code Repair Tool - Admin Gembira{% endblock %}
+
+{% block page_icon %}🔧{% endblock %}
+{% block page_title %}QR Code Repair Tool{% endblock %}
+{% block page_description %}Perbaiki QR Code yang rusak atau tidak bisa discan{% endblock %}
+
+{% block admin_content %}
+
+    <!-- Action Buttons -->
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex space-x-3">
+            <button type="button" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center" onclick="location.reload()">
+                <span class="mr-2">🔄</span> Refresh
+            </button>
+            <a href="{{ path('app_admin_qr_codes') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center">
+                <span class="mr-2">📱</span> QR Code Manager
+            </a>
+        </div>
+    </div>
+
+    <!-- Instruksi -->
+    <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+        <div class="flex">
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-blue-800">🔍 Cara Menggunakan Tool Ini:</h3>
+                <div class="mt-2 text-sm text-blue-700">
+                    <ol class="list-decimal list-inside space-y-1">
+                        <li>Upload gambar QR code yang rusak (JPG/PNG, max 5MB)</li>
+                        <li>Tool akan menganalisis struktur dan kerusakan QR code</li>
+                        <li>Jika memungkinkan, QR code akan diperbaiki otomatis</li>
+                        <li>Download QR code yang sudah diperbaiki</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Upload Section -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div class="bg-gradient-to-r from-orange-500 to-red-500 text-white p-4">
+                <h3 class="text-lg font-semibold">📤 Upload QR Code</h3>
+                <p class="text-orange-100 text-sm">Pilih gambar QR code yang ingin diperbaiki</p>
+            </div>
+
+            <div class="p-6">
+                <form id="qr-repair-form" enctype="multipart/form-data">
+                    <!-- File Upload Area -->
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center mb-4" 
+                         id="upload-area"
+                         ondrop="handleDrop(event)" 
+                         ondragover="handleDragOver(event)"
+                         ondragenter="handleDragEnter(event)"
+                         ondragleave="handleDragLeave(event)">
+                        
+                        <div id="upload-placeholder">
+                            <div class="text-6xl mb-4">📱</div>
+                            <p class="text-lg font-medium text-gray-700 mb-2">Drop QR Code di sini</p>
+                            <p class="text-sm text-gray-500 mb-4">atau klik untuk pilih file</p>
+                            <button type="button" 
+                                    onclick="document.getElementById('qr_image').click()"
+                                    class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg">
+                                📁 Pilih File
+                            </button>
+                        </div>
+
+                        <div id="upload-preview" class="hidden">
+                            <img id="preview-image" class="max-w-full max-h-64 mx-auto rounded-lg border">
+                            <p id="file-info" class="text-sm text-gray-600 mt-2"></p>
+                        </div>
+                    </div>
+
+                    <input type="file" 
+                           id="qr_image" 
+                           name="qr_image" 
+                           accept="image/*" 
+                           class="hidden"
+                           onchange="handleFileSelect(this.files[0])">
+
+                    <!-- Upload Button -->
+                    <button type="submit" 
+                            id="upload-btn"
+                            class="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white py-3 px-4 rounded-lg font-medium transition-colors"
+                            disabled>
+                        🔧 Analisis & Perbaiki QR Code
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div class="bg-gradient-to-r from-green-500 to-blue-500 text-white p-4">
+                <h3 class="text-lg font-semibold">📊 Hasil Analisis</h3>
+                <p class="text-green-100 text-sm">Status dan hasil perbaikan QR code</p>
+            </div>
+
+            <div class="p-6">
+                <div id="results-placeholder" class="text-center text-gray-500">
+                    <div class="text-6xl mb-4">⏳</div>
+                    <p>Upload QR code untuk melihat hasil analisis</p>
+                </div>
+
+                <div id="results-content" class="hidden">
+                    <!-- Analysis Results -->
+                    <div id="analysis-section" class="mb-6">
+                        <h4 class="font-semibold text-gray-800 mb-3">🔍 Analisis Gambar:</h4>
+                        <div id="analysis-details" class="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Repair Results -->
+                    <div id="repair-section" class="hidden">
+                        <h4 class="font-semibold text-gray-800 mb-3">🔧 Hasil Perbaikan:</h4>
+                        <div id="repair-details" class="space-y-3">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Suggestions -->
+                    <div id="suggestions-section" class="hidden">
+                        <h4 class="font-semibold text-gray-800 mb-3">💡 Saran:</h4>
+                        <ul id="suggestions-list" class="bg-yellow-50 rounded-lg p-4 space-y-1 text-sm">
+                            <!-- Will be populated by JavaScript -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Tambahan -->
+    <div class="bg-gray-50 rounded-lg p-4 mt-6">
+        <h3 class="font-semibold text-gray-800 mb-2">ℹ️ Tentang QR Code Repair</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+            <div>
+                <h4 class="font-medium mb-1">Kerusakan yang Dapat Diperbaiki:</h4>
+                <ul class="space-y-1">
+                    <li>• QR code blur atau tidak fokus</li>
+                    <li>• Kontras rendah (terlalu pucat)</li>
+                    <li>• Noise atau bintik-bintik</li>
+                    <li>• Rotasi atau orientasi salah</li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-medium mb-1">Keterbatasan:</h4>
+                <ul class="space-y-1">
+                    <li>• QR code terpotong > 30% tidak dapat diperbaiki</li>
+                    <li>• Data yang hilang permanen tidak dapat dipulihkan</li>
+                    <li>• Kerusakan fisik berat memerlukan QR code baru</li>
+                    <li>• Format QR code harus standar (ISO/IEC 18004)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div id="loading-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl p-6 text-center max-w-sm mx-4">
+            <div class="animate-spin w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p class="text-lg font-medium">Menganalisis QR Code...</p>
+            <p class="text-sm text-gray-600 mt-2">Mohon tunggu sebentar</p>
+        </div>
+    </div>
+{% endblock %}
+
+{% block admin_javascripts %}
+<script>
+class QRRepairTool {
+    constructor() {
+        this.selectedFile = null;
+        this.setupEventListeners();
+    }
+
+    setupEventListeners() {
+        document.getElementById('qr-repair-form').addEventListener('submit', (e) => this.handleSubmit(e));
+    }
+
+    async handleSubmit(e) {
+        e.preventDefault();
+        
+        if (!this.selectedFile) {
+            alert('❌ Pilih file QR code terlebih dahulu');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('qr_image', this.selectedFile);
+
+        // Show loading
+        document.getElementById('loading-modal').classList.remove('hidden');
+
+        try {
+            const response = await fetch('{{ path('app_qr_repair_upload') }}', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            this.displayResults(result);
+
+        } catch (error) {
+            this.displayError('Terjadi kesalahan koneksi: ' + error.message);
+        } finally {
+            document.getElementById('loading-modal').classList.add('hidden');
+        }
+    }
+
+    displayResults(result) {
+        document.getElementById('results-placeholder').classList.add('hidden');
+        document.getElementById('results-content').classList.remove('hidden');
+
+        // Analysis section
+        const analysisDetails = document.getElementById('analysis-details');
+        analysisDetails.innerHTML = `
+            <div class="flex justify-between">
+                <span>Status:</span>
+                <span class="${result.success ? 'text-green-600' : 'text-red-600'}">${result.success ? '✅ Berhasil' : '❌ Gagal'}</span>
+            </div>
+            ${result.image_size ? `<div class="flex justify-between"><span>Ukuran Gambar:</span><span>${result.image_size}</span></div>` : ''}
+            ${result.file_size ? `<div class="flex justify-between"><span>Ukuran File:</span><span>${this.formatFileSize(result.file_size)}</span></div>` : ''}
+            ${result.is_readable !== undefined ? `<div class="flex justify-between"><span>Dapat Dibaca:</span><span>${result.is_readable ? '✅ Ya' : '❌ Tidak'}</span></div>` : ''}
+        `;
+
+        if (result.success) {
+            // Repair section
+            document.getElementById('repair-section').classList.remove('hidden');
+            const repairDetails = document.getElementById('repair-details');
+            
+            if (result.original_data) {
+                repairDetails.innerHTML = `
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <h5 class="font-medium text-green-800 mb-2">✅ QR Code Berhasil Diperbaiki!</h5>
+                        <p class="text-sm text-green-700 mb-3"><strong>Data:</strong> ${result.original_data}</p>
+                        <a href="${result.repaired_url}" 
+                           class="inline-block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm">
+                            📥 Download QR Code yang Diperbaiki
+                        </a>
+                    </div>
+                `;
+            }
+        }
+
+        // Suggestions section
+        if (result.suggestions && result.suggestions.length > 0) {
+            document.getElementById('suggestions-section').classList.remove('hidden');
+            const suggestionsList = document.getElementById('suggestions-list');
+            suggestionsList.innerHTML = result.suggestions.map(suggestion => 
+                `<li>• ${suggestion}</li>`
+            ).join('');
+        }
+    }
+
+    displayError(message) {
+        document.getElementById('results-placeholder').classList.add('hidden');
+        document.getElementById('results-content').classList.remove('hidden');
+        document.getElementById('analysis-details').innerHTML = `
+            <div class="text-red-600">❌ ${message}</div>
+        `;
+    }
+
+    formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+}
+
+// File handling functions
+function handleDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const uploadArea = document.getElementById('upload-area');
+    uploadArea.classList.remove('border-orange-500', 'bg-orange-50');
+    uploadArea.classList.add('border-gray-300');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        handleFileSelect(files[0]);
+    }
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+function handleDragEnter(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const uploadArea = document.getElementById('upload-area');
+    uploadArea.classList.remove('border-gray-300');
+    uploadArea.classList.add('border-orange-500', 'bg-orange-50');
+}
+
+function handleDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const uploadArea = document.getElementById('upload-area');
+    uploadArea.classList.remove('border-orange-500', 'bg-orange-50');
+    uploadArea.classList.add('border-gray-300');
+}
+
+function handleFileSelect(file) {
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+        alert('❌ Pilih file gambar (JPG, PNG)');
+        return;
+    }
+    
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        alert('❌ Ukuran file terlalu besar. Maksimal 5MB');
+        return;
+    }
+    
+    // Update UI
+    document.getElementById('upload-placeholder').classList.add('hidden');
+    document.getElementById('upload-preview').classList.remove('hidden');
+    document.getElementById('upload-btn').disabled = false;
+    
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('preview-image').src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+    
+    // Show file info
+    document.getElementById('file-info').textContent = 
+        `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+    
+    // Store file
+    repairTool.selectedFile = file;
+}
+
+// Initialize tool
+const repairTool = new QRRepairTool();
+</script>
+{% endblock %}

@@ -1,0 +1,415 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .statistik-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .statistik-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 0;
+        }
+        .statistik-label {
+            margin: 0;
+            opacity: 0.9;
+        }
+        .jadwal-card {
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        .jadwal-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .status-aktif {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        .status-nonaktif {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+        .method-icons {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .method-icon {
+            background: #f7fafc;
+            padding: 0.25rem 0.5rem;
+            border-radius: 5px;
+            font-size: 0.75rem;
+            color: #4a5568;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">{{ page_title }}</h1>
+                    <p class="text-muted mb-0">Kelola jadwal absensi fleksibel untuk pegawai</p>
+                </div>
+                <a href="{{ path('admin_jadwal_absensi_create') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Buat Jadwal Baru
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistik -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="statistik-card">
+                <p class="statistik-number">{{ statistik.total_jadwal }}</p>
+                <p class="statistik-label">Total Jadwal</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="statistik-card" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);">
+                <p class="statistik-number">{{ statistik.jadwal_aktif }}</p>
+                <p class="statistik-label">Jadwal Aktif</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="statistik-card" style="background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);">
+                <p class="statistik-number">{{ statistik.jadwal_perlu_qr }}</p>
+                <p class="statistik-label">Perlu QR Code</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="statistik-card" style="background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%);">
+                <p class="statistik-number">{{ statistik.jadwal_perlu_kamera }}</p>
+                <p class="statistik-label">Perlu Kamera</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="{{ path('admin_jadwal_absensi_export') }}" class="btn btn-outline-success">
+                    <i class="fas fa-download"></i> Export CSV
+                </a>
+                <button class="btn btn-outline-info" onclick="refreshPage()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+                <div class="input-group" style="width: 300px;">
+                    <input type="text" class="form-control" placeholder="Cari jadwal..." id="search-input">
+                    <button class="btn btn-outline-secondary" type="button" id="search-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daftar Jadwal -->
+    <div class="row">
+        {% if daftar_jadwal|length > 0 %}
+            {% for jadwal in daftar_jadwal %}
+                <div class="col-lg-6 col-xl-4 mb-3">
+                    <div class="card jadwal-card">
+                        <div class="card-body">
+                            <!-- Header Card -->
+                            <div class="d-flex align-items-start justify-content-between mb-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3" style="font-size: 2rem;">{{ jadwal.emoji }}</div>
+                                    <div>
+                                        <h5 class="card-title mb-0">{{ jadwal.namaJadwal }}</h5>
+                                        <small class="text-muted">{{ jadwal.namaHariTersedia }}</small>
+                                    </div>
+                                </div>
+                                <span class="status-badge {{ jadwal.isAktif ? 'status-aktif' : 'status-nonaktif' }}">
+                                    {{ jadwal.isAktif ? 'Aktif' : 'Nonaktif' }}
+                                </span>
+                            </div>
+
+                            <!-- Info Waktu -->
+                            <div class="mb-3">
+                                <i class="fas fa-clock text-muted me-2"></i>
+                                <span>{{ jadwal.jamMulai|date('H:i') }} - {{ jadwal.jamSelesai|date('H:i') }}</span>
+                            </div>
+
+                            <!-- Method Icons -->
+                            <div class="method-icons mb-3">
+                                {% if jadwal.isPerluQrCode %}
+                                    <span class="method-icon">
+                                        <i class="fas fa-qrcode"></i> QR Code
+                                    </span>
+                                {% endif %}
+                                {% if jadwal.isPerluKamera %}
+                                    <span class="method-icon">
+                                        <i class="fas fa-camera"></i> Kamera
+                                    </span>
+                                {% endif %}
+                                {% if not jadwal.isPerluQrCode and not jadwal.isPerluKamera %}
+                                    <span class="method-icon">
+                                        <i class="fas fa-hand-point-up"></i> Tombol
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Deskripsi -->
+                            {% if jadwal.deskripsi %}
+                                <p class="card-text small text-muted">{{ jadwal.deskripsi }}</p>
+                            {% endif %}
+
+                            <!-- Actions -->
+                            <div class="d-flex gap-2">
+                                <a href="{{ path('admin_jadwal_absensi_show', {'id': jadwal.id}) }}" 
+                                   class="btn btn-sm btn-outline-info">
+                                    <i class="fas fa-eye"></i> Detail
+                                </a>
+                                <a href="{{ path('admin_jadwal_absensi_edit', {'id': jadwal.id}) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <form method="post" action="{{ path('admin_jadwal_absensi_toggle_status', {'id': jadwal.id}) }}" 
+                                      class="d-inline" onsubmit="return confirm('Yakin ingin mengubah status jadwal ini?')">
+                                    <button type="submit" class="btn btn-sm {{ jadwal.isAktif ? 'btn-outline-warning' : 'btn-outline-success' }}">
+                                        <i class="fas {{ jadwal.isAktif ? 'fa-pause' : 'fa-play' }}"></i>
+                                        {{ jadwal.isAktif ? 'Nonaktifkan' : 'Aktifkan' }}
+                                    </button>
+                                </form>
+                                <button onclick="deleteJadwal({{ jadwal.id }}, '{{ jadwal.namaJadwal|e('js') }}')" 
+                                        class="btn btn-sm btn-outline-danger" title="Hapus Jadwal">
+                                    <i class="fas fa-trash"></i> Hapus
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
+                    <h4>Belum Ada Jadwal Absensi</h4>
+                    <p class="text-muted mb-4">
+                        Belum ada jadwal absensi yang dibuat.<br>
+                        Klik tombol "Buat Jadwal Baru" untuk memulai.
+                    </p>
+                    <a href="{{ path('admin_jadwal_absensi_create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Buat Jadwal Pertama
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        function refreshPage() {
+            window.location.reload();
+        }
+
+        // Fitur pencarian jadwal
+        document.getElementById('search-btn').addEventListener('click', function() {
+            const query = document.getElementById('search-input').value;
+            if (query.length >= 2) {
+                // Implementasi pencarian jadwal
+                fetch(`{{ path('admin_jadwal_absensi_search') }}?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Update halaman dengan hasil pencarian
+                        if (data.success) {
+                            // Refresh halaman dengan hasil pencarian
+                            window.location.search = 'q=' + encodeURIComponent(query);
+                        }
+                    })
+                    .catch(error => {
+                        alert('Terjadi kesalahan saat mencari: ' + error.message);
+                    });
+            } else {
+                alert('Minimal 2 karakter untuk pencarian');
+            }
+        });
+
+        // Pencarian saat tekan Enter
+        document.getElementById('search-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('search-btn').click();
+            }
+        });
+
+        // Fungsi konfirmasi hapus jadwal dengan opsi force delete
+        async function deleteJadwal(id, namaJadwal, forceDelete = false) {
+            let confirmMessage;
+            
+            if (forceDelete) {
+                confirmMessage = `🚨 HAPUS PAKSA - PERINGATAN KERAS! 🚨\n\nAnda akan menghapus jadwal "${namaJadwal}" BESERTA SEMUA DATA ABSENSI yang terkait!\n\n❌ SEMUA RIWAYAT ABSENSI PEGAWAI UNTUK JADWAL INI AKAN HILANG PERMANEN!\n❌ TINDAKAN INI TIDAK DAPAT DIBATALKAN!\n\n⚠️ Hanya lakukan ini jika Anda benar-benar yakin!\n\n✅ Klik OK untuk hapus paksa\n❌ Klik Cancel untuk batalkan`;
+            } else {
+                confirmMessage = `⚠️ PERINGATAN!\n\nApakah Anda yakin ingin menghapus jadwal "${namaJadwal}"?\n\n❌ Tindakan ini tidak dapat dibatalkan!\n\n✅ Klik OK untuk menghapus\n❌ Klik Cancel untuk batalkan`;
+            }
+            
+            const confirmDelete = confirm(confirmMessage);
+            
+            if (!confirmDelete) {
+                return; // User cancelled
+            }
+            
+            showLoading(true, forceDelete ? 'Menghapus paksa jadwal dan data absensi...' : 'Menghapus jadwal...');
+            
+            try {
+                console.log('Delete request - ID:', id, 'Force:', forceDelete);
+                
+                const formData = new FormData();
+                if (forceDelete) {
+                    formData.append('force_delete', 'true');
+                }
+                
+                // Add AJAX header
+                const response = await fetch(`/admin/jadwal-absensi/${id}/delete`, {
+                    method: 'DELETE',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                console.log('Response status:', response.status);
+                const result = await response.json();
+                console.log('Response data:', result);
+                
+                if (result.success) {
+                    // Pesan sukses yang lebih informatif
+                    let successMessage = result.message;
+                    if (result.deleted_absensi > 0) {
+                        successMessage += `\n\n📊 ${result.deleted_absensi} data absensi terkait juga telah dihapus.`;
+                    }
+                    
+                    showAlert(successMessage, 'success');
+                    
+                    // Refresh halaman setelah 2 detik
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                    
+                } else {
+                    if (result.error_type === 'has_relations') {
+                        // Jadwal memiliki data absensi terkait - tawarkan opsi
+                        const pilihan = confirm(`${result.message}\n\n📊 Ditemukan ${result.count_absensi} data absensi terkait.\n\n🎯 PILIHAN ANDA:\n✅ Klik OK untuk HAPUS PAKSA (jadwal + semua data absensi)\n❌ Klik Cancel untuk BATALKAN`);
+                        
+                        if (pilihan) {
+                            // User memilih hapus paksa
+                            deleteJadwal(id, namaJadwal, true);
+                        }
+                    } else {
+                        showAlert(result.message, 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Delete jadwal error:', error);
+                showAlert('Terjadi kesalahan koneksi saat menghapus jadwal: ' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function showLoading(show, message = 'Memproses data...') {
+            const loadingModal = document.getElementById('loadingModal');
+            if (show) {
+                // Update pesan loading jika ada
+                const loadingText = loadingModal.querySelector('.loading-text');
+                if (loadingText) {
+                    loadingText.textContent = message;
+                }
+                // Gunakan Bootstrap modal show/hide
+                loadingModal.style.display = 'block';
+                loadingModal.classList.add('show');
+            } else {
+                loadingModal.style.display = 'none';
+                loadingModal.classList.remove('show');
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            
+            let bgClass, icon, statusText;
+            
+            switch(type) {
+                case 'success':
+                    bgClass = 'bg-success text-white';
+                    icon = '✅';
+                    statusText = 'Berhasil diproses';
+                    break;
+                case 'warning':
+                    bgClass = 'bg-warning text-dark';
+                    icon = '⚠️';
+                    statusText = 'Perhatian';
+                    break;
+                case 'error':
+                default:
+                    bgClass = 'bg-danger text-white';
+                    icon = '❌';
+                    statusText = 'Terjadi kesalahan';
+                    break;
+            }
+            
+            alertDiv.className = `position-fixed top-0 end-0 m-3 p-3 rounded shadow-lg ${bgClass}`;
+            alertDiv.style.zIndex = '9999';
+            alertDiv.style.maxWidth = '400px';
+            
+            alertDiv.innerHTML = `
+                <div class="d-flex align-items-start">
+                    <div class="me-3 fs-5">${icon}</div>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold small" style="white-space: pre-line;">${message}</div>
+                        <div class="small opacity-75">${statusText}</div>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="btn-close btn-close-${type === 'warning' ? 'dark' : 'white'} ms-2" type="button"></button>
+                </div>
+            `;
+            
+            document.body.appendChild(alertDiv);
+            
+            // Auto remove setelah 5 detik
+            setTimeout(() => {
+                if (alertDiv.parentElement) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+    </script>
+
+    <!-- Loading Modal -->
+    <div id="loadingModal" class="modal fade" tabindex="-1" style="display: none;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mb-0 loading-text">Memproses data...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

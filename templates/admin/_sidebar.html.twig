@@ -1,0 +1,186 @@
+<!-- Admin Sidebar Navigation -->
+<div class="w-64 bg-white shadow-lg flex-shrink-0 flex flex-col h-screen">
+    <!-- Header Sidebar -->
+    <div class="bg-purple-600 text-white p-4 flex-shrink-0">
+        <h1 class="text-lg font-bold">Admin Panel Gembira</h1>
+        <p class="text-purple-200 text-sm">{{ app.user.namaLengkap ?? app.user.username }}</p>
+    </div>
+
+    <!-- Menu Navigation -->
+    <nav class="flex-1 overflow-y-auto py-4">
+        <!-- Dashboard -->
+        <a href="{{ path('app_admin_dashboard') }}"
+           class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 {{ app.request.attributes.get('_route') == 'app_admin_dashboard' ? 'bg-purple-50 border-purple-500 text-purple-700' : 'border-transparent hover:border-purple-500' }}">
+            <span class="text-lg mr-3">🏠</span>
+            <span class="font-medium">Dashboard</span>
+        </a>
+
+        <!-- User - Hanya untuk Super Admin -->
+        {% if app.user.isSuperAdmin() %}
+        <a href="{{ path('app_admin_user') }}"
+           class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 {{ app.request.attributes.get('_route') == 'app_admin_user' ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent hover:border-indigo-500' }}">
+            <span class="text-lg mr-3">👤</span>
+            <span class="font-medium">User</span>
+        </a>
+
+        <!-- Pengaturan Role - Hanya untuk Super Admin -->
+        <a href="{{ path('app_admin_role') }}"
+           class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 {{ app.request.attributes.get('_route') == 'app_admin_role' ? 'bg-purple-50 border-purple-500 text-purple-700' : 'border-transparent hover:border-purple-500' }}">
+            <span class="text-lg mr-3">🔐</span>
+            <span class="font-medium">Pengaturan Role</span>
+        </a>
+        {% endif %}
+
+        <!-- Data Management -->
+        <div class="menu-group">
+            <button onclick="toggleSubmenu('dataManagement')"
+                    class="w-full flex items-center justify-between px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 {{ app.request.attributes.get('_route') starts with 'app_admin_unit_kerja' or app.request.attributes.get('_route') starts with 'app_admin_kepala_bidang' or app.request.attributes.get('_route') starts with 'app_admin_kepala_kantor' or app.request.attributes.get('_route') starts with 'app_admin_pegawai' ? 'bg-blue-50 border-blue-500' : 'border-transparent hover:border-blue-500' }}">
+                <div class="flex items-center">
+                    <span class="text-lg mr-3">👥</span>
+                    <span class="font-medium">Data Management</span>
+                </div>
+                <svg class="w-4 h-4 transform transition-transform submenu-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </button>
+            <div id="dataManagement" class="{{ app.request.attributes.get('_route') starts with 'app_admin_unit_kerja' or app.request.attributes.get('_route') starts with 'app_admin_kepala_bidang' or app.request.attributes.get('_route') starts with 'app_admin_kepala_kantor' or app.request.attributes.get('_route') starts with 'app_admin_pegawai' ? 'block' : 'hidden' }} bg-gray-50 ml-8">
+                <!-- Unit Kerja - Hanya untuk Super Admin -->
+                {% if app.user.isSuperAdmin() %}
+                <a href="{{ path('app_admin_unit_kerja') }}"
+                   class="flex items-center px-4 py-2 {{ app.request.attributes.get('_route') starts with 'app_admin_unit_kerja' ? 'text-blue-700 bg-blue-100' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}">
+                    <span class="text-sm mr-2">🏢</span>
+                    <span class="text-sm">Unit Kerja</span>
+                </a>
+                <a href="{{ path('app_admin_kepala_bidang') }}"
+                   class="flex items-center px-4 py-2 {{ app.request.attributes.get('_route') starts with 'app_admin_kepala_bidang' ? 'text-blue-700 bg-blue-100' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}">
+                    <span class="text-sm mr-2">👔</span>
+                    <span class="text-sm">Kepala Bidang</span>
+                </a>
+                <a href="{{ path('app_admin_kepala_kantor') }}"
+                   class="flex items-center px-4 py-2 {{ app.request.attributes.get('_route') starts with 'app_admin_kepala_kantor' ? 'text-blue-700 bg-blue-100' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}">
+                    <span class="text-sm mr-2">🏛️</span>
+                    <span class="text-sm">Kepala Kantor</span>
+                </a>
+                {% endif %}
+
+                <!-- Pegawai - Tersedia untuk semua admin -->
+                <a href="{{ path('app_admin_pegawai') }}"
+                   class="flex items-center px-4 py-2 {{ app.request.attributes.get('_route') starts with 'app_admin_pegawai' ? 'text-blue-700 bg-blue-100' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}">
+                    <span class="text-sm mr-2">👨‍💼</span>
+                    <span class="text-sm">Pegawai {{ app.user.isSuperAdmin() ? '' : '(Unit Saya)' }}</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Events -->
+        <a href="{{ path('app_admin_event_index') }}"
+           class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 {{ app.request.attributes.get('_route') starts with 'app_admin_event' ? 'bg-pink-50 border-pink-500 text-pink-700' : 'border-transparent hover:border-pink-500' }}">
+            <span class="text-lg mr-3">🎉</span>
+            <span class="font-medium">Events</span>
+        </a>
+
+        <!-- Jadwal Absensi - Hanya untuk Super Admin -->
+        {% if app.user.isSuperAdmin() %}
+        <a href="{{ path('app_admin_jadwal_absensi') }}"
+           class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 {{ app.request.attributes.get('_route') starts with 'app_admin_jadwal_absensi' ? 'bg-teal-50 border-teal-500 text-teal-700' : 'border-transparent hover:border-teal-500' }}">
+            <span class="text-lg mr-3">⏰</span>
+            <span class="font-medium">Jadwal Absensi</span>
+        </a>
+        {% endif %}
+
+        <!-- QR Code Manager - Hanya untuk Super Admin -->
+        {% if app.user.isSuperAdmin() %}
+        <a href="{{ path('app_admin_qr_codes') }}"
+           class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 {{ app.request.attributes.get('_route') starts with 'app_admin_qr' or app.request.attributes.get('_route') starts with 'app_qr_repair' ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-transparent hover:border-blue-500' }}">
+            <span class="text-lg mr-3">📱</span>
+            <span class="font-medium">QR Code Manager</span>
+        </a>
+
+        <!-- Manajemen Banner - Hanya untuk Super Admin -->
+        <a href="{{ path('app_admin_banner_index') }}"
+           class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 {{ app.request.attributes.get('_route') starts with 'app_admin_banner' ? 'bg-purple-50 border-purple-500 text-purple-700' : 'border-transparent hover:border-purple-500' }}">
+            <span class="text-lg mr-3">🖼️</span>
+            <span class="font-medium">Manajemen Banner</span>
+        </a>
+        {% endif %}
+
+        <!-- Laporan Kehadiran -->
+        <a href="{{ path('app_admin_laporan_kehadiran') }}"
+           class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 {{ app.request.attributes.get('_route') starts with 'app_admin_laporan_kehadiran' ? 'bg-green-50 border-green-500 text-green-700' : 'border-transparent hover:border-green-500' }}">
+            <span class="text-lg mr-3">📊</span>
+            <span class="font-medium">Laporan Kehadiran {{ app.user.isSuperAdmin() ? '' : '(Unit Saya)' }}</span>
+        </a>
+
+        <!-- Validasi Absen - Badge hanya tampil jika ada data pending -->
+        <a href="{{ path('app_admin_validasi_absen') }}"
+           class="flex items-center px-4 py-3 border-l-4 {{ app.request.attributes.get('_route') starts with 'app_admin_validasi_absen' ? 'text-white bg-orange-500 border-orange-600' : 'text-gray-700 hover:bg-gray-50 border-transparent hover:border-orange-500' }}">
+            <span class="text-lg mr-3">✅</span>
+            <span class="font-medium">Validasi Absen {{ app.user.isSuperAdmin() ? '' : '(Unit Saya)' }}</span>
+            {# Badge hanya muncul jika ada data pending validasi #}
+            {% if stats is defined and stats.pending is defined and stats.pending > 0 %}
+            <span class="ml-auto {{ app.request.attributes.get('_route') starts with 'app_admin_validasi_absen' ? 'bg-white text-orange-500' : 'bg-red-500 text-white' }} text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold"
+                  title="Ada {{ stats.pending }} absensi yang perlu validasi">{{ stats.pending }}</span>
+            {% endif %}
+        </a>
+
+        <!-- Laporan Bulanan -->
+        <a href="{{ path('app_admin_laporan_bulanan') }}"
+           class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 {{ app.request.attributes.get('_route') starts with 'app_admin_laporan_bulanan' ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent hover:border-indigo-500' }}">
+            <span class="text-lg mr-3">📈</span>
+            <span class="font-medium">Laporan Bulanan {{ app.user.isSuperAdmin() ? '' : '(Unit Saya)' }}</span>
+        </a>
+
+        <hr class="my-4">
+
+        <!-- Pengaturan - Hanya untuk Super Admin -->
+        {% if app.user.isSuperAdmin() %}
+        <a href="{{ path('app_admin_pengaturan') }}"
+           class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 {{ app.request.attributes.get('_route') starts with 'app_admin_pengaturan' ? 'bg-yellow-50 border-yellow-500 text-yellow-700' : 'border-transparent hover:border-yellow-500' }}">
+            <span class="text-lg mr-3">⚙️</span>
+            <span class="font-medium">Pengaturan</span>
+        </a>
+        {% endif %}
+
+        <!-- Logout dengan Robust CSRF Protection -->
+        <div class="mt-4">
+            {% include 'components/logout_button.html.twig' %}
+        </div>
+    </nav>
+</div>
+
+<!-- Sidebar JavaScript -->
+<script>
+    // Function untuk submenu toggle
+    function toggleSubmenu(id) {
+        const submenu = document.getElementById(id);
+        const arrow = submenu.previousElementSibling.querySelector('.submenu-arrow');
+
+        if (submenu.classList.contains('hidden')) {
+            submenu.classList.remove('hidden');
+            submenu.classList.add('block');
+            arrow.style.transform = 'rotate(180deg)';
+        } else {
+            submenu.classList.remove('block');
+            submenu.classList.add('hidden');
+            arrow.style.transform = 'rotate(0deg)';
+        }
+    }
+
+    // Auto-open submenu jika ada submenu yang aktif
+    document.addEventListener('DOMContentLoaded', function() {
+        // Cari semua submenu yang memiliki class 'block' (artinya aktif)
+        const activeSubmenus = document.querySelectorAll('.menu-group .block');
+        activeSubmenus.forEach(submenu => {
+            const arrow = submenu.previousElementSibling.querySelector('.submenu-arrow');
+            if (arrow) {
+                arrow.style.transform = 'rotate(180deg)';
+            }
+        });
+
+        // Pastikan semua arrow submenu memiliki transition
+        const allArrows = document.querySelectorAll('.submenu-arrow');
+        allArrows.forEach(arrow => {
+            arrow.style.transition = 'transform 0.2s ease-in-out';
+        });
+    });
+</script>

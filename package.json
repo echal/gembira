@@ -1,0 +1,17 @@
+{
+  "name": "gembira-app",
+  "version": "1.0.0",
+  "description": "Gembira - Gerakan Munajat Bersama Untuk Kinerja",
+  "main": "index.js",
+  "scripts": {
+    "dev": "npx tailwindcss -i ./assets/css/input.css -o ./public/css/app.css --watch",
+    "build": "npx tailwindcss -i ./assets/css/input.css -o ./public/css/app.css --minify",
+    "build:prod": "npm run build"
+  },
+  "keywords": ["symfony", "tailwindcss", "absensi"],
+  "author": "Gembira Team",
+  "license": "MIT",
+  "devDependencies": {
+    "tailwindcss": "^3.4.0"
+  }
+}

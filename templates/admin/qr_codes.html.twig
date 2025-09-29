@@ -1,0 +1,187 @@
+{% extends 'admin/_layout.html.twig' %}
+
+{% block title %}QR Code Manager - Admin Gembira{% endblock %}
+
+{% block page_icon %}📱{% endblock %}
+{% block page_title %}QR Code Manager{% endblock %}
+{% block page_description %}Kelola dan unduh QR Code untuk absensi{% endblock %}
+
+{% block admin_content %}
+    <!-- Action Buttons -->
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex space-x-3">
+            <button type="button" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center" onclick="location.reload()">
+                <span class="mr-2">🔄</span> Refresh
+            </button>
+            <a href="{{ path('app_qr_repair_index') }}" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center">
+                <span class="mr-2">🔧</span> QR Repair Tool
+            </a>
+        </div>
+    </div>
+
+    <!-- Instruksi -->
+    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+        <div class="flex">
+            <div class="ml-3">
+                <p class="text-sm text-yellow-700">
+                    <strong>Instruksi:</strong> QR Code ini digunakan untuk validasi absensi Apel Pagi dan Upacara Nasional.
+                    Tampilkan QR Code di lokasi kegiatan agar pegawai bisa memindainya.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code Grid -->
+    {% if qr_codes is empty %}
+    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+        <div class="text-6xl mb-4">📱</div>
+        <h3 class="text-lg font-semibold text-yellow-800 mb-2">Belum Ada QR Code</h3>
+        <p class="text-yellow-700 mb-4">Belum ada jadwal absensi yang menggunakan QR Code. QR Code akan muncul otomatis ketika admin membuat jadwal baru yang memerlukan QR Code.</p>
+        <a href="{{ path('app_admin_pengaturan') }}" class="inline-block bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg">
+            ⚙️ Kelola Jadwal Absensi
+        </a>
+    </div>
+    {% else %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {% for qr in qr_codes %}
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold">{{ qr.nama }}</h3>
+                        <p class="text-purple-100 text-sm">{{ qr.hari }} | {{ qr.jam_mulai }} - {{ qr.jam_selesai }}</p>
+                    </div>
+                    <div class="text-3xl">{{ qr.emoji }}</div>
+                </div>
+            </div>
+
+            <!-- QR Code Display -->
+            <div class="p-6">
+                <div class="text-center mb-4">
+                    <!-- QR Code Image -->
+                    <div class="bg-white border-4 border-gray-300 rounded-lg p-4 inline-block mb-4">
+                        <img src="{{ qr.url }}" alt="QR Code {{ qr.nama }}" class="w-48 h-48"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                        <div style="display:none; padding: 2rem; background: #fee; border: 2px solid #f87171; border-radius: 8px;">
+                            <p class="text-red-600 font-semibold">❌ QR Code Error</p>
+                            <p class="text-sm text-gray-600 mt-2">URL: {{ qr.url }}</p>
+                            <button onclick="window.open('{{ qr.url }}', '_blank')"
+                                    class="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-xs">
+                                🔍 Debug URL
+                            </button>
+                        </div>
+                    </div>
+
+                    <p class="text-sm text-gray-600 mb-4">
+                        Scan QR Code ini untuk absensi {{ qr.nama }}
+                    </p>
+
+                    <!-- Download Buttons -->
+                    <div class="flex justify-center space-x-2">
+                        <button onclick="downloadQR('{{ qr.url }}', '{{ qr.jenis }}')"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm">
+                            📥 Download PNG
+                        </button>
+                        <button onclick="printQR('{{ qr.url }}', '{{ qr.nama }}')"
+                                class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm">
+                            🖨️ Print
+                        </button>
+                    </div>
+                </div>
+
+                <!-- QR Info -->
+                <div class="bg-gray-50 rounded-lg p-3 text-sm">
+                    <p><strong>ID:</strong> {{ qr.id }}</p>
+                    <p><strong>Jenis:</strong> {{ qr.jenis }}</p>
+                    {% if qr.keterangan %}
+                    <p><strong>Keterangan:</strong> {{ qr.keterangan }}</p>
+                    {% endif %}
+                    <p><strong>Data QR:</strong> <code class="bg-white px-2 py-1 rounded">{{ qr.qr_code }}</code></p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block admin_javascripts %}
+<script>
+// Download QR Code as PNG
+function downloadQR(qrUrl, filename) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+
+    img.crossOrigin = 'anonymous';
+    img.onload = function() {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        // Create download link
+        const link = document.createElement('a');
+        link.download = `qr_code_${filename}.png`;
+        link.href = canvas.toDataURL();
+        link.click();
+    };
+
+    img.onerror = function() {
+        // Fallback: open in new window
+        window.open(qrUrl, '_blank');
+    };
+
+    img.src = qrUrl;
+}
+
+// Print QR Code
+function printQR(qrUrl, nama) {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>QR Code - ${nama}</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    text-align: center;
+                    margin: 20px;
+                }
+                .qr-container {
+                    border: 2px solid #333;
+                    padding: 20px;
+                    display: inline-block;
+                    margin: 20px;
+                }
+                img {
+                    width: 300px;
+                    height: 300px;
+                }
+                h2 {
+                    margin: 10px 0;
+                    color: #333;
+                }
+                @media print {
+                    body { margin: 0; }
+                    .no-print { display: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="qr-container">
+                <h2>${nama}</h2>
+                <img src="${qrUrl}" alt="QR Code ${nama}">
+                <p>Scan untuk absensi</p>
+            </div>
+            <div class="no-print">
+                <button onclick="window.print()">🖨️ Print</button>
+                <button onclick="window.close()">❌ Close</button>
+            </div>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+}
+</script>
+{% endblock %}

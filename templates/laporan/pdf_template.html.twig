@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Laporan Kehadiran {{ nama_bulan }} {{ tahun }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #333;
+            margin: 20px;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 18px;
+            color: #1e40af;
+        }
+        .header h2 {
+            margin: 5px 0;
+            font-size: 16px;
+            color: #333;
+        }
+        .header p {
+            margin: 0;
+            color: #666;
+            font-size: 10px;
+        }
+        
+        .summary {
+            display: table;
+            width: 100%;
+            margin-bottom: 20px;
+            border-collapse: collapse;
+        }
+        .summary-item {
+            display: table-cell;
+            width: 25%;
+            text-align: center;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+        .summary-item .number {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1e40af;
+        }
+        .summary-item .label {
+            font-size: 10px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        th {
+            background-color: #f3f4f6;
+            border: 1px solid #d1d5db;
+            padding: 8px 4px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 10px;
+        }
+        
+        td {
+            border: 1px solid #d1d5db;
+            padding: 6px 4px;
+            text-align: center;
+            font-size: 9px;
+        }
+        
+        td.left {
+            text-align: left;
+        }
+        
+        .status-baik { color: #059669; font-weight: bold; }
+        .status-cukup { color: #d97706; font-weight: bold; }
+        .status-kurang { color: #dc2626; font-weight: bold; }
+        
+        .footer {
+            margin-top: 30px;
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+            font-size: 10px;
+        }
+        
+        .signature {
+            float: right;
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .keterangan {
+            background-color: #f0f9ff;
+            border: 1px solid #bae6fd;
+            padding: 10px;
+            margin-top: 20px;
+            font-size: 10px;
+        }
+        
+        .page-break {
+            page-break-before: always;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Laporan -->
+    <div class="header">
+        <h1>🤲 GEMBIRA</h1>
+        <p>Gerakan Munajat Bersama Untuk Kinerja</p>
+        <h2>LAPORAN REKAP KEHADIRAN</h2>
+        <p>Periode: {{ nama_bulan }} {{ tahun }}</p>
+    </div>
+    
+    <!-- Ringkasan -->
+    <div class="summary">
+        <div class="summary-item">
+            <div class="number">{{ data_rekap.total_pegawai }}</div>
+            <div class="label">Total Pegawai</div>
+        </div>
+        <div class="summary-item">
+            <div class="number">{{ data_rekap.total_hari_kerja }}</div>
+            <div class="label">Hari Kerja</div>
+        </div>
+        <div class="summary-item">
+            <div class="number">{{ data_rekap.total_hadir }}</div>
+            <div class="label">Total Kehadiran</div>
+        </div>
+        <div class="summary-item">
+            <div class="number">{{ data_rekap.rata_rata_kehadiran|number_format(1) }}%</div>
+            <div class="label">Rata-rata Kehadiran</div>
+        </div>
+    </div>
+    
+    <!-- Tabel Detail -->
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 8%">No</th>
+                <th style="width: 15%">NIP</th>
+                <th style="width: 20%">Nama Pegawai</th>
+                <th style="width: 15%">Jabatan</th>
+                <th style="width: 12%">Unit Kerja</th>
+                <th style="width: 8%">Hari Kerja</th>
+                <th style="width: 7%">Hadir</th>
+                <th style="width: 7%">Tidak Hadir</th>
+                <th style="width: 8%">Kehadiran (%)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pegawai in data_rekap.detail_pegawai %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ pegawai.nip }}</td>
+                <td class="left">{{ pegawai.nama }}</td>
+                <td class="left">{{ pegawai.jabatan }}</td>
+                <td class="left">{{ pegawai.unit_kerja }}</td>
+                <td>{{ pegawai.total_hari_kerja }}</td>
+                <td>{{ pegawai.total_hadir }}</td>
+                <td>{{ pegawai.total_tidak_hadir }}</td>
+                <td class="{% if pegawai.persentase_kehadiran >= 80 %}status-baik{% elseif pegawai.persentase_kehadiran >= 60 %}status-cukup{% else %}status-kurang{% endif %}">
+                    {{ pegawai.persentase_kehadiran|number_format(1) }}%
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <!-- Keterangan -->
+    <div class="keterangan">
+        <strong>Keterangan:</strong><br>
+        • Hari Kerja: Senin - Jumat (kecuali hari libur nasional)<br>
+        • Status Kehadiran: <span class="status-baik">≥80% Baik</span>, <span class="status-cukup">60-79% Cukup</span>, <span class="status-kurang">&lt;60% Kurang</span><br>
+        • Data dihitung berdasarkan absensi yang statusnya 'hadir'<br>
+        • Laporan ini dibuat secara otomatis oleh sistem Gembira
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+        <div style="float: left;">
+            <strong>Dicetak:</strong> {{ tanggal_cetak|date('d F Y, H:i:s') }} WITA<br>
+            <strong>Sistem:</strong> Gembira (Gerakan Munajat Bersama Untuk Kinerja)
+        </div>
+        
+        <div class="signature">
+            <p style="margin: 0;">Jakarta, {{ tanggal_cetak|date('d F Y') }}</p>
+            <p style="margin: 0;">Administrator Sistem</p>
+            <br><br><br>
+            <p style="margin: 0; border-top: 1px solid #333; padding-top: 5px;">
+                (.................................)
+            </p>
+        </div>
+        
+        <div style="clear: both;"></div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,1082 @@
+{% extends 'admin/_layout.html.twig' %}
+
+{% block title %}Validasi Absensi - Admin Panel{% endblock %}
+
+{% block page_icon %}✅{% endblock %}
+{% block page_title %}Validasi Absensi{% endblock %}
+{% block page_description %}Kelola dan validasi absensi pegawai yang memerlukan persetujuan{% endblock %}
+
+{% block header_actions %}
+    <button class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium" id="btnBulkApprove">
+        <span class="mr-1">✓</span> Setujui Terpilih
+    </button>
+    <button class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium" id="btnBulkReject">
+        <span class="mr-1">✗</span> Tolak Terpilih
+    </button>
+{% endblock %}
+
+{% block admin_stylesheets %}
+<style>
+    .foto-preview {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 8px;
+        cursor: pointer;
+        border: 2px solid #e5e7eb;
+    }
+    .foto-preview:hover {
+        border-color: #3b82f6;
+        transform: scale(1.05);
+        transition: all 0.2s;
+    }
+    .location-badge {
+        background: #dbeafe;
+        color: #1d4ed8;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    .status-badge {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 4px 8px;
+        border-radius: 12px;
+    }
+    .btn-action {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+        margin: 0 2px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+    }
+    .btn-action:active {
+        transform: scale(0.95);
+    }
+    .btn-action.loading {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    .btn-action.loading::after {
+        content: '';
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        top: 50%;
+        left: 50%;
+        margin-left: -6px;
+        margin-top: -6px;
+        border: 2px solid transparent;
+        border-top: 2px solid currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .btn-approve {
+        background: #10b981;
+        color: white;
+    }
+    .btn-approve:hover {
+        background: #059669;
+    }
+    .btn-reject {
+        background: #ef4444;
+        color: white;
+    }
+    .btn-reject:hover {
+        background: #dc2626;
+    }
+    .btn-detail {
+        background: #3b82f6;
+        color: white;
+    }
+    .btn-detail:hover {
+        background: #2563eb;
+    }
+    .btn-info {
+        background: #6b7280;
+        color: white;
+    }
+    .btn-info:hover {
+        background: #4b5563;
+    }
+    .stats-card {
+        transition: transform 0.2s;
+    }
+    .stats-card:hover {
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <!-- Pending Validations -->
+                <div class="bg-white rounded-lg shadow-sm p-4 text-center stats-card border-l-4 border-orange-500">
+                    <div class="text-3xl mb-2">⏳</div>
+                    <div class="text-2xl font-bold text-orange-600">{{ stats.pending ?? 0 }}</div>
+                    <div class="text-xs text-gray-600 font-medium">Menunggu Validasi</div>
+                </div>
+
+                <!-- Approved Today -->
+                <div class="bg-white rounded-lg shadow-sm p-4 text-center stats-card border-l-4 border-green-500">
+                    <div class="text-3xl mb-2">✅</div>
+                    <div class="text-2xl font-bold text-green-600">{{ stats.approved_today ?? 0 }}</div>
+                    <div class="text-xs text-gray-600 font-medium">Disetujui Hari Ini</div>
+                </div>
+
+                <!-- Rejected Today -->
+                <div class="bg-white rounded-lg shadow-sm p-4 text-center stats-card border-l-4 border-red-500">
+                    <div class="text-3xl mb-2">❌</div>
+                    <div class="text-2xl font-bold text-red-600">{{ stats.rejected_today ?? 0 }}</div>
+                    <div class="text-xs text-gray-600 font-medium">Ditolak Hari Ini</div>
+                </div>
+
+                <!-- Approval Rate -->
+                <div class="bg-white rounded-lg shadow-sm p-4 text-center stats-card border-l-4 border-blue-500">
+                    <div class="text-3xl mb-2">📈</div>
+                    <div class="text-2xl font-bold text-blue-600">{{ stats.approval_rate ?? 0 }}%</div>
+                    <div class="text-xs text-gray-600 font-medium">Tingkat Persetujuan</div>
+                </div>
+            </div>
+
+            <!-- Filter Section -->
+            <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="text-xl mr-2">🔍</span>
+                    Filter & Pencarian
+                </h3>
+                <form method="GET" id="filterForm">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Status Validasi</label>
+                            <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Semua Status</option>
+                                <option value="pending" {{ app.request.get('status') == 'pending' ? 'selected' : '' }}>Menunggu Validasi</option>
+                                <option value="disetujui" {{ app.request.get('status') == 'disetujui' ? 'selected' : '' }}>Disetujui</option>
+                                <option value="ditolak" {{ app.request.get('status') == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Mulai</label>
+                            <input type="date" name="tanggal_mulai" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" value="{{ app.request.get('tanggal_mulai') }}">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Akhir</label>
+                            <input type="date" name="tanggal_akhir" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" value="{{ app.request.get('tanggal_akhir') }}">
+                        </div>
+                        <div class="flex items-end space-x-2">
+                            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
+                                <span class="mr-2">🔍</span> Filter
+                            </button>
+                            <a href="{{ path('app_admin_validasi_absen') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center">
+                                <span class="mr-2">🔄</span> Reset
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+
+            <!-- Data Table -->
+            <div class="bg-white rounded-lg shadow-sm">
+                <div class="bg-gray-50 px-4 py-3 border-b rounded-t-lg">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                            <span class="text-xl mr-2">📋</span>
+                            Daftar Absensi
+                        </h3>
+                        <div class="text-sm text-gray-600">
+                            Total: {{ daftarAbsensi|length }} data
+                            {% if stats.pending is defined %}
+                                | Pending: {{ stats.pending }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full" id="absensiTable">
+                        <thead class="bg-gray-50 border-b">
+                            <tr>
+                                <th class="p-3 text-left w-12">
+                                    <input type="checkbox" id="selectAll" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2">
+                                </th>
+                                <th class="p-3 text-left text-sm font-semibold text-gray-700">Pegawai</th>
+                                <th class="p-3 text-left text-sm font-semibold text-gray-700">Tanggal</th>
+                                <th class="p-3 text-left text-sm font-semibold text-gray-700">Waktu</th>
+                                <th class="p-3 text-left text-sm font-semibold text-gray-700">Status</th>
+                                <th class="p-3 text-left text-sm font-semibold text-gray-700">Foto</th>
+                                <th class="p-3 text-left text-sm font-semibold text-gray-700">Lokasi</th>
+                                <th class="p-3 text-left text-sm font-semibold text-gray-700">Validasi</th>
+                                <th class="p-3 text-left text-sm font-semibold text-gray-700 w-48">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            {% for absensi in daftarAbsensi %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="p-3">
+                                    <input type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 absensi-checkbox" value="{{ absensi.id }}">
+                                </td>
+                                <td class="p-3">
+                                    <div class="font-medium text-gray-900">{{ absensi.pegawai.nama ?? 'N/A' }}</div>
+                                    <div class="text-sm text-gray-500">{{ absensi.pegawai.nip ?? '-' }}</div>
+                                </td>
+                                <td class="p-3 text-sm text-gray-700">{{ absensi.tanggal ? absensi.tanggal|date('d/m/Y') : '-' }}</td>
+                                <td class="p-3 text-sm text-gray-700">{{ absensi.waktuAbsensi ? absensi.waktuAbsensi|date('H:i:s') : '-' }}</td>
+                                <td class="p-3">
+                                    {% if absensi.status == 'hadir' %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            ✅ {{ absensi.status|title }}
+                                        </span>
+                                    {% elseif absensi.status == 'izin' %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                            📝 {{ absensi.status|title }}
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                            ❌ {{ absensi.status|title }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="p-3">
+                                    {% if absensi.fotoPath %}
+                                        <img src="{{ asset('uploads/absensi/' ~ absensi.fotoPath) }}"
+                                             class="foto-preview"
+                                             data-foto="{{ asset('uploads/absensi/' ~ absensi.fotoPath) }}"
+                                             alt="Foto Absensi"
+                                             onclick="showPhotoModal('{{ asset('uploads/absensi/' ~ absensi.fotoPath) }}')">
+                                    {% else %}
+                                        <span class="text-sm text-gray-400">Tidak ada foto</span>
+                                    {% endif %}
+                                </td>
+                                <td class="p-3">
+                                    {% if absensi.latitude and absensi.longitude %}
+                                        <span class="location-badge">
+                                            📍 GPS
+                                        </span>
+                                        <div class="text-xs text-gray-500 mt-1">{{ absensi.latitude|number_format(6, '.', '') }}, {{ absensi.longitude|number_format(6, '.', '') }}</div>
+                                    {% else %}
+                                        <span class="text-sm text-gray-400">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="p-3">
+                                    {% if absensi.statusValidasi == 'disetujui' %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            ✅ Disetujui
+                                        </span>
+                                    {% elseif absensi.statusValidasi == 'ditolak' %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                            ❌ Ditolak
+                                        </span>
+                                    {% elseif absensi.statusValidasi == 'pending' %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                            ⏳ Menunggu
+                                        </span>
+                                    {% endif %}
+
+                                    {% if absensi.validatedBy %}
+                                        <div class="text-xs text-gray-500 mt-1">oleh {{ absensi.validatedBy.namaLengkap ?? absensi.validatedBy.username }}</div>
+                                    {% endif %}
+
+                                    {% if absensi.validatedAt %}
+                                        <div class="text-xs text-gray-500">{{ absensi.validatedAt|date('d/m/Y H:i') }}</div>
+                                    {% endif %}
+                                </td>
+                                <td class="p-3">
+                                    <div class="flex space-x-1">
+                                        {% if absensi.statusValidasi == 'pending' %}
+                                            <button class="btn-action btn-approve"
+                                                    data-id="{{ absensi.id }}"
+                                                    onclick="approveAbsensi({{ absensi.id }});"
+                                                    title="Setujui Absensi">
+                                                ✓
+                                            </button>
+                                            <button class="btn-action btn-reject"
+                                                    data-id="{{ absensi.id }}"
+                                                    onclick="rejectAbsensi({{ absensi.id }});"
+                                                    title="Tolak Absensi">
+                                                ✗
+                                            </button>
+                                        {% endif %}
+
+                                        <button class="btn-action btn-detail"
+                                                onclick="viewDetail({{ absensi.id }})"
+                                                title="Lihat Detail">
+                                            👁️
+                                        </button>
+
+                                        {% if absensi.keteranganValidasi %}
+                                            <button class="btn-action btn-info"
+                                                    onclick="showKeterangan('{{ absensi.keteranganValidasi|e('js') }}')"
+                                                    title="Lihat Keterangan">
+                                                💬
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="9" class="p-8 text-center text-gray-500">
+                                    <div class="text-4xl mb-3">📭</div>
+                                    <div class="text-lg font-medium">Tidak ada data absensi</div>
+                                    <div class="text-sm">Silakan ubah filter untuk melihat data yang berbeda</div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- Modal untuk Preview Foto -->
+<div id="fotoModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg shadow-xl max-w-4xl max-h-screen p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                <span class="text-xl mr-2">🖼️</span>
+                Preview Foto Absensi
+            </h3>
+            <button onclick="closeFotoModal()" class="text-gray-400 hover:text-gray-600">
+                <span class="text-2xl">✕</span>
+            </button>
+        </div>
+        <div class="text-center">
+            <img id="modalFoto" src="" class="max-w-full max-h-96 rounded-lg shadow-lg" alt="Foto Absensi">
+        </div>
+    </div>
+</div>
+
+<!-- Modal untuk Input Keterangan -->
+<div id="keteranganModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 id="keteranganTitle" class="text-lg font-semibold text-gray-800">Keterangan Validasi</h3>
+            <button onclick="closeKeteranganModal()" class="text-gray-400 hover:text-gray-600">
+                <span class="text-2xl">✕</span>
+            </button>
+        </div>
+        <form id="keteranganForm">
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Keterangan (Opsional)</label>
+                <textarea id="keteranganInput"
+                         rows="4"
+                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                         placeholder="Masukkan keterangan untuk keputusan validasi..."></textarea>
+            </div>
+        </form>
+        <div class="flex space-x-3">
+            <button onclick="closeKeteranganModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium">
+                Batal
+            </button>
+            <button id="submitKeterangan" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">
+                Kirim
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_javascripts %}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // PENTING: Deklarasi variabel global di awal sebelum fungsi lain
+        let currentAction = '';
+        let currentId = 0;
+
+        // Inisialisasi saat document ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Select All Checkbox
+            const selectAllCheckbox = document.getElementById('selectAll');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    const checkboxes = document.querySelectorAll('.absensi-checkbox');
+                    checkboxes.forEach(checkbox => {
+                        checkbox.checked = this.checked;
+                    });
+                });
+            }
+
+
+            // Bulk action event listeners
+            const btnBulkApprove = document.getElementById('btnBulkApprove');
+            if (btnBulkApprove) {
+                btnBulkApprove.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    handleBulkApprove();
+                }, false);
+
+                function handleBulkApprove() {
+                    const selectedCheckboxes = document.querySelectorAll('.absensi-checkbox:checked');
+                    const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+                    if (selectedIds.length === 0) {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Perhatian!',
+                                text: 'Pilih minimal satu absensi untuk disetujui'
+                            });
+                        } else {
+                            alert('Pilih minimal satu absensi untuk disetujui');
+                        }
+                        return;
+                    }
+
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Konfirmasi',
+                            text: `Setujui ${selectedIds.length} absensi terpilih?`,
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonText: 'Ya, Setujui',
+                            cancelButtonText: 'Batal'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                bulkAction('approve', selectedIds);
+                            }
+                        });
+                    } else {
+                        if (confirm(`Setujui ${selectedIds.length} absensi terpilih?`)) {
+                            bulkAction('approve', selectedIds);
+                        }
+                    }
+                }
+            }
+
+            // Bulk reject
+            const btnBulkReject = document.getElementById('btnBulkReject');
+            if (btnBulkReject) {
+                btnBulkReject.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    handleBulkReject();
+                }, false);
+
+                function handleBulkReject() {
+                    const selectedCheckboxes = document.querySelectorAll('.absensi-checkbox:checked');
+                    const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+                    if (selectedIds.length === 0) {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Perhatian!',
+                                text: 'Pilih minimal satu absensi untuk ditolak'
+                            });
+                        } else {
+                            alert('Pilih minimal satu absensi untuk ditolak');
+                        }
+                        return;
+                    }
+
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Konfirmasi',
+                            text: `Tolak ${selectedIds.length} absensi terpilih?`,
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonText: 'Ya, Tolak',
+                            cancelButtonText: 'Batal'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                bulkAction('reject', selectedIds);
+                            }
+                        });
+                    } else {
+                        if (confirm(`Tolak ${selectedIds.length} absensi terpilih?`)) {
+                            bulkAction('reject', selectedIds);
+                        }
+                    }
+                }
+            }
+        });
+
+        // Alternative: Event delegation untuk menangani tombol yang mungkin di-render ulang
+        document.addEventListener('click', function(e) {
+            // Cek apakah yang diklik adalah tombol bulk atau anaknya
+            if (e.target.id === 'btnBulkApprove' || e.target.closest('#btnBulkApprove')) {
+                e.preventDefault();
+                const selectedCheckboxes = document.querySelectorAll('.absensi-checkbox:checked');
+                const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+                if (selectedIds.length === 0) {
+                    alert('Pilih minimal satu absensi untuk disetujui');
+                    return;
+                }
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Konfirmasi',
+                        text: `Setujui ${selectedIds.length} absensi terpilih?`,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Setujui',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            bulkAction('approve', selectedIds);
+                        }
+                    });
+                } else {
+                    if (confirm(`Setujui ${selectedIds.length} absensi terpilih?`)) {
+                        bulkAction('approve', selectedIds);
+                    }
+                }
+            }
+
+            if (e.target.id === 'btnBulkReject' || e.target.closest('#btnBulkReject')) {
+                e.preventDefault();
+                const selectedCheckboxes = document.querySelectorAll('.absensi-checkbox:checked');
+                const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+                if (selectedIds.length === 0) {
+                    alert('Pilih minimal satu absensi untuk ditolak');
+                    return;
+                }
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Konfirmasi',
+                        text: `Tolak ${selectedIds.length} absensi terpilih?`,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Tolak',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            bulkAction('reject', selectedIds);
+                        }
+                    });
+                } else {
+                    if (confirm(`Tolak ${selectedIds.length} absensi terpilih?`)) {
+                        bulkAction('reject', selectedIds);
+                    }
+                }
+            }
+        });
+
+        // Modal Functions
+        function showPhotoModal(fotoUrl) {
+            document.getElementById('modalFoto').src = fotoUrl;
+            document.getElementById('fotoModal').classList.remove('hidden');
+        }
+
+        function closeFotoModal() {
+            document.getElementById('fotoModal').classList.add('hidden');
+        }
+
+        function showKeteranganModal(title) {
+            document.getElementById('keteranganTitle').textContent = title;
+            document.getElementById('keteranganModal').classList.remove('hidden');
+        }
+
+        function closeKeteranganModal() {
+            document.getElementById('keteranganModal').classList.add('hidden');
+            document.getElementById('keteranganInput').value = '';
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('fotoModal').addEventListener('click', function(e) {
+            if (e.target === this) closeFotoModal();
+        });
+
+        document.getElementById('keteranganModal').addEventListener('click', function(e) {
+            if (e.target === this) closeKeteranganModal();
+        });
+
+        // Variabel global sudah dideklarasikan di atas
+
+        // Fungsi untuk approve absensi individual
+        function approveAbsensi(id) {
+            if (!id || isNaN(id)) {
+                Swal.fire('Error', 'ID absensi tidak valid', 'error');
+                return;
+            }
+
+            // Tambahkan visual feedback loading pada tombol
+            const approveBtn = document.querySelector(`button[data-id="${id}"].btn-approve`);
+            if (approveBtn) {
+                approveBtn.classList.add('loading');
+                approveBtn.disabled = true;
+            }
+
+            currentAction = 'approve';
+            currentId = parseInt(id);
+
+            // Tampilkan konfirmasi dengan fallback
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Konfirmasi',
+                    text: 'Setujui absensi ini?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Setujui',
+                    cancelButtonText: 'Batal',
+                    confirmButtonColor: '#10b981'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        processApproval(currentId);
+                    } else {
+                        // Remove loading state jika dibatalkan
+                        if (approveBtn) {
+                            approveBtn.classList.remove('loading');
+                            approveBtn.disabled = false;
+                        }
+                    }
+                });
+            } else {
+                // Fallback jika SweetAlert tidak tersedia
+                if (confirm('Setujui absensi ini?')) {
+                    processApproval(currentId);
+                } else {
+                    if (approveBtn) {
+                        approveBtn.classList.remove('loading');
+                        approveBtn.disabled = false;
+                    }
+                }
+            }
+        }
+
+        // Fungsi terpisah untuk proses approval
+        function processApproval(absensiId) {
+            const url = '{{ path("app_admin_approve_absensi", {"id": "__ID__"}) }}'.replace('__ID__', absensiId);
+
+            // Referensi tombol untuk cleanup
+            const approveBtn = document.querySelector(`button[data-id="${absensiId}"].btn-approve`);
+
+            // Show loading
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Memproses...',
+                    text: 'Sedang menyetujui absensi',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    willOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            }
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                return response.json();
+            })
+            .then(data => {
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.close();
+                }
+
+                // Cleanup loading state
+                if (approveBtn) {
+                    approveBtn.classList.remove('loading');
+                    approveBtn.disabled = false;
+                }
+
+                if (data.success) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire('Berhasil!', data.message, 'success').then(() => {
+                            // Reload halaman untuk update data
+                            window.location.reload();
+                        });
+                    } else {
+                        alert('Berhasil: ' + data.message);
+                        window.location.reload();
+                    }
+                } else {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire('Error!', data.message || 'Terjadi kesalahan', 'error');
+                    } else {
+                        alert('Error: ' + (data.message || 'Terjadi kesalahan'));
+                    }
+                }
+            })
+            .catch(error => {
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.close();
+                }
+
+                // Cleanup loading state pada error
+                if (approveBtn) {
+                    approveBtn.classList.remove('loading');
+                    approveBtn.disabled = false;
+                }
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Error!', 'Terjadi kesalahan koneksi: ' + error.message, 'error');
+                } else {
+                    alert('Error: Terjadi kesalahan koneksi - ' + error.message);
+                }
+            });
+        }
+
+        // Fungsi untuk reject absensi individual
+        function rejectAbsensi(id) {
+            if (!id || isNaN(id)) {
+                Swal.fire('Error', 'ID absensi tidak valid', 'error');
+                return;
+            }
+
+            // Tambahkan visual feedback loading pada tombol
+            const rejectBtn = document.querySelector(`button[data-id="${id}"].btn-reject`);
+            if (rejectBtn) {
+                rejectBtn.classList.add('loading');
+                rejectBtn.disabled = true;
+            }
+
+            currentAction = 'reject';
+            currentId = parseInt(id);
+
+            // Langsung tampilkan prompt untuk alasan dengan fallback
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                title: 'Tolak Absensi',
+                input: 'textarea',
+                inputLabel: 'Alasan penolakan',
+                inputPlaceholder: 'Masukkan alasan mengapa absensi ini ditolak...',
+                inputAttributes: {
+                    'aria-label': 'Alasan penolakan'
+                },
+                showCancelButton: true,
+                confirmButtonText: 'Tolak Absensi',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#dc2626',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'Alasan penolakan harus diisi!';
+                    }
+                }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        processRejection(currentId, result.value);
+                    } else {
+                        // Remove loading state jika dibatalkan
+                        if (rejectBtn) {
+                            rejectBtn.classList.remove('loading');
+                            rejectBtn.disabled = false;
+                        }
+                    }
+                });
+            } else {
+                // Fallback jika SweetAlert tidak tersedia
+                const alasan = prompt('Alasan penolakan:');
+                if (alasan && alasan.trim()) {
+                    processRejection(currentId, alasan.trim());
+                } else {
+                    if (rejectBtn) {
+                        rejectBtn.classList.remove('loading');
+                        rejectBtn.disabled = false;
+                    }
+                }
+            }
+        }
+
+        // Fungsi terpisah untuk proses rejection
+        function processRejection(absensiId, alasan) {
+            const url = '{{ path("app_admin_reject_absensi", {"id": "__ID__"}) }}'.replace('__ID__', absensiId);
+
+            // Referensi tombol untuk cleanup
+            const rejectBtn = document.querySelector(`button[data-id="${absensiId}"].btn-reject`);
+
+            // Show loading
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Memproses...',
+                    text: 'Sedang menolak absensi',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    willOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            }
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    alasan: alasan
+                })
+            })
+            .then(response => {
+                return response.json();
+            })
+            .then(data => {
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.close();
+                }
+
+                // Cleanup loading state
+                if (rejectBtn) {
+                    rejectBtn.classList.remove('loading');
+                    rejectBtn.disabled = false;
+                }
+
+                if (data.success) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire('Berhasil!', data.message, 'success').then(() => {
+                            // Reload halaman untuk update data
+                            window.location.reload();
+                        });
+                    } else {
+                        alert('Berhasil: ' + data.message);
+                        window.location.reload();
+                    }
+                } else {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire('Error!', data.message || 'Terjadi kesalahan', 'error');
+                    } else {
+                        alert('Error: ' + (data.message || 'Terjadi kesalahan'));
+                    }
+                }
+            })
+            .catch(error => {
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.close();
+                }
+
+                // Cleanup loading state pada error
+                if (rejectBtn) {
+                    rejectBtn.classList.remove('loading');
+                    rejectBtn.disabled = false;
+                }
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Error!', 'Terjadi kesalahan koneksi: ' + error.message, 'error');
+                } else {
+                    alert('Error: Terjadi kesalahan koneksi - ' + error.message);
+                }
+            });
+        }
+
+        // Submit keterangan dan aksi
+        document.getElementById('submitKeterangan').addEventListener('click', function() {
+            const keterangan = document.getElementById('keteranganInput').value;
+            
+            if (currentAction && currentId) {
+                const url = currentAction === 'approve' ?
+                    '{{ path("app_admin_approve_absensi", {"id": "__ID__"}) }}'.replace('__ID__', currentId) :
+                    '{{ path("app_admin_reject_absensi", {"id": "__ID__"}) }}'.replace('__ID__', currentId);
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        alasan: keterangan
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            text: data.message,
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal!',
+                            text: data.message || 'Terjadi kesalahan sistem'
+                        });
+                    }
+                })
+                .catch(error => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: 'Terjadi kesalahan saat memproses permintaan'
+                    });
+                })
+                .finally(() => {
+                    closeKeteranganModal();
+                    currentAction = '';
+                    currentId = 0;
+                });
+            }
+        });
+
+
+        // Fungsi bulk action
+        function bulkAction(action, ids) {
+            const url = '{{ path("app_admin_bulk_validation") }}';
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    action: action,
+                    absensi_ids: ids,
+                    alasan: action === 'reject' ? 'Bulk rejection by admin' : ''
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: data.message,
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal!',
+                        text: data.message || 'Terjadi kesalahan sistem'
+                    });
+                }
+            })
+            .catch(error => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: 'Terjadi kesalahan saat memproses permintaan'
+                });
+            });
+        }
+
+        // Lihat detail absensi
+        function viewDetail(id) {
+            const url = '{{ path("app_admin_detail_absensi", {"id": "__ID__"}) }}'.replace('__ID__', id);
+
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const pegawai = data.data.pegawai;
+                    const jadwal = data.data.jadwal;
+                    const absensi = data.data.absensi;
+
+                    let detailHtml = `
+                        <div class="text-left">
+                            <h6 class="text-blue-600 font-semibold mb-2">👤 Informasi Pegawai:</h6>
+                            <p class="mb-4 text-sm">
+                                <strong>Nama:</strong> ${pegawai.nama}<br>
+                                <strong>NIP:</strong> ${pegawai.nip}<br>
+                                <strong>Unit Kerja:</strong> ${pegawai.unit_kerja}<br>
+                                <strong>Jabatan:</strong> ${pegawai.jabatan}
+                            </p>
+
+                            <h6 class="text-green-600 font-semibold mb-2">📅 Informasi Jadwal:</h6>
+                            <p class="mb-4 text-sm">
+                                <strong>Jadwal:</strong> ${jadwal.emoji} ${jadwal.nama}<br>
+                                <strong>Jam:</strong> ${jadwal.jam_mulai} - ${jadwal.jam_selesai}
+                            </p>
+
+                            <h6 class="text-purple-600 font-semibold mb-2">⏰ Informasi Absensi:</h6>
+                            <p class="mb-4 text-sm">
+                                <strong>Waktu:</strong> ${absensi.waktu}<br>
+                                <strong>Status:</strong> <span class="px-2 py-1 rounded-full text-xs font-medium bg-${getStatusColor(absensi.status_validasi)}-100 text-${getStatusColor(absensi.status_validasi)}-800">${getStatusText(absensi.status_validasi)}</span><br>
+                                <strong>Lokasi:</strong> ${absensi.latitude ? absensi.latitude + ', ' + absensi.longitude : 'Tidak tersedia'}
+                            </p>
+
+                            ${absensi.keterangan ? '<p class="mb-2 text-sm"><strong>Keterangan:</strong> ' + absensi.keterangan + '</p>' : ''}
+                            ${absensi.keterangan_validasi ? '<p class="mb-2 text-sm"><strong>Keterangan Validasi:</strong> ' + absensi.keterangan_validasi + '</p>' : ''}
+                            ${data.data.validator ? '<p class="mb-2 text-sm"><strong>Divalidasi oleh:</strong> ' + data.data.validator.nama + ' pada ' + data.data.validator.waktu + '</p>' : ''}
+                        </div>
+                    `;
+
+                    // Tambahkan foto jika ada
+                    if (absensi.foto_path) {
+                        detailHtml += `<div class="text-center mt-4 pt-4 border-t"><img src="{{ asset('uploads/absensi/') }}${absensi.foto_path}" class="max-w-full max-h-48 rounded-lg shadow-md" alt="Foto Absensi"></div>`;
+                    }
+
+                    Swal.fire({
+                        title: 'Detail Absensi',
+                        html: detailHtml,
+                        width: '600px',
+                        showCloseButton: true,
+                        showConfirmButton: false
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal!',
+                        text: data.message || 'Gagal mengambil detail absensi'
+                    });
+                }
+            })
+            .catch(error => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: 'Terjadi kesalahan saat mengambil detail absensi'
+                });
+            });
+        }
+
+        // Helper functions untuk status
+        function getStatusColor(status) {
+            switch(status) {
+                case 'disetujui': return 'green';
+                case 'ditolak': return 'red';
+                case 'pending': return 'yellow';
+                default: return 'gray';
+            }
+        }
+
+        function getStatusText(status) {
+            switch(status) {
+                case 'disetujui': return 'Disetujui';
+                case 'ditolak': return 'Ditolak';
+                case 'pending': return 'Menunggu Validasi';
+                default: return 'Tidak Diketahui';
+            }
+        }
+
+        // Show keterangan existing
+        function showKeterangan(keterangan) {
+            Swal.fire({
+                title: 'Keterangan Validasi',
+                text: keterangan,
+                icon: 'info',
+                showConfirmButton: true,
+                confirmButtonText: 'Tutup'
+            });
+        }
+    </script>
+{% endblock %}

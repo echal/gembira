@@ -1,0 +1,269 @@
+{% extends 'admin/_layout.html.twig' %}
+
+{% block title %}Kelola Event - Admin Gembira{% endblock %}
+
+{% block page_icon %}🎉{% endblock %}
+{% block page_title %}Kelola Event{% endblock %}
+{% block page_description %}Manajemen event dan kegiatan{% endblock %}
+
+{% block header_actions %}
+    <a href="{{ path('app_admin_event_new') }}"
+       class="bg-pink-600 hover:bg-pink-700 text-white py-2 px-4 rounded-lg font-medium text-sm">
+        ➕ Tambah Event
+    </a>
+{% endblock %}
+
+{% block admin_content %}
+
+    <!-- Statistics Cards -->
+    {% set eventAktif = 0 %}
+    {% set eventSelesai = 0 %}
+    {% set eventDibatalkan = 0 %}
+
+    {% for month, events in groupedEvents %}
+        {% for event in events %}
+            {% if event.status == 'aktif' %}
+                {% set eventAktif = eventAktif + 1 %}
+            {% elseif event.status == 'selesai' %}
+                {% set eventSelesai = eventSelesai + 1 %}
+            {% elseif event.status == 'dibatalkan' %}
+                {% set eventDibatalkan = eventDibatalkan + 1 %}
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-lg shadow-sm p-4 border">
+            <div class="flex items-center">
+                <div class="text-2xl mr-3">📅</div>
+                <div>
+                    <div class="text-sm text-gray-600">Total Event</div>
+                    <div class="text-xl font-bold text-gray-800">{{ totalEvents }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm p-4 border">
+            <div class="flex items-center">
+                <div class="text-2xl mr-3">✅</div>
+                <div>
+                    <div class="text-sm text-gray-600">Event Aktif</div>
+                    <div class="text-xl font-bold text-green-600">{{ eventAktif }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm p-4 border">
+            <div class="flex items-center">
+                <div class="text-2xl mr-3">✅</div>
+                <div>
+                    <div class="text-sm text-gray-600">Event Selesai</div>
+                    <div class="text-xl font-bold text-purple-600">{{ eventSelesai }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm p-4 border">
+            <div class="flex items-center">
+                <div class="text-2xl mr-3">❌</div>
+                <div>
+                    <div class="text-sm text-gray-600">Event Dibatalkan</div>
+                    <div class="text-xl font-bold text-red-600">{{ eventDibatalkan }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-800">🔍 Filter Data & Export Laporan</h3>
+        </div>
+
+        <form method="GET" action="{{ path('app_admin_event_index') }}" class="flex items-center gap-4">
+            <div class="flex-1">
+                <input type="text"
+                       name="search"
+                       value="{{ app.request.query.get('search') }}"
+                       placeholder="Cari event..."
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
+            </div>
+            <button type="submit"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium">
+                🔍 Cari
+            </button>
+        </form>
+    </div>
+
+    <!-- Events List -->
+    <div class="bg-white rounded-lg shadow-sm border">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-800">📋 Daftar Event</h3>
+        </div>
+
+        <div class="divide-y divide-gray-200">
+            {% if groupedEvents is empty %}
+                <div class="px-6 py-8 text-center">
+                    <div class="text-gray-400 text-5xl mb-4">📭</div>
+                    <p class="text-gray-500 text-lg">Belum ada event yang dibuat</p>
+                    <p class="text-gray-400 text-sm mt-2">Klik tombol "Tambah Event" untuk membuat event baru</p>
+                </div>
+            {% else %}
+                {% for month, events in groupedEvents %}
+                    <div class="px-6 py-4">
+                        <!-- Month Header -->
+                        <div class="flex items-center justify-between py-3 cursor-pointer" onclick="toggleAccordion('month_{{ loop.index }}')">
+                            <div class="flex items-center">
+                                <span class="text-2xl mr-3">📅</span>
+                                <h4 class="text-lg font-semibold text-gray-800">{{ month }}</h4>
+                                <span class="ml-3 bg-pink-100 text-pink-600 px-2 py-1 rounded-full text-xs font-medium">{{ events|length }} event</span>
+                            </div>
+                            <svg class="w-5 h-5 text-gray-400 transition-transform accordion-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+
+                        <!-- Accordion Content -->
+                        <div id="month_{{ loop.index }}" class="accordion-content {% if loop.first %}block{% else %}hidden{% endif %} ml-8 space-y-3">
+                            {% for event in events %}
+                                <div class="bg-gray-50 rounded-lg p-4 border">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1">
+                                            <div class="flex items-center mb-2">
+                                                <h5 class="font-semibold text-gray-800 mr-3">{{ event.judulEvent }}</h5>
+
+                                                <!-- Status Badge -->
+                                                {% if event.status == 'aktif' %}
+                                                    <span class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">✅ Aktif</span>
+                                                {% elseif event.status == 'selesai' %}
+                                                    <span class="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">✅ Selesai</span>
+                                                {% elseif event.status == 'dibatalkan' %}
+                                                    <span class="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">❌ Dibatalkan</span>
+                                                {% endif %}
+
+                                                <!-- Target Audience Badge -->
+                                                {% if event.targetAudience == 'all' %}
+                                                    <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium ml-2">🌍 Semua Unit</span>
+                                                {% else %}
+                                                    <span class="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium ml-2">🎯 Unit Tertentu</span>
+                                                {% endif %}
+                                            </div>
+
+                                            <div class="text-sm text-gray-600 mb-2">
+                                                📅 {{ event.tanggalMulai|date('d/m/Y H:i') }}
+                                                {% if event.tanggalSelesai %}
+                                                    - {{ event.tanggalSelesai|date('d/m/Y H:i') }}
+                                                {% endif %}
+                                            </div>
+
+                                            {% if event.deskripsi %}
+                                                <p class="text-sm text-gray-700 mb-2">
+                                                    {% if event.deskripsi|length > 150 %}
+                                                        {{ event.deskripsi|slice(0, 150) }}...
+                                                    {% else %}
+                                                        {{ event.deskripsi }}
+                                                    {% endif %}
+                                                </p>
+                                            {% endif %}
+
+                                            {% if event.lokasi %}
+                                                <div class="text-sm text-gray-600">📍 {{ event.lokasi }}</div>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="flex items-center space-x-2 ml-4">
+                                            <a href="{{ path('app_admin_event_show', {id: event.id}) }}"
+                                               class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs">
+                                                👁️ Lihat
+                                            </a>
+                                            <a href="{{ path('app_admin_event_edit', {id: event.id}) }}"
+                                               class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-xs">
+                                                ✏️ Edit
+                                            </a>
+                                            <button onclick="deleteEvent({{ event.id }}, '{{ event.judulEvent|e('js') }}')"
+                                                    class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs">
+                                                🗑️ Hapus
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block admin_javascripts %}
+<script>
+// Accordion functionality
+function toggleAccordion(id) {
+    const content = document.getElementById(id);
+    const arrow = content.previousElementSibling.querySelector('.accordion-arrow');
+
+    if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        content.classList.add('block');
+        arrow.style.transform = 'rotate(180deg)';
+    } else {
+        content.classList.remove('block');
+        content.classList.add('hidden');
+        arrow.style.transform = 'rotate(0deg)';
+    }
+}
+
+// Delete event function
+function deleteEvent(eventId, eventTitle) {
+    if (confirm(`Apakah Anda yakin ingin menghapus event "${eventTitle}"?`)) {
+        fetch(`/admin/event/${eventId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message, 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                showToast(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Terjadi kesalahan saat menghapus event', 'error');
+        });
+    }
+}
+
+// Toast notification
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white font-medium ${
+        type === 'success' ? 'bg-green-500' : 'bg-red-500'
+    }`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+// Initialize accordion on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Open first accordion by default
+    const firstAccordion = document.querySelector('.accordion-content');
+    if (firstAccordion) {
+        const firstArrow = firstAccordion.previousElementSibling.querySelector('.accordion-arrow');
+        if (firstArrow) {
+            firstArrow.style.transform = 'rotate(180deg)';
+        }
+    }
+});
+</script>
+{% endblock %}

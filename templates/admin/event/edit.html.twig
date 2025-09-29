@@ -1,0 +1,436 @@
+{% extends 'admin/_layout.html.twig' %}
+
+{% block title %}Edit Event - Admin Gembira{% endblock %}
+
+{% block page_icon %}✏️{% endblock %}
+{% block page_title %}Edit Event{% endblock %}
+{% block page_description %}Ubah informasi event dan kegiatan{% endblock %}
+
+{% block admin_content %}
+                    <a href="{{ path('app_admin_event_show', {id: event.id}) }}"
+                       class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                        Lihat Detail
+                    </a>
+                    <a href="{{ path('app_admin_event_index') }}"
+                       class="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                        Kembali
+                    </a>
+                    <div class="text-sm text-gray-600">{{ 'now'|date('d/m/Y H:i') }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6">
+            <!-- Form Card -->
+            <div class="bg-white rounded-lg shadow-sm border overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-800">Form Edit Event</h2>
+                    <p class="text-sm text-gray-600 mt-1">Ubah informasi event "{{ event.judulEvent }}"</p>
+                </div>
+
+                <div class="p-6">
+                    {{ form_start(form, {'attr': {'class': 'space-y-6'}}) }}
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Judul Event -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                {{ form_label(form.judulEvent) }}
+                            </label>
+                            {{ form_widget(form.judulEvent) }}
+                            {{ form_errors(form.judulEvent) }}
+                        </div>
+
+                        <!-- Deskripsi -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                {{ form_label(form.deskripsi) }}
+                            </label>
+                            {{ form_widget(form.deskripsi) }}
+                            {{ form_errors(form.deskripsi) }}
+                        </div>
+
+                        <!-- Tanggal Mulai -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                {{ form_label(form.tanggalMulai) }}
+                            </label>
+                            {{ form_widget(form.tanggalMulai) }}
+                            {{ form_errors(form.tanggalMulai) }}
+                        </div>
+
+                        <!-- Tanggal Selesai -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                {{ form_label(form.tanggalSelesai) }}
+                            </label>
+                            {{ form_widget(form.tanggalSelesai) }}
+                            {{ form_errors(form.tanggalSelesai) }}
+                        </div>
+
+                        <!-- Lokasi -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                {{ form_label(form.lokasi) }}
+                            </label>
+                            {{ form_widget(form.lokasi) }}
+                            {{ form_errors(form.lokasi) }}
+                        </div>
+
+                        <!-- Status -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                {{ form_label(form.status) }}
+                            </label>
+                            {{ form_widget(form.status) }}
+                            {{ form_errors(form.status) }}
+                        </div>
+
+                        <!-- Kategori -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                {{ form_label(form.kategoriEvent) }}
+                            </label>
+                            {{ form_widget(form.kategoriEvent) }}
+                            {{ form_errors(form.kategoriEvent) }}
+                        </div>
+
+                        <!-- Warna -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                {{ form_label(form.warna) }}
+                            </label>
+                            {{ form_widget(form.warna) }}
+                            {{ form_errors(form.warna) }}
+                            <div class="mt-1 text-xs text-gray-500">Warna untuk ditampilkan di kalender</div>
+                        </div>
+
+                        <!-- Butuh Absensi -->
+                        <div>
+                            <label class="flex items-center space-x-3">
+                                {{ form_widget(form.butuhAbsensi) }}
+                                <span class="text-sm font-medium text-gray-700">{{ form_label(form.butuhAbsensi) }}</span>
+                            </label>
+                            {{ form_errors(form.butuhAbsensi) }}
+                            <div class="mt-1 text-xs text-gray-500">Centang jika event ini membutuhkan absensi dari peserta</div>
+                        </div>
+
+                        <!-- Jam Mulai Absensi -->
+                        <div class="absensi-field" {% if not form.butuhAbsensi.vars.data %}style="display: none;"{% endif %}>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                {{ form_label(form.jamMulaiAbsensi) }}
+                            </label>
+                            {{ form_widget(form.jamMulaiAbsensi) }}
+                            {{ form_errors(form.jamMulaiAbsensi) }}
+                            <div class="mt-1 text-xs text-gray-500">Jam mulai absensi (contoh: 14:00)</div>
+                        </div>
+
+                        <!-- Jam Selesai Absensi -->
+                        <div class="absensi-field" {% if not form.butuhAbsensi.vars.data %}style="display: none;"{% endif %}>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                {{ form_label(form.jamSelesaiAbsensi) }}
+                            </label>
+                            {{ form_widget(form.jamSelesaiAbsensi) }}
+                            {{ form_errors(form.jamSelesaiAbsensi) }}
+                            <div class="mt-1 text-xs text-gray-500">Jam selesai absensi (contoh: 15:00)</div>
+                        </div>
+                    </div>
+
+                    <!-- Link Meeting -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            {{ form_label(form.linkMeeting) }}
+                        </label>
+                        {{ form_widget(form.linkMeeting) }}
+                        {{ form_errors(form.linkMeeting) }}
+                        <div class="mt-1 text-xs text-gray-500">Link untuk meeting online (Zoom, Google Meet, Teams, dll.)</div>
+                    </div>
+
+                    <!-- Target Audience Section -->
+                    <div class="md:col-span-2 bg-sky-50 rounded-lg p-4 border border-sky-200">
+                        <h3 class="text-lg font-medium text-sky-800 mb-4 flex items-center">
+                            🎯 Target Notifikasi Event
+                        </h3>
+
+                        <!-- Debug info untuk memastikan unit kerja dimuat -->
+                        {% if unitChoicesCount is defined %}
+                        <div class="mb-2 text-xs text-sky-600 bg-sky-100 px-2 py-1 rounded">
+                            📊 Debug: {{ unitChoicesCount }} unit kerja tersedia
+                        </div>
+                        {% endif %}
+
+                        <!-- Target Audience Radio -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-3">
+                                {{ form_label(form.targetAudience) }}
+                            </label>
+                            <div class="space-y-2">
+                                {% for choice in form.targetAudience %}
+                                    <label class="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-white cursor-pointer transition-colors">
+                                        {{ form_widget(choice, {'attr': {'class': 'w-4 h-4 text-sky-600 bg-gray-100 border-gray-300 focus:ring-sky-500 focus:ring-2'}}) }}
+                                        <span class="text-sm text-gray-700">{{ choice.vars.label }}</span>
+                                    </label>
+                                {% endfor %}
+                            </div>
+                            {{ form_errors(form.targetAudience) }}
+                            <div class="mt-1 text-xs text-gray-500">Pilih siapa yang akan menerima notifikasi event ini</div>
+                        </div>
+
+                        <!-- Target Units Checkboxes dengan loading state dan fallback AJAX -->
+                        <div id="target-units-container" class="{% if event.targetAudience != 'custom' %}hidden{% endif %}">
+                            <label class="block text-sm font-medium text-gray-700 mb-3">
+                                {{ form_label(form.targetUnits) }}
+                                <span class="text-xs text-sky-600 ml-2">(Multi-select: bisa pilih lebih dari satu)</span>
+                            </label>
+
+                            <!-- Loading state -->
+                            <div id="unit-loading" class="hidden text-center py-4 text-sky-600">
+                                <div class="inline-flex items-center">
+                                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-sky-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Memuat daftar unit kerja...
+                                </div>
+                            </div>
+
+                            <!-- Unit kerja checkboxes -->
+                            <div id="unit-choices-container" class="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-white">
+                                {% if form.targetUnits is defined and form.targetUnits.children|length > 0 %}
+                                    {% for choice in form.targetUnits %}
+                                        <label class="flex items-center space-x-2 p-2 rounded hover:bg-sky-50 cursor-pointer transition-colors border border-transparent hover:border-sky-200">
+                                            {{ form_widget(choice, {'attr': {'class': 'w-4 h-4 text-sky-600 bg-gray-100 border-gray-300 rounded focus:ring-sky-500 focus:ring-2'}}) }}
+                                            <span class="text-sm text-gray-700">🏢 {{ choice.vars.label }}</span>
+                                        </label>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="col-span-2 text-center py-4 text-gray-500 bg-gray-50 rounded">
+                                        <p class="mb-2">📊 Tidak ada unit kerja yang tersedia</p>
+                                        <button type="button" onclick="loadUnitKerjaAjax()" class="text-sky-600 hover:text-sky-800 text-sm font-medium">
+                                            🔄 Muat Ulang Unit Kerja
+                                        </button>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            {{ form_errors(form.targetUnits) }}
+                            <div class="mt-2 text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                                📝 <strong>Petunjuk:</strong> Pilih satu atau lebih unit kerja yang akan menerima notifikasi event ini.
+                                Pegawai dari unit kerja yang dipilih akan mendapat notifikasi otomatis.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Info Update -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex items-center text-sm text-gray-600">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span>
+                                Event dibuat: {{ event.createdAt|date('d/m/Y H:i') }}
+                                {% if event.createdBy %}
+                                    oleh {{ event.createdBy.namaLengkap }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% if event.updatedAt %}
+                            <div class="flex items-center text-sm text-gray-600 mt-1">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <span>Terakhir diupdate: {{ event.updatedAt|date('d/m/Y H:i') }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="pt-6 border-t border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <a href="{{ path('app_admin_event_index') }}"
+                               class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-3 rounded-lg font-medium">
+                                Batal
+                            </a>
+                            <button type="submit"
+                                    class="bg-sky-500 hover:bg-sky-600 text-white px-6 py-3 rounded-lg font-medium flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                Update Event
+                            </button>
+                        </div>
+                    </div>
+
+                    {{ form_end(form) }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Toggle field absensi berdasarkan checkbox
+function toggleAbsensiFields(isChecked) {
+    const absensiFields = document.querySelectorAll('.absensi-field');
+    absensiFields.forEach(field => {
+        if (isChecked) {
+            field.style.display = 'block';
+        } else {
+            field.style.display = 'none';
+        }
+    });
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const absensiCheckbox = document.querySelector('input[name="event[butuhAbsensi]"]');
+    if (absensiCheckbox) {
+        // Set initial state
+        toggleAbsensiFields(absensiCheckbox.checked);
+
+        // Add event listener
+        absensiCheckbox.addEventListener('change', function() {
+            toggleAbsensiFields(this.checked);
+        });
+    }
+});
+
+// Form validation and UX improvements
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const tanggalMulai = document.querySelector('[name="event[tanggalMulai]"]');
+    const tanggalSelesai = document.querySelector('[name="event[tanggalSelesai]"]');
+
+    // Target audience handling
+    const targetAudienceRadios = document.querySelectorAll('[name="event[targetAudience]"]');
+    const targetUnitsContainer = document.getElementById('target-units-container');
+    const targetUnitsCheckboxes = document.querySelectorAll('[name="event[targetUnits][]"]');
+
+    if (tanggalMulai) {
+        tanggalMulai.addEventListener('change', function() {
+            if (tanggalSelesai) {
+                tanggalSelesai.min = this.value;
+
+                // Clear tanggal selesai if it's before tanggal mulai
+                if (tanggalSelesai.value && tanggalSelesai.value < this.value) {
+                    tanggalSelesai.value = '';
+                    alert('Tanggal selesai tidak boleh sebelum tanggal mulai');
+                }
+            }
+        });
+    }
+
+    // Real-time validation
+    if (tanggalSelesai) {
+        tanggalSelesai.addEventListener('change', function() {
+            if (tanggalMulai.value && this.value < tanggalMulai.value) {
+                this.value = '';
+                alert('Tanggal selesai tidak boleh sebelum tanggal mulai');
+            }
+        });
+    }
+
+    // Enhanced target audience toggle dengan loading state
+    function toggleTargetUnits() {
+        const selectedValue = document.querySelector('[name="event[targetAudience]"]:checked')?.value;
+
+        if (selectedValue === 'custom') {
+            targetUnitsContainer.classList.remove('hidden');
+
+            // Cek jika tidak ada unit kerja yang dimuat, coba load via AJAX
+            const unitChoices = document.querySelectorAll('#unit-choices-container input[type="checkbox"]');
+            if (unitChoices.length === 0) {
+                console.log('🔄 No unit choices found, attempting AJAX load...');
+                loadUnitKerjaAjax();
+            }
+        } else {
+            targetUnitsContainer.classList.add('hidden');
+            // Clear all checkboxes when hiding
+            targetUnitsCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+        }
+    }
+
+    // Add event listeners to radio buttons
+    targetAudienceRadios.forEach(radio => {
+        radio.addEventListener('change', toggleTargetUnits);
+    });
+
+    // Initialize target units visibility on load
+    toggleTargetUnits();
+});
+
+// Global function untuk load unit kerja via AJAX
+async function loadUnitKerjaAjax() {
+    const loadingElement = document.getElementById('unit-loading');
+    const containerElement = document.getElementById('unit-choices-container');
+
+    try {
+        // Show loading state
+        loadingElement.classList.remove('hidden');
+
+        console.log('🔄 Loading unit kerja via AJAX...');
+        const response = await fetch('/admin/event/api/unit-kerja');
+        const result = await response.json();
+
+        if (result.success && result.data.length > 0) {
+            console.log(`✅ Loaded ${result.data.length} unit kerja via AJAX`);
+
+            // Clear existing content
+            containerElement.innerHTML = '';
+
+            // Generate checkboxes dynamically
+            result.data.forEach(unit => {
+                const checkboxHtml = `
+                    <label class="flex items-center space-x-2 p-2 rounded hover:bg-sky-50 cursor-pointer transition-colors border border-transparent hover:border-sky-200">
+                        <input type="checkbox"
+                               name="event[targetUnits][]"
+                               value="${unit.id}"
+                               class="w-4 h-4 text-sky-600 bg-gray-100 border-gray-300 rounded focus:ring-sky-500 focus:ring-2">
+                        <span class="text-sm text-gray-700">🏢 ${unit.nama_unit}</span>
+                    </label>
+                `;
+                containerElement.insertAdjacentHTML('beforeend', checkboxHtml);
+            });
+
+            // Update targetUnitsCheckboxes reference
+            window.targetUnitsCheckboxes = document.querySelectorAll('[name="event[targetUnits][]"]');
+
+        } else {
+            console.log('⚠️ No unit kerja data received');
+            containerElement.innerHTML = `
+                <div class="col-span-2 text-center py-4 text-yellow-600 bg-yellow-50 rounded">
+                    <p class="mb-2">⚠️ Tidak dapat memuat unit kerja</p>
+                    <button type="button" onclick="loadUnitKerjaAjax()" class="text-sky-600 hover:text-sky-800 text-sm font-medium">
+                        🔄 Coba Lagi
+                    </button>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('❌ Error loading unit kerja:', error);
+        containerElement.innerHTML = `
+            <div class="col-span-2 text-center py-4 text-red-600 bg-red-50 rounded">
+                <p class="mb-2">❌ Gagal memuat unit kerja</p>
+                <p class="text-xs text-gray-600 mb-2">${error.message}</p>
+                <button type="button" onclick="loadUnitKerjaAjax()" class="text-sky-600 hover:text-sky-800 text-sm font-medium">
+                    🔄 Coba Lagi
+                </button>
+            </div>
+        `;
+    } finally {
+        // Hide loading state
+        loadingElement.classList.add('hidden');
+    }
+}
+</script>
+{% endblock %}

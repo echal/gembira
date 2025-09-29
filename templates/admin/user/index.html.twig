@@ -1,0 +1,910 @@
+{% extends 'admin/_layout.html.twig' %}
+
+{% block title %}Manajemen User - Admin Gembira{% endblock %}
+
+{% block page_icon %}👤{% endblock %}
+{% block page_title %}Manajemen User{% endblock %}
+{% block page_description %}Kelola user admin dan pegawai dalam sistem{% endblock %}
+
+{% block header_actions %}
+    <button type="button" onclick="showAddUserModal()"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center">
+        <span class="mr-2">➕</span> Tambah User
+    </button>
+    <button type="button" onclick="showImportModal()"
+            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center">
+        <span class="mr-2">📊</span> Import Excel
+    </button>
+    <button type="button" onclick="downloadTemplate()"
+            class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center">
+        <span class="mr-2">📥</span> Template Excel
+    </button>
+{% endblock %}
+
+{% block admin_content %}
+<!-- User Statistics -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+
+    <div class="bg-white rounded-lg shadow-sm border-l-4 border-red-500 p-6">
+        <div class="flex items-center">
+            <div class="flex-1">
+                <div class="text-xs font-bold text-red-600 uppercase mb-1">
+                    Super Admin
+                </div>
+                <div class="text-2xl font-bold text-gray-800">{{ statistics.super_admin_count }}</div>
+            </div>
+            <div class="text-4xl text-gray-300">
+                👑
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-sm border-l-4 border-blue-500 p-6">
+        <div class="flex items-center">
+            <div class="flex-1">
+                <div class="text-xs font-bold text-blue-600 uppercase mb-1">
+                    Admin
+                </div>
+                <div class="text-2xl font-bold text-gray-800">{{ statistics.admin_count }}</div>
+            </div>
+            <div class="text-4xl text-gray-300">
+                👨‍💼
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-sm border-l-4 border-green-500 p-6">
+        <div class="flex items-center">
+            <div class="flex-1">
+                <div class="text-xs font-bold text-green-600 uppercase mb-1">
+                    Pegawai
+                </div>
+                <div class="text-2xl font-bold text-gray-800">{{ statistics.pegawai_count }}</div>
+            </div>
+            <div class="text-4xl text-gray-300">
+                👨‍💻
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Users Table -->
+<div class="bg-white rounded-lg shadow-sm mb-6" x-data="{
+    expanded: {},
+    init() {
+        // Set semua unit kerja expanded secara default untuk memudahkan testing
+        {% for unitKerjaId, data in unit_kerja_users %}
+        this.expanded[{{ unitKerjaId }}] = false;
+        {% endfor %}
+    }
+}">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-medium text-gray-900 flex items-center">
+            <span class="mr-2">👥</span> Daftar User per Unit Kerja
+        </h3>
+    </div>
+    <div class="overflow-x-auto">
+        <!-- Unit Kerja dengan User -->
+        {% if unit_kerja_users|length > 0 %}
+            {% for unitKerjaId, data in unit_kerja_users %}
+                <div class="border-b border-gray-100">
+                    <!-- Unit Kerja Header -->
+                    <div class="px-6 py-4 bg-gray-50 cursor-pointer hover:bg-gray-100"
+                         @click="expanded[{{ unitKerjaId }}] = !expanded[{{ unitKerjaId }}]">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <span class="text-lg mr-3"
+                                      :class="expanded[{{ unitKerjaId }}] ? 'transform rotate-90' : ''"
+                                      style="transition: transform 0.2s;">▶</span>
+                                <div>
+                                    <h4 class="text-lg font-semibold text-gray-900">🏢 {{ data.unit_kerja.namaUnit }}</h4>
+                                    <p class="text-sm text-gray-600">{{ data.users|length }} pegawai</p>
+                                </div>
+                            </div>
+                            <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                                {{ data.users|length }} user
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- User List (Collapsed/Expanded) -->
+                    <div x-show="expanded[{{ unitKerjaId }}]"
+                         x-transition:enter="transition-all duration-300"
+                         x-transition:enter-start="opacity-0 max-h-0"
+                         x-transition:enter-end="opacity-100 max-h-screen"
+                         x-transition:leave="transition-all duration-300"
+                         x-transition:leave-start="opacity-100 max-h-screen"
+                         x-transition:leave-end="opacity-0 max-h-0"
+                         class="overflow-hidden">
+
+                        <table class="min-w-full">
+                            <thead class="bg-blue-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase w-1/5">Nama</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase w-1/5 hidden md:table-cell">NIP / Email</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase w-16">Role</th>
+                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase w-16">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase w-1/5 hidden lg:table-cell">Login Terakhir</th>
+                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase w-24">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-100">
+                                {% for user in data.users %}
+                                    <tr class="hover:bg-gray-50" id="user-row-{{ user.id }}">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="font-medium text-gray-900">{{ user.namaLengkap }}</div>
+                                            <!-- Mobile: tampilkan info tambahan -->
+                                            <div class="text-sm text-gray-500 md:hidden">
+                                                {% if user.nip %}📋 {{ user.nip }}{% else %}📧 {{ user.email }}{% endif %}
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap hidden md:table-cell">
+                                            <div class="font-medium text-gray-900">{{ user.nip ?? user.username }}</div>
+                                            <div class="text-sm text-gray-500">{{ user.email }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            {% if user.role == 'super_admin' %}
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                    👑 Super Admin
+                                                </span>
+                                            {% elseif user.role == 'admin' %}
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                    👨‍💼 Admin
+                                                </span>
+                                            {% else %}
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    👨‍💻 Pegawai
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                            {% if user.status == 'aktif' %}
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    Aktif
+                                                </span>
+                                            {% else %}
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                    Nonaktif
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">
+                                            {{ user.lastLoginFormatted }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <div class="flex space-x-1 justify-center">
+                                                <button onclick="editUser({{ user.id }})"
+                                                        class="text-indigo-600 hover:text-indigo-900 text-sm w-8 h-8 flex items-center justify-center border border-indigo-300 rounded hover:bg-indigo-50 transition-colors duration-200"
+                                                        title="Edit User">
+                                                    ✏️
+                                                </button>
+                                                <button onclick="toggleUserStatus({{ user.id }})"
+                                                        class="text-yellow-600 hover:text-yellow-900 text-sm w-8 h-8 flex items-center justify-center border border-yellow-300 rounded hover:bg-yellow-50 transition-colors duration-200"
+                                                        title="{% if user.status == 'aktif' %}Nonaktifkan User{% else %}Aktifkan User{% endif %}">
+                                                    {% if user.status == 'aktif' %}⏸️{% else %}▶️{% endif %}
+                                                </button>
+                                                {% if user.id != admin.id %}
+                                                    <button onclick="deleteUser({{ user.id }}, '{{ user.namaLengkap }}')"
+                                                            class="text-red-600 hover:text-red-900 text-sm w-8 h-8 flex items-center justify-center border border-red-300 rounded hover:bg-red-50 transition-colors duration-200"
+                                                            title="Hapus User">
+                                                        🗑️
+                                                    </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- User Tanpa Unit Kerja -->
+        {% if users_without_unit|length > 0 %}
+            <div class="border-b border-gray-100">
+                <!-- Header User Tanpa Unit Kerja -->
+                <div class="px-6 py-4 bg-gray-50 cursor-pointer hover:bg-gray-100"
+                     @click="expanded['no_unit'] = !expanded['no_unit']">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <span class="text-lg mr-3"
+                                  :class="expanded['no_unit'] ? 'transform rotate-90' : ''"
+                                  style="transition: transform 0.2s;">▶</span>
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-900">🏢 Tanpa Unit Kerja</h4>
+                                <p class="text-sm text-gray-600">{{ users_without_unit|length }} pegawai</p>
+                            </div>
+                        </div>
+                        <span class="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                            {{ users_without_unit|length }} user
+                        </span>
+                    </div>
+                </div>
+
+                <!-- User List Tanpa Unit Kerja -->
+                <div x-show="expanded['no_unit']"
+                     x-transition:enter="transition-all duration-300"
+                     x-transition:enter-start="opacity-0 max-h-0"
+                     x-transition:enter-end="opacity-100 max-h-screen"
+                     x-transition:leave="transition-all duration-300"
+                     x-transition:leave-start="opacity-100 max-h-screen"
+                     x-transition:leave-end="opacity-0 max-h-0"
+                     style="display: none;"
+                     class="overflow-hidden">
+
+                    <table class="min-w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase w-1/5">Nama</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase w-1/5 hidden md:table-cell">NIP / Email</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase w-16">Role</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase w-16">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase w-1/5 hidden lg:table-cell">Login Terakhir</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase w-24">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-100">
+                            {% for user in users_without_unit %}
+                                <tr class="hover:bg-gray-50" id="user-row-{{ user.id }}">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="font-medium text-gray-900">{{ user.namaLengkap }}</div>
+                                        <!-- Mobile: tampilkan info tambahan -->
+                                        <div class="text-sm text-gray-500 md:hidden">
+                                            {% if user.nip %}📋 {{ user.nip }}{% else %}📧 {{ user.email }}{% endif %}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap hidden md:table-cell">
+                                        <div class="font-medium text-gray-900">{{ user.nip ?? user.username }}</div>
+                                        <div class="text-sm text-gray-500">{{ user.email }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        {% if user.role == 'super_admin' %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                👑 Super Admin
+                                            </span>
+                                        {% elseif user.role == 'admin' %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                👨‍💼 Admin
+                                            </span>
+                                        {% else %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                👨‍💻 Pegawai
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                                        {% if user.status == 'aktif' %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                Aktif
+                                            </span>
+                                        {% else %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                Nonaktif
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">
+                                        {{ user.lastLoginFormatted }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div class="flex space-x-1 justify-center">
+                                            <button onclick="editUser({{ user.id }})"
+                                                    class="text-indigo-600 hover:text-indigo-900 text-sm w-8 h-8 flex items-center justify-center border border-indigo-300 rounded hover:bg-indigo-50 transition-colors duration-200"
+                                                    title="Edit User">
+                                                ✏️
+                                            </button>
+                                            <button onclick="toggleUserStatus({{ user.id }})"
+                                                    class="text-yellow-600 hover:text-yellow-900 text-sm w-8 h-8 flex items-center justify-center border border-yellow-300 rounded hover:bg-yellow-50 transition-colors duration-200"
+                                                    title="{% if user.status == 'aktif' %}Nonaktifkan User{% else %}Aktifkan User{% endif %}">
+                                                {% if user.status == 'aktif' %}⏸️{% else %}▶️{% endif %}
+                                            </button>
+                                            {% if user.id != admin.id %}
+                                                <button onclick="deleteUser({{ user.id }}, '{{ user.namaLengkap }}')"
+                                                        class="text-red-600 hover:text-red-900 text-sm w-8 h-8 flex items-center justify-center border border-red-300 rounded hover:bg-red-50 transition-colors duration-200"
+                                                        title="Hapus User">
+                                                    🗑️
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if unit_kerja_users|length == 0 and users_without_unit|length == 0 %}
+            <div class="text-center py-12">
+                <div class="text-6xl mb-4">👥</div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Belum Ada User</h3>
+                <p class="text-gray-500">Tambahkan user pertama untuk memulai mengelola sistem.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_javascripts %}
+{{ parent() }}
+
+<!-- Modal Tambah/Edit User -->
+<div id="userModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-10 mx-auto p-5 border w-11/12 md:w-2/3 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200">
+            <h3 id="userModalTitle" class="text-lg font-medium text-gray-900 flex items-center">
+                <span class="mr-2">👤</span> Tambah User Baru
+            </h3>
+            <button type="button" class="text-gray-400 hover:text-gray-600" onclick="closeModal('userModal')">
+                <span class="text-2xl">&times;</span>
+            </button>
+        </div>
+        <form id="userForm" class="p-4">
+            <input type="hidden" id="userId" name="userId">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                    <input type="text" id="username" name="username" required autocomplete="username"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="namaLengkap" class="block text-sm font-medium text-gray-700 mb-2">Nama Lengkap</label>
+                    <input type="text" id="namaLengkap" name="namaLengkap" required autocomplete="name"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" id="email" name="email" required autocomplete="email"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="nip" class="block text-sm font-medium text-gray-700 mb-2">NIP</label>
+                    <input type="text" id="nip" name="nip" autocomplete="off"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="Nomor Induk Pegawai (opsional)">
+                </div>
+                <div>
+                    <label for="nomorTelepon" class="block text-sm font-medium text-gray-700 mb-2">Nomor Telepon</label>
+                    <input type="tel" id="nomorTelepon" name="nomorTelepon" autocomplete="tel"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="unitKerja" class="block text-sm font-medium text-gray-700 mb-2">Unit Kerja</label>
+                    <select id="unitKerja" name="unitKerja" autocomplete="organization"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Pilih Unit Kerja...</option>
+                        {% for unit in unit_kerja_list %}
+                            <option value="{{ unit.id }}">{{ unit.namaUnit }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="kepalaBidang" class="block text-sm font-medium text-gray-700 mb-2">Kepala Bidang</label>
+                    <select id="kepalaBidang" name="kepalaBidang" autocomplete="off"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Pilih Kepala Bidang...</option>
+                        {% for kepala in kepala_bidang_list %}
+                            <option value="{{ kepala.id }}">{{ kepala.nama }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="kepalaKantor" class="block text-sm font-medium text-gray-700 mb-2">Kepala Kantor</label>
+                    <select id="kepalaKantor" name="kepalaKantor" autocomplete="off"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Pilih Kepala Kantor...</option>
+                        {% for kepala in kepala_kantor_list %}
+                            <option value="{{ kepala.id }}">{{ kepala.nama }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="role" class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                    <select id="role" name="role" required autocomplete="off"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        {% for role_key, role_name in available_roles %}
+                            <option value="{{ role_key }}">{{ role_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <select id="status" name="status" autocomplete="off"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="aktif">Aktif</option>
+                        <option value="nonaktif">Nonaktif</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <input type="password" id="password" name="password" autocomplete="new-password"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <small class="text-gray-500" id="passwordHelp">Minimal 6 karakter. Kosongkan jika tidak ingin mengubah password.</small>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <fieldset>
+                    <legend class="block text-sm font-medium text-gray-700 mb-2">Permissions</legend>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {% for perm_key, perm_name in available_permissions %}
+                            <label class="flex items-center" for="perm_{{ perm_key }}">
+                                <input type="checkbox" id="perm_{{ perm_key }}" name="permissions[]" value="{{ perm_key }}" class="mr-2">
+                                <span class="text-sm">{{ perm_name }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+            </div>
+
+            <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
+                <button type="button" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md" onclick="closeModal('userModal')">
+                    Batal
+                </button>
+                <button type="submit" id="submitBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md">
+                    Simpan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Import Excel -->
+<div id="importModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-2/3 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900 flex items-center">
+                <span class="mr-2">📊</span> Import User dari Excel
+            </h3>
+            <button type="button" class="text-gray-400 hover:text-gray-600" onclick="closeModal('importModal')">
+                <span class="text-2xl">&times;</span>
+            </button>
+        </div>
+
+        <div class="p-6">
+            <!-- Info Step -->
+            <div class="mb-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                <h4 class="text-sm font-medium text-blue-800 mb-2">📋 Langkah Import:</h4>
+                <ol class="text-sm text-blue-700 space-y-1">
+                    <li>1. Download template Excel dengan tombol "Template Excel"</li>
+                    <li>2. Isi data user sesuai format pada template</li>
+                    <li>3. Upload file Excel yang sudah diisi</li>
+                    <li>4. Preview dan konfirmasi data yang akan diimport</li>
+                </ol>
+            </div>
+
+            <!-- Upload Form -->
+            <form id="importForm" enctype="multipart/form-data" class="space-y-4">
+                <div>
+                    <label for="excelFile" class="block text-sm font-medium text-gray-700 mb-2">
+                        File Excel (.xlsx, .xls)
+                    </label>
+                    <input type="file"
+                           id="excelFile"
+                           name="excelFile"
+                           accept=".xlsx,.xls"
+                           required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           onchange="validateExcelFile(this)">
+                    <small class="text-gray-500">Format yang didukung: .xlsx, .xls (Maksimal 5MB)</small>
+                </div>
+
+                <div class="flex items-center">
+                    <input type="checkbox" id="updateExisting" name="updateExisting" class="mr-2">
+                    <label for="updateExisting" class="text-sm text-gray-700">
+                        Update user yang sudah ada (berdasarkan email/username)
+                    </label>
+                </div>
+            </form>
+
+            <!-- Preview Area -->
+            <div id="importPreview" class="hidden mt-6">
+                <h4 class="text-sm font-medium text-gray-700 mb-3">🔍 Preview Data:</h4>
+                <div class="max-h-64 overflow-y-auto border rounded">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-gray-50">
+                            <tr id="previewHeader"></tr>
+                        </thead>
+                        <tbody id="previewBody"></tbody>
+                    </table>
+                </div>
+                <div class="mt-3 text-sm text-gray-600" id="previewStats"></div>
+            </div>
+        </div>
+
+        <div class="flex justify-end space-x-3 p-4 border-t border-gray-200">
+            <button type="button" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md" onclick="closeModal('importModal')">
+                Batal
+            </button>
+            <button type="button" id="previewBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md" onclick="previewImport()">
+                Preview
+            </button>
+            <button type="button" id="importBtn" class="hidden px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md" onclick="executeImport()">
+                Import Sekarang
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Modal functions
+function showModal(modalId) {
+    document.getElementById(modalId).classList.remove('hidden');
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+    if (modalId === 'userModal') {
+        resetUserForm();
+    } else if (modalId === 'importModal') {
+        resetImportForm();
+    }
+}
+
+// Show modals
+function showAddUserModal() {
+    document.getElementById('userModalTitle').innerHTML = '<span class="mr-2">👤</span> Tambah User Baru';
+    document.getElementById('submitBtn').textContent = 'Simpan';
+    document.getElementById('passwordHelp').textContent = 'Minimal 6 karakter.';
+    document.getElementById('password').required = true;
+    resetUserForm();
+    showModal('userModal');
+}
+
+function showImportModal() {
+    resetImportForm();
+    showModal('importModal');
+}
+
+// Reset forms
+function resetUserForm() {
+    document.getElementById('userForm').reset();
+    document.getElementById('userId').value = '';
+    document.querySelectorAll('input[name="permissions[]"]').forEach(cb => cb.checked = false);
+    document.getElementById('unitKerja').value = '';
+    document.getElementById('kepalaBidang').value = '';
+    document.getElementById('kepalaKantor').value = '';
+}
+
+function resetImportForm() {
+    document.getElementById('importForm').reset();
+    document.getElementById('importPreview').classList.add('hidden');
+    document.getElementById('importBtn').classList.add('hidden');
+    document.getElementById('previewBtn').classList.remove('hidden');
+}
+
+// Download Template Excel
+async function downloadTemplate() {
+    try {
+        const response = await fetch('{{ path('app_admin_user_export_template') }}');
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'template_import_user.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } else {
+            alert('Gagal mendownload template');
+        }
+    } catch (error) {
+        alert('Terjadi kesalahan: ' + error.message);
+    }
+}
+
+// Validate Excel File
+function validateExcelFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const allowedTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
+    if (!allowedTypes.includes(file.type)) {
+        alert('Format file tidak didukung. Gunakan .xlsx atau .xls');
+        input.value = '';
+        return;
+    }
+
+    if (file.size > maxSize) {
+        alert('Ukuran file terlalu besar. Maksimal 5MB');
+        input.value = '';
+        return;
+    }
+}
+
+// Preview Import
+async function previewImport() {
+    const fileInput = document.getElementById('excelFile');
+    const file = fileInput.files[0];
+
+    if (!file) {
+        alert('Pilih file Excel terlebih dahulu');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('excelFile', file);
+
+    try {
+        const response = await fetch('{{ path('app_admin_user_preview_import') }}', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            displayPreview(result.data);
+            document.getElementById('importBtn').classList.remove('hidden');
+            document.getElementById('previewBtn').classList.add('hidden');
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch (error) {
+        alert('Terjadi kesalahan: ' + error.message);
+    }
+}
+
+// Display Preview
+function displayPreview(data) {
+    const previewDiv = document.getElementById('importPreview');
+    const headerRow = document.getElementById('previewHeader');
+    const bodyRows = document.getElementById('previewBody');
+    const statsDiv = document.getElementById('previewStats');
+
+    // Clear previous content
+    headerRow.innerHTML = '';
+    bodyRows.innerHTML = '';
+
+    if (data.length === 0) {
+        statsDiv.textContent = 'Tidak ada data yang valid untuk diimport';
+        previewDiv.classList.remove('hidden');
+        return;
+    }
+
+    // Headers
+    const headers = ['No', 'Username', 'Nama Lengkap', 'Email', 'NIP', 'Role', 'Status'];
+    headers.forEach(header => {
+        const th = document.createElement('th');
+        th.className = 'px-4 py-2 text-left font-medium';
+        th.textContent = header;
+        headerRow.appendChild(th);
+    });
+
+    // Data rows (show first 10)
+    const displayData = data.slice(0, 10);
+    displayData.forEach((user, index) => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-t';
+
+        const cells = [
+            index + 1,
+            user.username || '-',
+            user.namaLengkap || '-',
+            user.email || '-',
+            user.nip || '-',
+            user.role || '-',
+            user.status || 'aktif'
+        ];
+
+        cells.forEach(cellData => {
+            const td = document.createElement('td');
+            td.className = 'px-4 py-2';
+            td.textContent = cellData;
+            tr.appendChild(td);
+        });
+
+        bodyRows.appendChild(tr);
+    });
+
+    // Stats
+    const totalCount = data.length;
+    const showingCount = Math.min(10, totalCount);
+    statsDiv.textContent = `Menampilkan ${showingCount} dari ${totalCount} user yang akan diimport`;
+
+    previewDiv.classList.remove('hidden');
+}
+
+// Execute Import
+async function executeImport() {
+    if (!confirm('Apakah Anda yakin ingin mengimport data ini?')) {
+        return;
+    }
+
+    const fileInput = document.getElementById('excelFile');
+    const updateExisting = document.getElementById('updateExisting').checked;
+    const file = fileInput.files[0];
+
+    const formData = new FormData();
+    formData.append('excelFile', file);
+    formData.append('updateExisting', updateExisting ? '1' : '0');
+
+    try {
+        const response = await fetch('{{ path('app_admin_user_import') }}', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            alert(`Import berhasil! ${result.imported} user berhasil diimport.`);
+            closeModal('importModal');
+            location.reload();
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch (error) {
+        alert('Terjadi kesalahan: ' + error.message);
+    }
+}
+
+// Existing user management functions...
+async function editUser(userId) {
+    try {
+        const response = await fetch(`{{ path('app_admin_user_get', {id: '__ID__'}) }}`.replace('__ID__', userId));
+        const result = await response.json();
+
+        if (result.success) {
+            const user = result.user;
+            document.getElementById('userModalTitle').innerHTML = '<span class="mr-2">✏️</span> Edit User';
+            document.getElementById('submitBtn').textContent = 'Update';
+            document.getElementById('passwordHelp').textContent = 'Kosongkan jika tidak ingin mengubah password.';
+            document.getElementById('password').required = false;
+
+            // Fill form
+            document.getElementById('userId').value = user.id;
+            document.getElementById('username').value = user.username;
+            document.getElementById('namaLengkap').value = user.namaLengkap;
+            document.getElementById('email').value = user.email;
+            document.getElementById('nip').value = user.nip || '';
+            document.getElementById('nomorTelepon').value = user.nomorTelepon || '';
+            document.getElementById('unitKerja').value = user.unit_kerja_id || '';
+            document.getElementById('kepalaBidang').value = user.kepala_bidang_id || '';
+            document.getElementById('kepalaKantor').value = user.kepala_kantor_id || '';
+            document.getElementById('role').value = user.role;
+            document.getElementById('status').value = user.status;
+
+            // Set permissions
+            document.querySelectorAll('input[name="permissions[]"]').forEach(cb => {
+                cb.checked = user.permissions.includes(cb.value);
+            });
+
+            showModal('userModal');
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch (error) {
+        alert('Terjadi kesalahan: ' + error.message);
+    }
+}
+
+// Handle form submit
+document.getElementById('userForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const userId = formData.get('userId');
+
+    // Collect permissions
+    const permissions = [];
+    document.querySelectorAll('input[name="permissions[]"]:checked').forEach(cb => {
+        permissions.push(cb.value);
+    });
+
+    const data = {
+        username: formData.get('username'),
+        namaLengkap: formData.get('namaLengkap'),
+        email: formData.get('email'),
+        nip: formData.get('nip'),
+        nomorTelepon: formData.get('nomorTelepon'),
+        unit_kerja_id: formData.get('unitKerja'),
+        kepala_bidang_id: formData.get('kepalaBidang'),
+        kepala_kantor_id: formData.get('kepalaKantor'),
+        role: formData.get('role'),
+        status: formData.get('status'),
+        permissions: permissions
+    };
+
+    if (formData.get('password')) {
+        data.password = formData.get('password');
+    }
+
+    try {
+        let url, method;
+        if (userId) {
+            url = `{{ path('app_admin_user_update', {id: '__ID__'}) }}`.replace('__ID__', userId);
+            method = 'POST';
+        } else {
+            url = '{{ path('app_admin_user_create') }}';
+            method = 'POST';
+        }
+
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            alert(result.message);
+            closeModal('userModal');
+            location.reload();
+        } else {
+            alert('Error: ' + result.message);
+        }
+    } catch (error) {
+        alert('Terjadi kesalahan: ' + error.message);
+    }
+});
+
+// Toggle user status
+async function toggleUserStatus(userId) {
+    if (confirm('Apakah Anda yakin ingin mengubah status user ini?')) {
+        try {
+            const response = await fetch(`{{ path('app_admin_user_toggle_status', {id: '__ID__'}) }}`.replace('__ID__', userId), {
+                method: 'POST'
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert(result.message);
+                location.reload();
+            } else {
+                alert('Error: ' + result.message);
+            }
+        } catch (error) {
+            alert('Terjadi kesalahan: ' + error.message);
+        }
+    }
+}
+
+// Delete user
+async function deleteUser(userId, userName) {
+    if (confirm(`Apakah Anda yakin ingin menghapus user "${userName}"? Aksi ini tidak dapat dibatalkan!`)) {
+        try {
+            const response = await fetch(`{{ path('app_admin_user_delete', {id: '__ID__'}) }}`.replace('__ID__', userId), {
+                method: 'DELETE'
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert(result.message);
+                location.reload();
+            } else {
+                alert('Error: ' + result.message);
+            }
+        } catch (error) {
+            alert('Terjadi kesalahan: ' + error.message);
+        }
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const userModal = document.getElementById('userModal');
+        const importModal = document.getElementById('importModal');
+        if (event.target === userModal) {
+            closeModal('userModal');
+        } else if (event.target === importModal) {
+            closeModal('importModal');
+        }
+    }
+});
+</script>
+{% endblock %}

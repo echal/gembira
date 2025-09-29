@@ -1,0 +1,386 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .emoji-preview {
+            font-size: 2rem;
+            padding: 10px;
+            text-align: center;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            margin-top: 5px;
+        }
+        .color-preview {
+            width: 100%;
+            height: 60px;
+            border-radius: 8px;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .form-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .section-title {
+            color: #495057;
+            font-weight: 600;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 8px;
+        }
+        .help-text {
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+        .preview-card {
+            background: var(--preview-color, #3B82F6);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 15px;
+        }
+        .preview-emoji {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">{{ page_title }}</h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a href="{{ path('admin_jadwal_absensi_index') }}">Kelola Jadwal</a></li>
+                            <li class="breadcrumb-item active">{{ mode == 'create' ? 'Buat Baru' : 'Edit' }}</li>
+                        </ol>
+                    </nav>
+                </div>
+                <a href="{{ path('admin_jadwal_absensi_index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Kembali
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="row">
+        <div class="col-lg-8">
+            {{ form_start(form, {'attr': {'class': 'needs-validation', 'novalidate': 'true'}}) }}
+            
+            <!-- Informasi Dasar -->
+            <div class="form-section">
+                <h5 class="section-title">📋 Informasi Dasar Jadwal</h5>
+                
+                <div class="mb-3">
+                    {{ form_label(form.namaJadwal, null, {'class': 'form-label fw-bold'}) }}
+                    {{ form_widget(form.namaJadwal) }}
+                    {{ form_help(form.namaJadwal) }}
+                    {{ form_errors(form.namaJadwal) }}
+                </div>
+
+                <div class="mb-3">
+                    {{ form_label(form.deskripsi, null, {'class': 'form-label fw-bold'}) }}
+                    {{ form_widget(form.deskripsi) }}
+                    {{ form_help(form.deskripsi) }}
+                    {{ form_errors(form.deskripsi) }}
+                </div>
+            </div>
+
+            <!-- Pengaturan Waktu -->
+            <div class="form-section">
+                <h5 class="section-title">📅 Pengaturan Waktu Absensi</h5>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form_label(form.hariMulai, null, {'class': 'form-label fw-bold'}) }}
+                        {{ form_widget(form.hariMulai) }}
+                        {{ form_help(form.hariMulai) }}
+                        {{ form_errors(form.hariMulai) }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form_label(form.hariSelesai, null, {'class': 'form-label fw-bold'}) }}
+                        {{ form_widget(form.hariSelesai) }}
+                        {{ form_help(form.hariSelesai) }}
+                        {{ form_errors(form.hariSelesai) }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form_label(form.jamMulai, null, {'class': 'form-label fw-bold'}) }}
+                        {{ form_widget(form.jamMulai) }}
+                        {{ form_help(form.jamMulai) }}
+                        {{ form_errors(form.jamMulai) }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form_label(form.jamSelesai, null, {'class': 'form-label fw-bold'}) }}
+                        {{ form_widget(form.jamSelesai) }}
+                        {{ form_help(form.jamSelesai) }}
+                        {{ form_errors(form.jamSelesai) }}
+                    </div>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Tips:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Untuk jadwal harian, pilih hari mulai dan selesai yang sama</li>
+                        <li>Untuk jadwal mingguan, pilih rentang hari (contoh: Senin-Jumat)</li>
+                        <li>Jam bisa melintasi tengah malam (contoh: 22:00-05:00 untuk jadwal malam)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Pengaturan Metode Absensi -->
+            <div class="form-section">
+                <h5 class="section-title">📱 Metode Absensi</h5>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check form-switch">
+                            {{ form_widget(form.perluQrCode, {'attr': {'class': 'form-check-input', 'role': 'switch'}}) }}
+                            {{ form_label(form.perluQrCode, null, {'class': 'form-check-label fw-bold'}) }}
+                        </div>
+                        <div class="help-text">
+                            {{ form_help(form.perluQrCode) }}
+                        </div>
+                        {{ form_errors(form.perluQrCode) }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check form-switch">
+                            {{ form_widget(form.perluKamera, {'attr': {'class': 'form-check-input', 'role': 'switch'}}) }}
+                            {{ form_label(form.perluKamera, null, {'class': 'form-check-label fw-bold'}) }}
+                        </div>
+                        <div class="help-text">
+                            {{ form_help(form.perluKamera) }}
+                        </div>
+                        {{ form_errors(form.perluKamera) }}
+                    </div>
+                </div>
+
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Penting:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li><strong>QR Code:</strong> Jika dicentang, pegawai harus scan QR code untuk absen</li>
+                        <li><strong>Kamera:</strong> Jika dicentang, pegawai harus ambil foto selfie saat absen</li>
+                        <li><strong>Tidak keduanya:</strong> Pegawai cukup klik tombol "Hadir" saja</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Status dan Keterangan -->
+            <div class="form-section">
+                <h5 class="section-title">⚙️ Status dan Keterangan</h5>
+                
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        {{ form_widget(form.isAktif, {'attr': {'class': 'form-check-input', 'role': 'switch'}}) }}
+                        {{ form_label(form.isAktif, null, {'class': 'form-check-label fw-bold'}) }}
+                    </div>
+                    <div class="help-text">
+                        {{ form_help(form.isAktif) }}
+                    </div>
+                    {{ form_errors(form.isAktif) }}
+                </div>
+
+                <div class="mb-3">
+                    {{ form_label(form.keterangan, null, {'class': 'form-label fw-bold'}) }}
+                    {{ form_widget(form.keterangan) }}
+                    {{ form_help(form.keterangan) }}
+                    {{ form_errors(form.keterangan) }}
+                </div>
+            </div>
+
+            <!-- Tombol Submit -->
+            <div class="d-flex justify-content-between">
+                <a href="{{ path('admin_jadwal_absensi_index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Batal
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> 
+                    {{ mode == 'create' ? 'Buat Jadwal' : 'Simpan Perubahan' }}
+                </button>
+            </div>
+
+            {{ form_end(form) }}
+        </div>
+
+        <!-- Preview Card -->
+        <div class="col-lg-4">
+            <div class="form-section sticky-top">
+                <h5 class="section-title">👀 Preview Kartu Absensi</h5>
+                
+                <div id="preview-card" class="preview-card">
+                    <div class="preview-emoji" id="preview-emoji">{{ form.emoji.vars.data|default('✅') }}</div>
+                    <h6 id="preview-nama">{{ form.namaJadwal.vars.data|default('Nama Jadwal') }}</h6>
+                    <small id="preview-waktu">
+                        {{ form.jamMulai.vars.data ? form.jamMulai.vars.data|date('H:i') : '00:00' }} - 
+                        {{ form.jamSelesai.vars.data ? form.jamSelesai.vars.data|date('H:i') : '00:00' }}
+                    </small>
+                </div>
+
+                <!-- Kustomisasi Tampilan -->
+                <div class="mt-4">
+                    <h6 class="fw-bold">🎨 Kustomisasi Tampilan</h6>
+                    
+                    <div class="mb-3">
+                        {{ form_label(form.emoji, null, {'class': 'form-label fw-bold'}) }}
+                        {{ form_widget(form.emoji, {'attr': {'id': 'emoji-input'}}) }}
+                        {{ form_help(form.emoji) }}
+                        {{ form_errors(form.emoji) }}
+                        
+                        <div class="mt-2">
+                            <small class="text-muted">Emoji populer:</small><br>
+                            <span class="emoji-suggestion" data-emoji="✅">✅</span>
+                            <span class="emoji-suggestion" data-emoji="🏢">🏢</span>
+                            <span class="emoji-suggestion" data-emoji="📖">📖</span>
+                            <span class="emoji-suggestion" data-emoji="🤲">🤲</span>
+                            <span class="emoji-suggestion" data-emoji="🇮🇩">🇮🇩</span>
+                            <span class="emoji-suggestion" data-emoji="📝">📝</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form_label(form.warnaKartu, null, {'class': 'form-label fw-bold'}) }}
+                        {{ form_widget(form.warnaKartu, {'attr': {'id': 'color-input'}}) }}
+                        {{ form_help(form.warnaKartu) }}
+                        {{ form_errors(form.warnaKartu) }}
+                    </div>
+                </div>
+
+                <!-- Info QR Code -->
+                {% if mode == 'edit' and jadwal.isPerluQrCode and jadwal.qrCode %}
+                <div class="mt-4">
+                    <h6 class="fw-bold">📱 QR Code</h6>
+                    <div class="alert alert-success">
+                        <small>QR Code: <code>{{ jadwal.qrCode }}</code></small><br>
+                        <button type="button" class="btn btn-sm btn-outline-success mt-2" id="generate-new-qr">
+                            <i class="fas fa-refresh"></i> Generate Ulang
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements
+            const namaInput = document.getElementById('{{ form.namaJadwal.vars.id }}');
+            const emojiInput = document.getElementById('emoji-input');
+            const colorInput = document.getElementById('color-input');
+            const jamMulaiInput = document.getElementById('{{ form.jamMulai.vars.id }}');
+            const jamSelesaiInput = document.getElementById('{{ form.jamSelesai.vars.id }}');
+            
+            const previewCard = document.getElementById('preview-card');
+            const previewEmoji = document.getElementById('preview-emoji');
+            const previewNama = document.getElementById('preview-nama');
+            const previewWaktu = document.getElementById('preview-waktu');
+
+            // Update preview ketika input berubah
+            function updatePreview() {
+                const nama = namaInput.value || 'Nama Jadwal';
+                const emoji = emojiInput.value || '✅';
+                const color = colorInput.value || '#3B82F6';
+                const jamMulai = jamMulaiInput.value || '00:00';
+                const jamSelesai = jamSelesaiInput.value || '00:00';
+
+                previewNama.textContent = nama;
+                previewEmoji.textContent = emoji;
+                previewWaktu.textContent = `${jamMulai} - ${jamSelesai}`;
+                previewCard.style.backgroundColor = color;
+            }
+
+            // Event listeners untuk update preview
+            [namaInput, emojiInput, colorInput, jamMulaiInput, jamSelesaiInput].forEach(input => {
+                if (input) {
+                    input.addEventListener('input', updatePreview);
+                    input.addEventListener('change', updatePreview);
+                }
+            });
+
+            // Emoji suggestions
+            document.querySelectorAll('.emoji-suggestion').forEach(suggestion => {
+                suggestion.addEventListener('click', function() {
+                    const emoji = this.dataset.emoji;
+                    emojiInput.value = emoji;
+                    updatePreview();
+                });
+                
+                // Styling
+                suggestion.style.cursor = 'pointer';
+                suggestion.style.fontSize = '1.5rem';
+                suggestion.style.padding = '5px';
+                suggestion.style.margin = '2px';
+                suggestion.style.border = '1px solid #dee2e6';
+                suggestion.style.borderRadius = '4px';
+                suggestion.style.display = 'inline-block';
+            });
+
+            // Initial preview update
+            updatePreview();
+
+            // Form validation
+            const form = document.querySelector('.needs-validation');
+            form.addEventListener('submit', function(event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            });
+
+            // Generate new QR code (jika ada)
+            const generateQrBtn = document.getElementById('generate-new-qr');
+            if (generateQrBtn) {
+                generateQrBtn.addEventListener('click', function() {
+                    if (confirm('Yakin ingin generate QR Code baru? QR Code lama tidak akan bisa digunakan lagi.')) {
+                        // AJAX call ke endpoint generate QR
+                        fetch('{{ path("admin_jadwal_absensi_generate_qr", {"id": jadwal.id|default(0)}) }}', {
+                            method: 'POST',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert('QR Code baru berhasil di-generate: ' + data.qr_code);
+                                location.reload();
+                            } else {
+                                alert('Error: ' + data.message);
+                            }
+                        })
+                        .catch(error => {
+                            alert('Terjadi kesalahan saat generate QR Code');
+                        });
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock %}

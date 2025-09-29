@@ -1,0 +1,575 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ page_title }} - Absensi Gembira{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.umd.min.js"></script>
+{% endblock %}
+
+{% block body %}
+<!-- Header -->
+<div class="bg-gradient-to-r from-sky-400 to-sky-500 text-white sticky top-0 z-40">
+    <div class="container mx-auto px-4 py-4">
+        <div class="flex items-center">
+            <a href="{{ path('app_absensi_dashboard') }}" class="text-white mr-3 p-2 hover:bg-sky-600 rounded-lg">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <div class="flex-1">
+                <h1 class="text-lg font-bold">{{ jadwal.emoji }} {{ jadwal.namaJadwal }}</h1>
+                <p class="text-sky-200 text-sm">{{ 'now'|date('d F Y - H:i') }} WITA</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="min-h-screen bg-gray-100 pb-20">
+    <!-- Progress Steps -->
+    <div class="bg-white shadow-sm p-4 mb-4">
+        <div class="flex justify-center">
+            <div class="flex items-center space-x-4 text-sm">
+                <div class="step-mobile active" data-step="1">
+                    <div class="step-circle">1</div>
+                    <span class="step-text">Scan QR</span>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step-mobile" data-step="2">
+                    <div class="step-circle">2</div>
+                    <span class="step-text">Konfirmasi</span>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step-mobile" data-step="3">
+                    <div class="step-circle">3</div>
+                    <span class="step-text">Selesai</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Container -->
+    <div class="px-4">
+        <form id="form-absensi-qr">
+            <input type="hidden" name="jadwal_id" value="{{ jadwal.id }}">
+            <input type="hidden" name="qr_code" id="qr_code" value="">
+            <input type="hidden" name="_token" value="{{ csrf_token('absensi_qr') }}">
+
+            <!-- Step 1: QR Scanner -->
+            <div class="step-content active" id="step-qr">
+                <div class="bg-white rounded-xl shadow-sm p-6 mb-4">
+                    <div class="text-center mb-6">
+                        <div class="text-6xl mb-4">📱</div>
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">Pindai QR Code</h3>
+                        <p class="text-gray-600 text-sm">Arahkan kamera ke QR Code yang tersedia di lokasi {{ jadwal.namaJadwal }}</p>
+                    </div>
+                    
+                    <!-- QR Scanner Container -->
+                    <div class="relative mb-6">
+                        <video id="qr-video" class="w-full h-80 rounded-xl bg-black object-cover" autoplay muted playsinline style="display:none;"></video>
+                        
+                        <!-- Scanner Overlay -->
+                        <div id="scanner-overlay" class="absolute inset-0 pointer-events-none" style="display:none;">
+                            <div class="w-full h-full relative">
+                                <!-- Corner borders -->
+                                <div class="absolute top-4 left-4 w-8 h-8 border-l-4 border-t-4 border-white rounded-tl-lg"></div>
+                                <div class="absolute top-4 right-4 w-8 h-8 border-r-4 border-t-4 border-white rounded-tr-lg"></div>
+                                <div class="absolute bottom-4 left-4 w-8 h-8 border-l-4 border-b-4 border-white rounded-bl-lg"></div>
+                                <div class="absolute bottom-4 right-4 w-8 h-8 border-r-4 border-b-4 border-white rounded-br-lg"></div>
+                                
+                                <!-- Center guide -->
+                                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 border-2 border-white rounded-lg opacity-50"></div>
+                                
+                                <!-- Instruction text -->
+                                <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white text-sm text-center bg-black bg-opacity-50 px-4 py-2 rounded-lg">
+                                    Letakkan QR Code di dalam kotak
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Start Camera Button -->
+                        <div id="start-camera-container" class="text-center">
+                            <button type="button" id="btn-start-qr-camera" class="bg-green-600 hover:bg-green-700 active:bg-green-800 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg touch-manipulation min-h-[56px]">
+                                📷 Buka Kamera QR
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Manual QR Input (Backup) -->
+                    <div class="border-t pt-4">
+                        <p class="text-center text-sm text-gray-500 mb-3">Atau masukkan kode QR secara manual:</p>
+                        <div class="flex space-x-2">
+                            <input type="text" id="manual-qr" class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm" placeholder="JDW_{{ jadwal.namaJadwal|upper }}_xxx">
+                            <button type="button" id="btn-manual-qr" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg text-sm whitespace-nowrap">
+                                Gunakan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Konfirmasi -->
+            <div class="step-content" id="step-konfirmasi">
+                <div class="bg-white rounded-xl shadow-sm p-6 mb-4">
+                    <div class="text-center">
+                        <div class="text-6xl mb-4">✅</div>
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4">Konfirmasi Absensi</h3>
+                        
+                        <div class="bg-gray-50 rounded-lg p-4 mb-6 text-left space-y-2">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Absensi:</span>
+                                <span class="font-medium">{{ jadwal.namaJadwal }}</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Waktu:</span>
+                                <span class="font-medium" id="waktu-absensi">--:--</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Pegawai:</span>
+                                <span class="font-medium">{{ pegawai.nama }}</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">QR Code:</span>
+                                <span class="font-medium" id="status-qr">⏳ Belum dipindai</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Fixed Bottom Bar -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t p-4 safe-area-pb">
+        <button type="button" id="btn-submit" class="w-full bg-gray-400 text-white py-4 rounded-xl font-semibold text-lg shadow-lg transition-colors touch-manipulation min-h-[56px]" disabled>
+            <span id="submit-text">⏳ Pindai QR Code Terlebih Dahulu</span>
+        </button>
+    </div>
+
+    <!-- Loading Modal -->
+    <div id="loading-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl p-6 text-center max-w-sm mx-4">
+            <div class="animate-spin w-12 h-12 border-4 border-sky-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p class="text-lg font-medium">Memproses absensi...</p>
+            <p class="text-sm text-gray-600 mt-2">Mohon tunggu sebentar</p>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="success-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl p-6 text-center max-w-sm mx-4">
+            <div class="text-6xl mb-4">✅</div>
+            <h3 class="text-xl font-bold text-green-600 mb-2">Absensi Berhasil!</h3>
+            <div id="success-message" class="text-sm text-gray-700 mb-4"></div>
+            <div class="space-y-2">
+                <button onclick="window.location.href='{{ path('app_user_laporan', {success: 1}) }}'" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-medium">
+                    📊 Lihat di Laporan
+                </button>
+                <button onclick="window.location.href='{{ path('app_absensi_dashboard') }}'" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-medium">
+                    🏠 Kembali ke Dashboard
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="error-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl p-6 text-center max-w-sm mx-4">
+            <div class="text-6xl mb-4">❌</div>
+            <h3 class="text-xl font-bold text-red-600 mb-2">Absensi Gagal</h3>
+            <div id="error-message" class="text-sm text-gray-700 mb-4"></div>
+            <button onclick="document.getElementById('error-modal').classList.add('hidden')" class="w-full bg-gray-600 hover:bg-gray-700 text-white py-3 rounded-lg font-medium">
+                Tutup
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Mobile-optimized styles */
+.step-mobile {
+    @apply flex flex-col items-center space-y-1;
+}
+.step-circle {
+    @apply w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-medium;
+}
+.step-mobile.active .step-circle {
+    @apply bg-sky-500 text-white;
+}
+.step-mobile.completed .step-circle {
+    @apply bg-green-500 text-white;
+}
+.step-text {
+    @apply text-xs text-gray-600;
+}
+.step-mobile.active .step-text {
+    @apply text-sky-500 font-medium;
+}
+.step-connector {
+    @apply w-8 h-px bg-gray-300 flex-shrink-0;
+}
+
+/* Mobile Touch Optimization */
+.touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Improve button accessibility */
+button:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+/* Prevent zoom on input focus (iOS Safari) */
+input[type="text"] {
+    font-size: 16px;
+}
+
+/* Improve video element on mobile */
+video {
+    -webkit-playsinline: true;
+    -webkit-object-fit: cover;
+    object-fit: cover;
+}
+
+.step-content {
+    @apply hidden;
+}
+.step-content.active {
+    @apply block;
+}
+
+/* Safe area padding for iPhone */
+.safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom, 1rem);
+}
+</style>
+
+<script>
+class GembiraMobileQR {
+    constructor() {
+        this.currentStep = 1;
+        this.qrScanned = false;
+        this.qrScanner = null;
+        this.stream = null;
+        
+        this.init();
+    }
+
+    init() {
+        console.log('GembiraMobileQR initialized');
+        this.setupEventListeners();
+        this.updateSteps();
+        this.updateTime();
+        setInterval(() => this.updateTime(), 1000);
+        
+        // Auto-start QR scanner after 500ms
+        setTimeout(() => {
+            this.startQrScanner();
+        }, 500);
+    }
+
+    setupEventListeners() {
+        // QR Scanner
+        document.getElementById('btn-start-qr-camera').addEventListener('click', () => this.startQrScanner());
+        document.getElementById('btn-manual-qr').addEventListener('click', () => this.handleManualQr());
+        
+        // Form Submit
+        document.getElementById('btn-submit').addEventListener('click', (e) => this.submitForm(e));
+    }
+
+    updateSteps() {
+        const steps = document.querySelectorAll('.step-mobile');
+        const contents = document.querySelectorAll('.step-content');
+        
+        steps.forEach((step, index) => {
+            const stepNum = index + 1;
+            step.classList.remove('active', 'completed');
+            
+            if (stepNum < this.currentStep) {
+                step.classList.add('completed');
+            } else if (stepNum === this.currentStep) {
+                step.classList.add('active');
+            }
+        });
+
+        contents.forEach((content, index) => {
+            content.classList.remove('active');
+            const contentStep = index + 1;
+            if (contentStep === this.currentStep) {
+                content.classList.add('active');
+            }
+        });
+
+        this.updateSubmitButton();
+    }
+
+    updateTime() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('id-ID');
+        const element = document.getElementById('waktu-absensi');
+        if (element) {
+            element.textContent = timeString;
+        }
+    }
+
+    async startQrScanner() {
+        console.log('Starting QR scanner');
+        try {
+            const video = document.getElementById('qr-video');
+            
+            // Show video and overlay
+            video.style.display = 'block';
+            document.getElementById('scanner-overlay').style.display = 'block';
+            document.getElementById('start-camera-container').style.display = 'none';
+            
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error('Browser tidak mendukung akses kamera');
+            }
+
+            if (typeof QrScanner === 'undefined') {
+                throw new Error('QR Scanner library tidak tersedia');
+            }
+            
+            // Initialize QR Scanner
+            this.qrScanner = new QrScanner(
+                video,
+                (result) => this.onQrDetected(result),
+                {
+                    returnDetailedScanResult: true,
+                    highlightScanRegion: false,
+                    highlightCodeOutline: false,
+                    preferredCamera: 'environment' // Back camera for QR scanning
+                }
+            );
+            
+            await this.qrScanner.start();
+            this.showToast('📱 Kamera QR siap. Arahkan ke QR Code', 'info');
+            
+        } catch (error) {
+            console.error('Error in startQrScanner:', error);
+            
+            let errorMessage = '❌ Tidak dapat mengakses kamera.';
+            if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                errorMessage = '🔒 Akses kamera diblokir. Silakan izinkan akses kamera di pengaturan browser.';
+            } else if (error.name === 'NotFoundError') {
+                errorMessage = '📷 Kamera tidak ditemukan. Pastikan perangkat memiliki kamera.';
+            } else if (error.name === 'NotReadableError') {
+                errorMessage = '⚠️ Kamera sedang digunakan aplikasi lain. Tutup aplikasi lain dan coba lagi.';
+            }
+            
+            this.showToast(errorMessage, 'error');
+            
+            // Fallback to manual input
+            document.getElementById('qr-video').style.display = 'none';
+            document.getElementById('scanner-overlay').style.display = 'none';
+            document.getElementById('start-camera-container').style.display = 'block';
+        }
+    }
+
+    onQrDetected(result) {
+        if (this.qrScanned) return; // Prevent multiple scans
+        
+        const qrValue = result.data || result;
+        if (this.validateQr(qrValue)) {
+            this.qrScanned = true;
+            document.getElementById('qr_code').value = qrValue;
+            document.getElementById('status-qr').innerHTML = '✅ QR Code Valid';
+            
+            // Stop scanner
+            if (this.qrScanner) {
+                this.qrScanner.stop();
+            }
+            
+            // Hide scanner UI
+            document.getElementById('qr-video').style.display = 'none';
+            document.getElementById('scanner-overlay').style.display = 'none';
+            
+            this.showToast('✅ QR Code berhasil dipindai!', 'success');
+            this.nextStep();
+            
+        } else {
+            // Don't show error for every invalid scan, just continue scanning
+            console.log('QR Code tidak valid:', qrValue);
+        }
+    }
+
+    handleManualQr() {
+        const qrValue = document.getElementById('manual-qr').value.trim();
+        if (qrValue && this.validateQr(qrValue)) {
+            this.qrScanned = true;
+            document.getElementById('qr_code').value = qrValue;
+            document.getElementById('status-qr').innerHTML = '✅ QR Code Valid';
+            this.showToast('✅ QR Code berhasil digunakan!', 'success');
+            this.nextStep();
+        } else {
+            this.showToast('❌ QR Code tidak valid atau sudah kedaluwarsa', 'error');
+        }
+    }
+
+    validateQr(qrValue) {
+        // Validate QR Code format dengan fleksibilitas lebih tinggi
+        const expectedQrCode = '{{ jadwal.qrCode }}';
+        console.log('Validating QR:', qrValue, 'Expected:', expectedQrCode);
+
+        if (!qrValue || qrValue.trim() === '') {
+            return false;
+        }
+
+        // Coba exact match terlebih dahulu
+        if (expectedQrCode && qrValue === expectedQrCode) {
+            return true;
+        }
+
+        // Coba trim match
+        if (expectedQrCode && qrValue.trim() === expectedQrCode.trim()) {
+            return true;
+        }
+
+        // Jika tidak ada expected QR code atau tidak match, coba pattern validation
+        if (qrValue.startsWith('JDW_')) {
+            // Basic pattern validation untuk QR format JDW_
+            const qrPattern = /^JDW_[A-Z0-9_]+/;
+
+            if (qrPattern.test(qrValue)) {
+                // Jika ada expectedQrCode, coba pattern matching
+                if (expectedQrCode && expectedQrCode.startsWith('JDW_')) {
+                    const qrParts = qrValue.split('_');
+                    const expectedParts = expectedQrCode.split('_');
+
+                    // Cek apakah nama jadwal cocok (bagian kedua)
+                    if (qrParts.length >= 2 && expectedParts.length >= 2) {
+                        return qrParts[1].toUpperCase() === expectedParts[1].toUpperCase();
+                    }
+                }
+
+                return true; // Accept QR dengan format yang benar
+            }
+        }
+
+        // Fallback: jika format QR tidak standar tapi ada expected code, biarkan server yang validasi
+        if (expectedQrCode) {
+            return true; // Biarkan server yang menentukan validitas final
+        }
+
+        return false;
+    }
+
+    nextStep() {
+        if (this.currentStep === 1 && this.qrScanned) {
+            this.currentStep = 2;
+            this.updateSteps();
+        }
+    }
+
+    updateSubmitButton() {
+        const submitBtn = document.getElementById('btn-submit');
+        const canSubmit = this.qrScanned;
+        
+        submitBtn.disabled = !canSubmit;
+        
+        if (canSubmit) {
+            document.getElementById('submit-text').textContent = '🚀 Kirim Absensi';
+            submitBtn.className = 'w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl font-semibold text-lg shadow-lg transition-colors touch-manipulation min-h-[56px]';
+        } else {
+            document.getElementById('submit-text').textContent = '⏳ Pindai QR Code Terlebih Dahulu';
+            submitBtn.className = 'w-full bg-gray-400 text-white py-4 rounded-xl font-semibold text-lg shadow-lg touch-manipulation min-h-[56px]';
+        }
+    }
+
+    async submitForm(e) {
+        e.preventDefault();
+        
+        if (!this.qrScanned) {
+            this.showToast('❌ QR Code wajib dipindai terlebih dahulu', 'error');
+            return;
+        }
+        
+        const loadingModal = document.getElementById('loading-modal');
+        loadingModal.classList.remove('hidden');
+        
+        const formData = new FormData();
+        formData.append('qr_code', document.getElementById('qr_code').value);
+        formData.append('_token', document.querySelector('input[name="_token"]').value);
+        
+        try {
+            const response = await fetch(window.location.href, {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.berhasil) {
+                this.showSuccessModal(result.pesan, result.waktu_absensi);
+            } else {
+                this.showErrorModal(result.pesan);
+            }
+        } catch (error) {
+            this.showErrorModal('❌ Terjadi kesalahan koneksi. Silakan coba lagi.');
+            console.error(error);
+        } finally {
+            loadingModal.classList.add('hidden');
+        }
+    }
+
+    showSuccessModal(message, waktuAbsensi) {
+        const modal = document.getElementById('success-modal');
+        const messageDiv = document.getElementById('success-message');
+        messageDiv.innerHTML = message + '<br><strong>Waktu: ' + waktuAbsensi + '</strong>';
+        modal.classList.remove('hidden');
+    }
+
+    showErrorModal(message) {
+        const modal = document.getElementById('error-modal');
+        const messageDiv = document.getElementById('error-message');
+        messageDiv.innerHTML = message;
+        modal.classList.remove('hidden');
+    }
+
+    showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `fixed top-20 left-4 right-4 z-40 px-4 py-3 rounded-xl text-white text-sm font-medium shadow-lg ${
+            type === 'success' ? 'bg-green-600' : 
+            type === 'error' ? 'bg-red-600' : 
+            type === 'warning' ? 'bg-orange-600' : 'bg-blue-600'
+        }`;
+        toast.textContent = message;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 4000);
+    }
+
+    stopCamera() {
+        if (this.stream) {
+            this.stream.getTracks().forEach(track => track.stop());
+            this.stream = null;
+        }
+    }
+
+    cleanup() {
+        this.stopCamera();
+        if (this.qrScanner) {
+            this.qrScanner.destroy();
+        }
+    }
+}
+
+// Initialize when page loads
+let qrApp;
+document.addEventListener('DOMContentLoaded', () => {
+    qrApp = new GembiraMobileQR();
+});
+
+// Cleanup when page unloads
+window.addEventListener('beforeunload', () => {
+    if (qrApp) {
+        qrApp.cleanup();
+    }
+});
+</script>
+{% endblock %}

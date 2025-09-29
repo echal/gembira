@@ -1,0 +1,669 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Data Pegawai - Admin Gembira{% endblock %}
+
+{% block body %}
+<!-- Layout dengan Sidebar -->
+<div class="flex h-screen bg-gray-100">
+    <!-- Sidebar -->
+    <div class="w-64 bg-white shadow-lg flex-shrink-0">
+        <!-- Header Sidebar -->
+        <div class="bg-purple-600 text-white p-4">
+            <h1 class="text-lg font-bold">Admin Panel Gembira</h1>
+            <p class="text-purple-200 text-sm">{{ app.user.namaLengkap ?? app.user.nama ?? 'Admin' }}</p>
+        </div>
+        
+        <!-- Menu Navigation -->
+        <nav class="mt-4">
+            <!-- Dashboard -->
+            <a href="{{ path('app_admin_dashboard') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 border-purple-500">
+                <span class="text-lg mr-3">🏠</span>
+                <span class="font-medium">Dashboard</span>
+            </a>
+            
+            <!-- User -->
+            <a href="{{ path('app_admin_user') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-indigo-500">
+                <span class="text-lg mr-3">👤</span>
+                <span class="font-medium">User</span>
+            </a>
+            
+            <!-- Pengaturan Role -->
+            <a href="{{ path('app_admin_role') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-purple-500">
+                <span class="text-lg mr-3">🔐</span>
+                <span class="font-medium">Pengaturan Role</span>
+            </a>
+            
+            <!-- Data Management -->
+            <div class="menu-group">
+                <button onclick="toggleSubmenu('dataManagement')" class="w-full flex items-center justify-between px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-blue-500">
+                    <div class="flex items-center">
+                        <span class="text-lg mr-3">👥</span>
+                        <span class="font-medium">Data Management</span>
+                    </div>
+                    <svg class="w-4 h-4 transform transition-transform submenu-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div id="dataManagement" class="hidden bg-gray-50 ml-8">
+                    <a href="{{ path('app_admin_unit_kerja') }}" class="flex items-center px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+                        <span class="text-sm mr-2">🏢</span>
+                        <span class="text-sm">Unit Kerja</span>
+                    </a>
+                    <a href="{{ path('app_admin_kepala_bidang') }}" class="flex items-center px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+                        <span class="text-sm mr-2">👔</span>
+                        <span class="text-sm">Kepala Bidang</span>
+                    </a>
+                    <a href="{{ path('app_admin_kepala_kantor') }}" class="flex items-center px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+                        <span class="text-sm mr-2">🏛️</span>
+                        <span class="text-sm">Kepala Kantor</span>
+                    </a>
+                    <a href="{{ path('app_admin_pegawai') }}" class="flex items-center px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+                        <span class="text-sm mr-2">👨‍💼</span>
+                        <span class="text-sm">Pegawai</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Events -->
+            <a href="{{ path('app_admin_event_index') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 border-pink-500">
+                <span class="text-lg mr-3">🎉</span>
+                <span class="font-medium">Events</span>
+            </a>
+            
+            <!-- Jadwal Absensi -->
+            <a href="{{ path('app_admin_jadwal_absensi') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 border-teal-500">
+                <span class="text-lg mr-3">⏰</span>
+                <span class="font-medium">Jadwal Absensi</span>
+            </a>
+            
+            
+            <!-- Laporan Kehadiran -->
+            <a href="{{ path('app_admin_laporan_kehadiran') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-green-500">
+                <span class="text-lg mr-3">📊</span>
+                <span class="font-medium">Laporan Kehadiran</span>
+            </a>
+            
+            <!-- Validasi Absen -->
+            <a href="{{ path('app_admin_validasi_absen') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-orange-500">
+                <span class="text-lg mr-3">✅</span>
+                <span class="font-medium">Validasi Absen</span>
+                <span class="ml-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">3</span>
+            </a>
+            
+            <!-- Laporan Bulanan -->
+            <a href="{{ path('app_admin_laporan_bulanan') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-indigo-500">
+                <span class="text-lg mr-3">📈</span>
+                <span class="font-medium">Laporan Bulanan</span>
+            </a>
+            
+            <hr class="my-4">
+            
+            <!-- Pengaturan -->
+            <a href="{{ path('app_admin_pengaturan') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 border-yellow-500">
+                <span class="text-lg mr-3">⚙️</span>
+                <span class="font-medium">Pengaturan</span>
+            </a>
+            
+            <!-- Logout -->
+            <form method="post" action="{{ path('app_logout') }}" class="mt-4">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+                <button type="submit" class="w-full flex items-center px-4 py-3 text-red-600 hover:bg-red-50 border-l-4 border-red-500">
+                    <span class="text-lg mr-3">🚪</span>
+                    <span class="font-medium">Logout</span>
+                </button>
+            </form>
+        </nav>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 overflow-y-auto">
+        <!-- Header -->
+        <div class="bg-white shadow-sm px-6 py-4 border-b">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <h2 class="text-xl font-bold text-gray-800">👨‍💼 Data Pegawai</h2>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button id="btnTambahPegawai" class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg font-medium text-sm">
+                        ➕ Tambah Pegawai
+                    </button>
+                    <div class="text-sm text-gray-600">{{ 'now'|date('d/m/Y H:i') }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Content -->
+        <div class="p-6">
+        
+        <!-- Filter & Search -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h3 class="text-lg font-semibold mb-4">🔍 Cari Pegawai</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nama / NIP</label>
+                    <input type="text" placeholder="Cari berdasarkan nama atau NIP" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Unit Kerja</label>
+                    <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Semua Unit Kerja</option>
+                        <option value="bagian_umum">Bagian Umum</option>
+                        <option value="keuangan">Keuangan</option>
+                        <option value="hrd">HRD</option>
+                        <option value="it">IT</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Semua Status</option>
+                        <option value="aktif">Aktif</option>
+                        <option value="nonaktif">Non-Aktif</option>
+                        <option value="cuti">Cuti</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mt-4 flex space-x-3">
+                <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium">
+                    🔍 Cari
+                </button>
+                <button class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium">
+                    🔄 Reset
+                </button>
+            </div>
+        </div>
+
+        <!-- Statistik Pegawai -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-lg shadow-sm p-4 text-center">
+                <div class="text-2xl mb-2">👥</div>
+                <div class="text-xl font-bold text-blue-600">25</div>
+                <div class="text-xs text-gray-600">Total Pegawai</div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-sm p-4 text-center">
+                <div class="text-2xl mb-2">✅</div>
+                <div class="text-xl font-bold text-green-600">23</div>
+                <div class="text-xs text-gray-600">Aktif</div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-sm p-4 text-center">
+                <div class="text-2xl mb-2">🏖️</div>
+                <div class="text-xl font-bold text-yellow-600">2</div>
+                <div class="text-xs text-gray-600">Cuti</div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-sm p-4 text-center">
+                <div class="text-2xl mb-2">📊</div>
+                <div class="text-xl font-bold text-purple-600">92%</div>
+                <div class="text-xs text-gray-600">Kehadiran Rata-rata</div>
+            </div>
+        </div>
+
+        <!-- Daftar Pegawai -->
+        <div class="bg-white rounded-xl shadow-sm">
+            <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="text-lg font-semibold">📋 Daftar Pegawai ASN</h3>
+                        <p class="text-sm text-gray-600">Data pegawai terdaftar dalam sistem</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="bg-green-100 hover:bg-green-200 text-green-600 px-3 py-2 rounded-lg text-sm font-medium">
+                            📤 Export Excel
+                        </button>
+                        <button class="bg-blue-100 hover:bg-blue-200 text-blue-600 px-3 py-2 rounded-lg text-sm font-medium">
+                            📥 Import Excel
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="divide-y divide-gray-200">
+                {% if pegawai_list is empty %}
+                <div class="p-6 text-center text-gray-500">
+                    <div class="text-4xl mb-4">👥</div>
+                    <p class="text-lg">Belum ada data pegawai</p>
+                    <p class="text-sm">Klik tombol "Tambah Pegawai" untuk menambahkan pegawai baru</p>
+                </div>
+                {% else %}
+                {% for pegawai in pegawai_list %}
+                <div class="p-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                <span class="text-blue-600 font-semibold text-sm">{{ pegawai.nama|slice(0, 2)|upper }}</span>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-900">{{ pegawai.nama }}</h4>
+                                <p class="text-sm text-gray-600">NIP: {{ pegawai.nip }}</p>
+                                <div class="flex items-center space-x-2 mt-1">
+                                    <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                        {{ pegawai.jabatan }}
+                                    </span>
+                                    <span class="text-xs {{ pegawai.statusKepegawaian == 'aktif' ? 'bg-green-100 text-green-800' : (pegawai.statusKepegawaian == 'cuti' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }} px-2 py-1 rounded-full">
+                                        {% if pegawai.statusKepegawaian == 'aktif' %}✅ Aktif
+                                        {% elseif pegawai.statusKepegawaian == 'cuti' %}🏖️ Cuti
+                                        {% else %}❌ Non-Aktif{% endif %}
+                                    </span>
+                                    <span class="text-xs text-gray-500">
+                                        {{ pegawai.namaUnitKerja ?? 'Unit Kerja Belum Ditentukan' }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center space-x-2">
+                            <button class="bg-blue-100 hover:bg-blue-200 text-blue-600 px-3 py-2 rounded-lg text-sm font-medium">
+                                👁️ Detail
+                            </button>
+                            <button class="bg-yellow-100 hover:bg-yellow-200 text-yellow-600 px-3 py-2 rounded-lg text-sm font-medium">
+                                ✏️ Edit
+                            </button>
+                            <button class="bg-red-100 hover:bg-red-200 text-red-600 px-3 py-2 rounded-lg text-sm font-medium">
+                                🗑️ Hapus
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% endif %}
+                
+                <!-- Sample Data Pegawai 1 (akan dihapus nanti) -->
+                <div class="p-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                <span class="text-blue-600 font-semibold text-sm">AB</span>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-900">Ahmad Budiman</h4>
+                                <p class="text-sm text-gray-600">NIP: 123456789</p>
+                                <div class="flex items-center space-x-2 mt-1">
+                                    <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                        Staff
+                                    </span>
+                                    <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                                        ✅ Aktif
+                                    </span>
+                                    <span class="text-xs text-gray-500">
+                                        Bagian Umum
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center space-x-2">
+                            <button class="bg-blue-100 hover:bg-blue-200 text-blue-600 px-3 py-2 rounded-lg text-sm font-medium">
+                                👁️ Detail
+                            </button>
+                            <button class="bg-yellow-100 hover:bg-yellow-200 text-yellow-600 px-3 py-2 rounded-lg text-sm font-medium">
+                                ✏️ Edit
+                            </button>
+                            <button class="bg-red-100 hover:bg-red-200 text-red-600 px-3 py-2 rounded-lg text-sm font-medium">
+                                🗑️ Hapus
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sample Data Pegawai 2 -->
+                <div class="p-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center">
+                                <span class="text-pink-600 font-semibold text-sm">SS</span>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-900">Siti Saleha</h4>
+                                <p class="text-sm text-gray-600">NIP: 987654321</p>
+                                <div class="flex items-center space-x-2 mt-1">
+                                    <span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
+                                        Supervisor
+                                    </span>
+                                    <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                                        ✅ Aktif
+                                    </span>
+                                    <span class="text-xs text-gray-500">
+                                        Keuangan
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center space-x-2">
+                            <button class="bg-blue-100 hover:bg-blue-200 text-blue-600 px-3 py-2 rounded-lg text-sm font-medium">
+                                👁️ Detail
+                            </button>
+                            <button class="bg-yellow-100 hover:bg-yellow-200 text-yellow-600 px-3 py-2 rounded-lg text-sm font-medium">
+                                ✏️ Edit
+                            </button>
+                            <button class="bg-red-100 hover:bg-red-200 text-red-600 px-3 py-2 rounded-lg text-sm font-medium">
+                                🗑️ Hapus
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sample Data Pegawai 3 -->
+                <div class="p-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                <span class="text-green-600 font-semibold text-sm">BJ</span>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-900">Budi Joko</h4>
+                                <p class="text-sm text-gray-600">NIP: 555666777</p>
+                                <div class="flex items-center space-x-2 mt-1">
+                                    <span class="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">
+                                        Manager
+                                    </span>
+                                    <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                                        🏖️ Cuti
+                                    </span>
+                                    <span class="text-xs text-gray-500">
+                                        HRD
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center space-x-2">
+                            <button class="bg-blue-100 hover:bg-blue-200 text-blue-600 px-3 py-2 rounded-lg text-sm font-medium">
+                                👁️ Detail
+                            </button>
+                            <button class="bg-yellow-100 hover:bg-yellow-200 text-yellow-600 px-3 py-2 rounded-lg text-sm font-medium">
+                                ✏️ Edit
+                            </button>
+                            <button class="bg-red-100 hover:bg-red-200 text-red-600 px-3 py-2 rounded-lg text-sm font-medium">
+                                🗑️ Hapus
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bulk Actions -->
+        <div class="mt-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 bg-white rounded-lg p-4 shadow-sm">
+            <div class="flex items-center space-x-4">
+                <label class="flex items-center">
+                    <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600">
+                    <span class="ml-2 text-sm text-gray-700">Pilih Semua</span>
+                </label>
+                <span class="text-sm text-gray-500">0 item dipilih</span>
+            </div>
+            
+            <div class="flex space-x-3">
+                <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                    ✅ Aktifkan
+                </button>
+                <button class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                    ⏸️ Non-Aktifkan
+                </button>
+                <button class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                    🗑️ Hapus
+                </button>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="mt-6 flex justify-center">
+            <div class="flex items-center space-x-2">
+                <button class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">← Previous</button>
+                <button class="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg">1</button>
+                <button class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">2</button>
+                <button class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">3</button>
+                <button class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">Next →</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Tambah Pegawai -->
+<div id="modalTambahPegawai" class="fixed inset-0 z-50 hidden overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Background overlay -->
+        <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onclick="tutupModal()"></div>
+        
+        <!-- Modal content -->
+        <div class="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl sm:max-w-lg">
+            <div class="flex items-center justify-between pb-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">➕ Tambah Pegawai Baru</h3>
+                <button type="button" onclick="tutupModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <form id="formTambahPegawai" class="mt-4 space-y-4">
+                <!-- NIP -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">NIP *</label>
+                    <input type="text" name="nip" required maxlength="18" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                           placeholder="Masukkan NIP (18 digit)">
+                </div>
+                
+                <!-- Nama -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nama Lengkap *</label>
+                    <input type="text" name="nama" required maxlength="100" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                           placeholder="Masukkan nama lengkap">
+                </div>
+                
+                <!-- Email -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                    <input type="email" name="email" required maxlength="100" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                           placeholder="contoh@email.com">
+                </div>
+                
+                <!-- Jabatan -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Jabatan *</label>
+                    <input type="text" name="jabatan" required maxlength="100" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                           placeholder="Masukkan jabatan">
+                </div>
+                
+                <!-- Unit Kerja -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Unit Kerja</label>
+                    <select name="unit_kerja_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Pilih Unit Kerja</option>
+                        {% for unitKerja in unit_kerja_list %}
+                        <option value="{{ unitKerja.id }}">{{ unitKerja.namaUnit }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Status Kepegawaian -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status Kepegawaian</label>
+                    <select name="status_kepegawaian" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="aktif">✅ Aktif</option>
+                        <option value="nonaktif">❌ Non-Aktif</option>
+                        <option value="cuti">🏖️ Cuti</option>
+                    </select>
+                </div>
+                
+                <!-- Tanggal Mulai Kerja -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Mulai Kerja *</label>
+                    <input type="date" name="tanggal_mulai_kerja" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <!-- Nomor Telepon -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nomor Telepon</label>
+                    <input type="tel" name="nomor_telepon" maxlength="15" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                           placeholder="08xxxxxxxxxx">
+                </div>
+                
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <p class="text-sm text-blue-700">
+                        <strong>🔑 Informasi Password:</strong><br>
+                        Password default akan menggunakan NIP pegawai. Pegawai dapat mengubah password setelah login pertama kali.
+                    </p>
+                </div>
+                
+                <!-- Buttons -->
+                <div class="flex space-x-3 pt-4">
+                    <button type="button" onclick="tutupModal()" 
+                            class="flex-1 px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 font-medium">
+                        Batal
+                    </button>
+                    <button type="submit" 
+                            class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+                        ➕ Tambah Pegawai
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Modal functions
+function bukaModal() {
+    document.getElementById('modalTambahPegawai').classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+}
+
+function tutupModal() {
+    document.getElementById('modalTambahPegawai').classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+    // Reset form
+    document.getElementById('formTambahPegawai').reset();
+}
+
+// Event listeners
+document.getElementById('btnTambahPegawai').addEventListener('click', bukaModal);
+
+// Form submission
+document.getElementById('formTambahPegawai').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const submitButton = this.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    
+    // Disable button dan ubah text
+    submitButton.disabled = true;
+    submitButton.innerHTML = '⏳ Menyimpan...';
+    
+    try {
+        const response = await fetch('{{ path("app_admin_tambah_pegawai") }}', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Tampilkan pesan sukses
+            alert(result.message);
+            
+            // Tutup modal
+            tutupModal();
+            
+            // Refresh halaman untuk menampilkan data baru
+            window.location.reload();
+        } else {
+            // Tampilkan pesan error
+            alert(result.message);
+        }
+    } catch (error) {
+        alert('❌ Terjadi kesalahan saat menyimpan data: ' + error.message);
+    } finally {
+        // Restore button
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalText;
+    }
+});
+
+// ESC key untuk tutup modal
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && !document.getElementById('modalTambahPegawai').classList.contains('hidden')) {
+        tutupModal();
+    }
+});
+
+// Toggle submenu function
+function toggleSubmenu(menuId) {
+    const submenu = document.getElementById(menuId);
+    const arrow = submenu.previousElementSibling.querySelector('.submenu-arrow');
+    
+    if (submenu.classList.contains('hidden')) {
+        submenu.classList.remove('hidden');
+        arrow.classList.add('rotate-180');
+    } else {
+        submenu.classList.add('hidden');
+        arrow.classList.remove('rotate-180');
+    }
+}
+</script>
+
+<style>
+/* Submenu Animation */
+.submenu-arrow {
+    transition: transform 0.2s ease-in-out;
+}
+
+/* Menu Hover Effects */
+.menu-group button:hover,
+.menu-group a:hover {
+    background-color: #f9fafb;
+}
+
+/* Active Menu Style */
+.menu-active {
+    background-color: #f3f4f6;
+    border-left-color: #6366f1 !important;
+    color: #6366f1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .flex {
+        flex-direction: column;
+    }
+    .w-64 {
+        width: 100%;
+        height: auto;
+    }
+    .flex-1 {
+        min-height: calc(100vh - 200px);
+    }
+}
+
+/* Scrollbar Styling */
+.overflow-y-auto::-webkit-scrollbar {
+    width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+</style>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

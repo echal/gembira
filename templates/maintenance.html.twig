@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem dalam Pemeliharaan - Gembira</title>
+    <!-- Tailwind CSS - Production Build -->
+    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+    <!-- Favicon untuk berbagai platform -->
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/logo-kemenag.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/logo-kemenag.png') }}">
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center px-4">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md text-center">
+        <!-- Logo & Header -->
+        <div class="mb-8">
+            <div class="mb-4 flex justify-center">
+                <img src="{{ asset('images/logo-kemenag.png') }}" alt="Logo Kementerian Agama" class="h-16 w-auto">
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">Sistem dalam Pemeliharaan</h1>
+            <p class="text-gray-600 text-sm">Aplikasi Gembira ASN</p>
+        </div>
+
+        <!-- Maintenance Icon -->
+        <div class="mb-6">
+            <div class="text-6xl mb-4">🔧</div>
+            <div class="text-yellow-600 bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+                <div class="flex items-center justify-center mb-2">
+                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                    <span class="font-semibold">Pemberitahuan Maintenance</span>
+                </div>
+                <p class="text-sm">{{ maintenance_message }}</p>
+            </div>
+        </div>
+
+        <!-- Information -->
+        <div class="space-y-4 mb-6">
+            <div class="text-left bg-gray-50 rounded-lg p-4">
+                <div class="text-sm text-gray-600">
+                    <div class="mb-2"><strong>📋 Informasi:</strong></div>
+                    <ul class="space-y-1 text-xs">
+                        <li>• Sistem sedang dalam proses pemeliharaan</li>
+                        <li>• Akses sementara dibatasi untuk pengguna</li>
+                        <li>• Admin dapat tetap mengakses sistem</li>
+                        <li>• Silakan coba beberapa saat lagi</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estimated Time -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div class="flex items-center justify-center text-blue-600 mb-2">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span class="font-medium">Waktu Maintenance</span>
+            </div>
+            <p class="text-sm text-blue-600">Estimasi: 15-30 menit</p>
+            <p class="text-xs text-blue-500 mt-1">Waktu dapat berubah sesuai kebutuhan</p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="space-y-3">
+            <button onclick="location.reload()" class="w-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg transition-colors">
+                🔄 Refresh Halaman
+            </button>
+            
+            <div class="text-center">
+                <a href="{{ path('app_login') }}" class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                    🔐 Login Admin
+                </a>
+            </div>
+        </div>
+
+        <!-- Footer Info -->
+        <div class="mt-8 pt-6 border-t border-gray-200">
+            <div class="text-center text-xs text-gray-500">
+                <div class="mb-1">🔒 Aplikasi Gembira ASN</div>
+                <div>Kementerian Agama Republik Indonesia</div>
+                <div class="mt-2">
+                    <span class="text-gray-400">{{ 'now'|date('d/m/Y H:i') }} WITA</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auto-refresh setiap 2 menit untuk cek apakah maintenance sudah selesai
+        setTimeout(function() {
+            location.reload();
+        }, 120000); // 2 menit
+        
+        // Show countdown
+        let countdown = 120;
+        const countdownInterval = setInterval(function() {
+            countdown--;
+            if (countdown <= 0) {
+                clearInterval(countdownInterval);
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

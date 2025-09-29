@@ -1,0 +1,223 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Tanda Tangan Digital - Gembira{% endblock %}
+
+{% block body %}
+<!-- Header -->
+<div class="bg-gradient-to-r from-sky-400 to-sky-500 text-white sticky top-0 z-40 shadow-lg">
+    <div class="container mx-auto px-4 py-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <a href="{{ path('app_dashboard') }}" class="text-2xl hover:bg-white hover:bg-opacity-20 p-2 rounded-lg transition-colors">
+                    ←
+                </a>
+                <div>
+                    <h1 class="text-lg font-bold">📝 Tanda Tangan Digital</h1>
+                    <p class="text-sky-100 text-sm">Upload sekali untuk semua absensi</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="bg-gradient-to-b from-sky-50 to-sky-100 min-h-screen">
+    <div class="container mx-auto px-4 py-6">
+        
+        <!-- Flash Messages -->
+        {% for message in app.flashes('success') %}
+            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
+                {{ message }}
+            </div>
+        {% endfor %}
+        
+        {% for message in app.flashes('error') %}
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        <!-- Info Card -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <div class="flex items-start space-x-4">
+                <div class="text-4xl">ℹ️</div>
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-800 mb-2">Informasi Tanda Tangan Digital</h2>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• Upload tanda tangan Anda <strong>sekali saja</strong></li>
+                        <li>• Tanda tangan akan digunakan untuk <strong>semua absensi event</strong></li>
+                        <li>• Format file: <strong>PNG atau SVG</strong></li>
+                        <li>• Ukuran maksimal: <strong>100KB</strong></li>
+                        <li>• Pastikan tanda tangan <strong>jelas dan mudah dibaca</strong></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Signature Status -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h3 class="text-lg font-semibold mb-4">Status Tanda Tangan Saat Ini</h3>
+            
+            {% if pegawai.hasTandaTangan %}
+                <div class="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="text-2xl">✅</div>
+                        <div>
+                            <div class="text-green-800 font-medium">Tanda tangan sudah tersimpan</div>
+                            <div class="text-green-600 text-sm">
+                                Upload pada: {{ pegawai.tandaTanganUploadedAt ? pegawai.tandaTanganUploadedAt|date('d/m/Y H:i') : '-' }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <img src="{{ pegawai.tandaTanganPath }}" 
+                             alt="Tanda Tangan {{ pegawai.nama }}" 
+                             class="max-w-32 max-h-16 border border-gray-300 rounded bg-white p-2">
+                    </div>
+                </div>
+            {% else %}
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="text-2xl">⚠️</div>
+                        <div>
+                            <div class="text-yellow-800 font-medium">Belum ada tanda tangan</div>
+                            <div class="text-yellow-600 text-sm">
+                                Upload tanda tangan untuk dapat melakukan absensi event
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Upload Form -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <h3 class="text-lg font-semibold mb-4">
+                {% if pegawai.hasTandaTangan %}
+                    🔄 Perbarui Tanda Tangan
+                {% else %}
+                    📝 Upload Tanda Tangan
+                {% endif %}
+            </h3>
+            
+            {{ form_start(form, {'attr': {'class': 'space-y-4', 'enctype': 'multipart/form-data'}}) }}
+                
+                <div>
+                    {{ form_label(form.tandaTangan, null, {'attr': {'class': 'block text-sm font-medium text-gray-700 mb-2'}}) }}
+                    {{ form_widget(form.tandaTangan) }}
+                    {% if form.tandaTangan.vars.help %}
+                        <div class="mt-1 text-xs text-gray-500">{{ form.tandaTangan.vars.help }}</div>
+                    {% endif %}
+                    {% if form.tandaTangan.vars.errors|length > 0 %}
+                        <div class="mt-1 text-red-600 text-sm">
+                            {{ form_errors(form.tandaTangan) }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Preview Area -->
+                <div id="signature-preview" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Preview:</label>
+                    <div class="border border-gray-300 rounded-lg p-4 bg-gray-50">
+                        <img id="preview-image" src="" alt="Preview" class="max-w-64 max-h-32 mx-auto">
+                    </div>
+                </div>
+
+                <div class="pt-4">
+                    {{ form_widget(form.submit) }}
+                </div>
+
+            {{ form_end(form) }}
+        </div>
+
+        <!-- Help Section -->
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 mt-6">
+            <h4 class="text-blue-800 font-semibold mb-3">💡 Tips Upload Tanda Tangan</h4>
+            <div class="grid md:grid-cols-2 gap-4 text-sm text-blue-700">
+                <div>
+                    <h5 class="font-medium mb-2">Format File:</h5>
+                    <ul class="space-y-1">
+                        <li>• PNG: Untuk gambar hasil scan</li>
+                        <li>• SVG: Untuk tanda tangan vector</li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="font-medium mb-2">Kualitas:</h5>
+                    <ul class="space-y-1">
+                        <li>• Gunakan background transparan/putih</li>
+                        <li>• Pastikan kontras yang baik</li>
+                        <li>• Kompres jika ukuran > 100KB</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Navigasi Bawah - TETAP PERTAHANKAN -->
+<div class="fixed bottom-0 left-0 right-0 bg-sky-400 shadow-2xl border-t border-sky-500 z-50">
+    <div class="grid grid-cols-5 text-center">
+        <!-- Home -->
+        <a href="{{ path('app_dashboard') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
+            <div class="text-lg mb-1">🏠</div>
+            <div class="text-xs">Home</div>
+        </a>
+        
+        <!-- Laporan -->
+        <a href="{{ path('app_user_laporan') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
+            <div class="text-lg mb-1">📊</div>
+            <div class="text-xs">Laporan</div>
+        </a>
+        
+        <!-- Kalender -->
+        <a href="{{ path('app_user_kalender') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
+            <div class="text-lg mb-1">📅</div>
+            <div class="text-xs">Kalender</div>
+        </a>
+        
+        <!-- Notifikasi -->
+        <a href="#" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
+            <div class="text-lg mb-1">🔔</div>
+            <div class="text-xs">Notifikasi</div>
+        </a>
+        
+        <!-- Akun Saya - Active -->
+        <a href="{{ path('app_profile_change_password') }}" class="flex flex-col items-center py-3 px-2 text-white bg-sky-600 rounded-lg mx-1">
+            <div class="text-lg mb-1">👤</div>
+            <div class="text-xs font-medium">Akun Saya</div>
+        </a>
+    </div>
+</div>
+
+<script>
+// Preview file yang akan diupload
+document.querySelector('input[type="file"]').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const preview = document.getElementById('signature-preview');
+    const previewImage = document.getElementById('preview-image');
+    
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImage.src = e.target.result;
+            preview.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    } else {
+        preview.classList.add('hidden');
+    }
+});
+
+// Validasi ukuran file real-time
+document.querySelector('input[type="file"]').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file && file.size > 100000) { // 100KB
+        alert('⚠️ Ukuran file terlalu besar! Maksimal 100KB. File Anda: ' + Math.round(file.size/1000) + 'KB');
+        this.value = '';
+        document.getElementById('signature-preview').classList.add('hidden');
+    }
+});
+</script>
+
+{% endblock %}

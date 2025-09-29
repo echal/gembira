@@ -1,0 +1,452 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Manajemen Hari Libur - Gembira{% endblock %}
+
+{% block body %}
+<!-- Header -->
+<div class="bg-orange-600 text-white">
+    <div class="container mx-auto px-4 py-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <a href="{{ path('app_admin_dashboard') }}" class="text-white mr-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </a>
+                <div>
+                    <h1 class="text-xl font-bold">📅 Manajemen Hari Libur</h1>
+                    <p class="text-orange-200 text-sm">Kelola hari libur nasional & cuti bersama</p>
+                </div>
+            </div>
+            <button onclick="showTambahHariLibur()" class="bg-orange-500 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                ➕ Tambah
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="container mx-auto px-4 py-6">
+    <!-- Info Kalender -->
+    <div class="bg-blue-50 rounded-lg p-4 mb-6">
+        <h3 class="font-semibold text-blue-800 mb-2">ℹ️ Informasi Penting</h3>
+        <ul class="text-sm text-blue-700 space-y-1">
+            <li>• <strong>Hari Kerja Normal:</strong> Senin - Jumat</li>
+            <li>• <strong>Hari Libur:</strong> Sabtu, Minggu, dan hari yang tercantum di bawah</li>
+            <li>• <strong>Rekap Kehadiran:</strong> Hanya menghitung hari kerja efektif (exclude weekend & libur)</li>
+        </ul>
+    </div>
+
+    <!-- Filter Tahun -->
+    <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <div class="flex flex-col md:flex-row gap-4 items-center">
+            <div class="flex-1">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Tahun</label>
+                <select id="filter-tahun" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                    {% for year in range(2023, 2027) %}
+                    <option value="{{ year }}" {{ tahun_sekarang == year ? 'selected' : '' }}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex-none">
+                <label class="block text-sm font-medium text-gray-700 mb-2">&nbsp;</label>
+                <button onclick="loadHariLibur()" class="w-full md:w-auto bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                    🔍 Tampilkan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daftar Hari Libur -->
+    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div class="bg-gray-50 px-4 py-3 border-b flex justify-between items-center">
+            <h3 class="text-lg font-semibold" id="header-daftar">📋 Daftar Hari Libur {{ tahun_sekarang }}</h3>
+            <span class="text-sm text-gray-600" id="total-hari-libur">{{ hari_libur_list|length }} hari</span>
+        </div>
+        
+        <!-- Mobile View -->
+        <div class="md:hidden" id="mobile-list">
+            <!-- Data akan dimuat via JavaScript -->
+            <div class="p-8 text-center text-gray-500">
+                <div class="text-4xl mb-4">📅</div>
+                <p>Belum ada hari libur yang ditambahkan</p>
+            </div>
+        </div>
+
+        <!-- Desktop Table View -->
+        <div class="hidden md:block overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Hari Libur</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200" id="desktop-list">
+                    <!-- Data akan dimuat via JavaScript -->
+                    <tr>
+                        <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+                            <div class="text-4xl mb-4">📅</div>
+                            <p>Belum ada hari libur yang ditambahkan</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Contoh Hari Libur Default -->
+    <div class="bg-yellow-50 rounded-lg p-4 mt-6">
+        <h3 class="font-semibold text-yellow-800 mb-3">💡 Contoh Hari Libur 2024</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+            <div class="flex justify-between">
+                <span>01 Januari 2024</span>
+                <span class="text-yellow-700">Tahun Baru Masehi</span>
+            </div>
+            <div class="flex justify-between">
+                <span>17 Agustus 2024</span>
+                <span class="text-yellow-700">Hari Kemerdekaan RI</span>
+            </div>
+            <div class="flex justify-between">
+                <span>10 April 2024</span>
+                <span class="text-yellow-700">Idul Fitri 1445 H</span>
+            </div>
+            <div class="flex justify-between">
+                <span>25 Desember 2024</span>
+                <span class="text-yellow-700">Hari Raya Natal</span>
+            </div>
+        </div>
+        <div class="mt-3 text-xs text-yellow-600">
+            Klik tombol "Tambah" untuk menambahkan hari libur ke sistem
+        </div>
+    </div>
+</div>
+
+<!-- Modal Tambah/Edit Hari Libur -->
+<div id="modal-hari-libur" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center px-4">
+    <div class="bg-white rounded-xl p-6 max-w-md w-full">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold" id="modal-title">➕ Tambah Hari Libur</h3>
+            <button onclick="hideModal()" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        
+        <form id="form-hari-libur">
+            <input type="hidden" id="edit-id" value="">
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal Libur *</label>
+                <input type="date" id="tanggal-libur" required 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Nama Hari Libur *</label>
+                <input type="text" id="nama-libur" required placeholder="contoh: Hari Kemerdekaan RI"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Jenis Libur</label>
+                <select id="jenis-libur" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                    <option value="nasional">Nasional</option>
+                    <option value="cuti_bersama">Cuti Bersama</option>
+                    <option value="khusus">Khusus</option>
+                </select>
+            </div>
+            
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Keterangan (opsional)</label>
+                <textarea id="keterangan" rows="2" placeholder="Keterangan tambahan..."
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"></textarea>
+            </div>
+            
+            <div class="flex space-x-3">
+                <button type="button" onclick="hideModal()" 
+                        class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg font-medium">
+                    Batal
+                </button>
+                <button type="submit" 
+                        class="flex-1 bg-orange-600 hover:bg-orange-700 text-white py-2 px-4 rounded-lg font-medium">
+                    💾 Simpan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Data hari libur initial dari server
+let hariLiburData = {{ hari_libur_data|raw }};
+
+async function loadHariLibur() {
+    const tahun = document.getElementById('filter-tahun').value;
+    
+    try {
+        const response = await fetch(`{{ path('app_admin_list_hari_libur', {tahun: 'TAHUN'}) }}`.replace('TAHUN', tahun));
+        const result = await response.json();
+        
+        if (result.success) {
+            hariLiburData = result.data;
+            updateHariLiburList(result.data);
+            updateTotalCount(result.total);
+            
+            // Update header dengan tahun yang dipilih
+            document.getElementById('header-daftar').textContent = `📋 Daftar Hari Libur ${tahun}`;
+        } else {
+            console.error('Gagal memuat data hari libur:', result.message);
+            updateHariLiburList([]);
+            updateTotalCount(0);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('❌ Gagal memuat data hari libur', 'error');
+        updateHariLiburList([]);
+        updateTotalCount(0);
+    }
+}
+
+function updateHariLiburList(data) {
+    // Update mobile view
+    const mobileList = document.getElementById('mobile-list');
+    mobileList.innerHTML = '';
+    
+    // Update desktop view
+    const desktopList = document.getElementById('desktop-list');
+    desktopList.innerHTML = '';
+    
+    if (data.length === 0) {
+        mobileList.innerHTML = `
+            <div class="p-8 text-center text-gray-500">
+                <div class="text-4xl mb-4">📅</div>
+                <p>Belum ada hari libur untuk tahun ini</p>
+            </div>
+        `;
+        
+        desktopList.innerHTML = `
+            <tr>
+                <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+                    <div class="text-4xl mb-4">📅</div>
+                    <p>Belum ada hari libur untuk tahun ini</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    data.forEach(item => {
+        const tanggalFormat = new Date(item.tanggal).toLocaleDateString('id-ID', {
+            weekday: 'long',
+            year: 'numeric', 
+            month: 'long',
+            day: 'numeric'
+        });
+        
+        const jenisLabel = {
+            'nasional': 'Nasional',
+            'cuti_bersama': 'Cuti Bersama', 
+            'khusus': 'Khusus'
+        };
+        
+        const jenisClass = {
+            'nasional': 'bg-red-100 text-red-800',
+            'cuti_bersama': 'bg-blue-100 text-blue-800',
+            'khusus': 'bg-yellow-100 text-yellow-800'
+        };
+        
+        // Mobile card
+        const mobileCard = document.createElement('div');
+        mobileCard.className = 'p-4 border-b border-gray-200';
+        mobileCard.innerHTML = `
+            <div class="flex justify-between items-start mb-2">
+                <div class="font-medium text-gray-800">${item.nama}</div>
+                <span class="px-2 py-1 text-xs font-semibold rounded-full ${jenisClass[item.jenis]}">
+                    ${jenisLabel[item.jenis]}
+                </span>
+            </div>
+            <div class="text-sm text-gray-600 mb-3">${tanggalFormat}</div>
+            <div class="flex justify-between items-center">
+                <span class="text-xs text-green-600 font-semibold">✅ ${item.status}</span>
+                <div class="flex space-x-2">
+                    <button onclick="editHariLibur(${item.id})" class="text-blue-600 hover:text-blue-800 text-sm">
+                        ✏️ Edit
+                    </button>
+                    <button onclick="deleteHariLibur(${item.id})" class="text-red-600 hover:text-red-800 text-sm">
+                        🗑️ Hapus
+                    </button>
+                </div>
+            </div>
+        `;
+        mobileList.appendChild(mobileCard);
+        
+        // Desktop row
+        const desktopRow = document.createElement('tr');
+        desktopRow.className = 'hover:bg-gray-50';
+        desktopRow.innerHTML = `
+            <td class="px-4 py-3 text-sm text-gray-900">${tanggalFormat}</td>
+            <td class="px-4 py-3 text-sm font-medium text-gray-900">${item.nama}</td>
+            <td class="px-4 py-3 text-sm">
+                <span class="px-2 py-1 text-xs font-semibold rounded-full ${jenisClass[item.jenis]}">
+                    ${jenisLabel[item.jenis]}
+                </span>
+            </td>
+            <td class="px-4 py-3 text-sm text-green-600 font-semibold">✅ ${item.status}</td>
+            <td class="px-4 py-3 text-sm text-center">
+                <button onclick="editHariLibur(${item.id})" class="text-blue-600 hover:text-blue-800 mr-3">
+                    ✏️ Edit
+                </button>
+                <button onclick="deleteHariLibur(${item.id})" class="text-red-600 hover:text-red-800">
+                    🗑️ Hapus
+                </button>
+            </td>
+        `;
+        desktopList.appendChild(desktopRow);
+    });
+}
+
+function updateTotalCount(count) {
+    document.getElementById('total-hari-libur').textContent = `${count} hari`;
+}
+
+function showTambahHariLibur() {
+    document.getElementById('modal-title').textContent = '➕ Tambah Hari Libur';
+    document.getElementById('edit-id').value = '';
+    document.getElementById('form-hari-libur').reset();
+    document.getElementById('modal-hari-libur').classList.remove('hidden');
+}
+
+function editHariLibur(id) {
+    const item = hariLiburData.find(h => h.id === id);
+    if (!item) return;
+    
+    document.getElementById('modal-title').textContent = '✏️ Edit Hari Libur';
+    document.getElementById('edit-id').value = id;
+    document.getElementById('tanggal-libur').value = item.tanggal;
+    document.getElementById('nama-libur').value = item.nama;
+    document.getElementById('jenis-libur').value = item.jenis;
+    document.getElementById('keterangan').value = item.keterangan || '';
+    
+    document.getElementById('modal-hari-libur').classList.remove('hidden');
+}
+
+async function deleteHariLibur(id) {
+    const item = hariLiburData.find(h => h.id === id);
+    if (!item) return;
+    
+    if (confirm(`Apakah Anda yakin ingin menghapus hari libur "${item.nama}"?`)) {
+        try {
+            const response = await fetch(`{{ path('app_admin_hapus_hari_libur', {id: 'ID'}) }}`.replace('ID', id), {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showToast(result.message, 'success');
+                loadHariLibur(); // Reload data
+            } else {
+                showToast(result.message, 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('❌ Terjadi kesalahan saat menghapus hari libur', 'error');
+        }
+    }
+}
+
+function hideModal() {
+    document.getElementById('modal-hari-libur').classList.add('hidden');
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `fixed bottom-4 right-4 z-50 px-4 py-2 rounded-lg text-white text-sm font-medium ${
+        type === 'success' ? 'bg-green-600' : 
+        type === 'error' ? 'bg-red-600' : 'bg-blue-600'
+    }`;
+    toast.textContent = message;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+// Form submission
+document.getElementById('form-hari-libur').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const editId = document.getElementById('edit-id').value;
+    const submitButton = this.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    
+    // Disable button
+    submitButton.disabled = true;
+    submitButton.innerHTML = '⏳ Menyimpan...';
+    
+    const formData = new FormData();
+    formData.append('tanggal_libur', document.getElementById('tanggal-libur').value);
+    formData.append('nama_libur', document.getElementById('nama-libur').value);
+    formData.append('jenis_libur', document.getElementById('jenis-libur').value);
+    formData.append('keterangan', document.getElementById('keterangan').value);
+    
+    try {
+        let url, method;
+        
+        if (editId) {
+            // Update existing
+            url = `{{ path('app_admin_edit_hari_libur', {id: 'ID'}) }}`.replace('ID', editId);
+            method = 'POST';
+        } else {
+            // Add new
+            url = '{{ path("app_admin_tambah_hari_libur") }}';
+            method = 'POST';
+        }
+        
+        const response = await fetch(url, {
+            method: method,
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast(result.message, 'success');
+            hideModal();
+            loadHariLibur(); // Reload data
+        } else {
+            showToast(result.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('❌ Terjadi kesalahan saat menyimpan data', 'error');
+    } finally {
+        // Restore button
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalText;
+    }
+});
+
+// Load initial data
+document.addEventListener('DOMContentLoaded', function() {
+    // Jika ada data initial, tampilkan langsung
+    if (hariLiburData.length > 0) {
+        updateHariLiburList(hariLiburData);
+        updateTotalCount(hariLiburData.length);
+    } else {
+        // Jika tidak ada data, load dari server
+        loadHariLibur();
+    }
+});
+</script>
+{% endblock %}

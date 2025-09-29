@@ -1,0 +1,403 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Manajemen Banner - Admin Gembira{% endblock %}
+
+{% block body %}
+<!-- Layout dengan Sidebar -->
+<div class="flex h-screen bg-gray-100">
+    <!-- Sidebar -->
+    <div class="w-64 bg-white shadow-lg flex-shrink-0">
+        <!-- Header Sidebar -->
+        <div class="bg-purple-600 text-white p-4">
+            <h1 class="text-lg font-bold">Admin Panel Gembira</h1>
+            <p class="text-purple-200 text-sm">{{ admin.namaLengkap }}</p>
+        </div>
+        
+        <!-- Menu Navigation -->
+        <nav class="mt-4">
+            <!-- Dashboard -->
+            <a href="{{ path('app_admin_dashboard') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-purple-500">
+                <span class="text-lg mr-3">🏠</span>
+                <span class="font-medium">Dashboard</span>
+            </a>
+            
+            <!-- User -->
+            <a href="{{ path('app_admin_user') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-indigo-500">
+                <span class="text-lg mr-3">👤</span>
+                <span class="font-medium">User</span>
+            </a>
+            
+            <!-- Pengaturan Role -->
+            <a href="{{ path('app_admin_role') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-purple-500">
+                <span class="text-lg mr-3">🔐</span>
+                <span class="font-medium">Pengaturan Role</span>
+            </a>
+            
+            <!-- Data Management -->
+            <div class="menu-group">
+                <button onclick="toggleSubmenu('dataManagement')" class="w-full flex items-center justify-between px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-blue-500">
+                    <div class="flex items-center">
+                        <span class="text-lg mr-3">👥</span>
+                        <span class="font-medium">Data Management</span>
+                    </div>
+                    <svg class="w-4 h-4 transform transition-transform submenu-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div id="dataManagement" class="hidden bg-gray-50 ml-8">
+                    <a href="{{ path('app_admin_unit_kerja') }}" class="flex items-center px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+                        <span class="text-sm mr-2">🏢</span>
+                        <span class="text-sm">Unit Kerja</span>
+                    </a>
+                    <a href="{{ path('app_admin_kepala_bidang') }}" class="flex items-center px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+                        <span class="text-sm mr-2">👔</span>
+                        <span class="text-sm">Kepala Bidang</span>
+                    </a>
+                    <a href="{{ path('app_admin_kepala_kantor') }}" class="flex items-center px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+                        <span class="text-sm mr-2">🏛️</span>
+                        <span class="text-sm">Kepala Kantor</span>
+                    </a>
+                    <a href="{{ path('app_admin_pegawai') }}" class="flex items-center px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+                        <span class="text-sm mr-2">👨‍💼</span>
+                        <span class="text-sm">Pegawai</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Events -->
+            <a href="{{ path('app_admin_event_index') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-pink-500">
+                <span class="text-lg mr-3">🎉</span>
+                <span class="font-medium">Events</span>
+            </a>
+            
+            <!-- Jadwal Absensi -->
+            <a href="{{ path('app_admin_jadwal_absensi') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-teal-500">
+                <span class="text-lg mr-3">⏰</span>
+                <span class="font-medium">Jadwal Absensi</span>
+            </a>
+            
+            <!-- QR Code Manager -->
+            <a href="{{ path('app_admin_qr_codes') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-blue-500">
+                <span class="text-lg mr-3">📱</span>
+                <span class="font-medium">QR Code Manager</span>
+            </a>
+            
+            <!-- Manajemen Banner - ACTIVE -->
+            <a href="{{ path('app_admin_banner_index') }}" class="flex items-center px-4 py-3 text-gray-700 bg-gray-50 border-l-4 border-purple-500">
+                <span class="text-lg mr-3">🖼️</span>
+                <span class="font-medium">Manajemen Banner</span>
+            </a>
+            
+            <!-- Laporan Kehadiran -->
+            <a href="{{ path('app_admin_laporan_kehadiran') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-green-500">
+                <span class="text-lg mr-3">📊</span>
+                <span class="font-medium">Laporan Kehadiran</span>
+            </a>
+            
+            <!-- Laporan Bulanan -->
+            <a href="{{ path('app_admin_laporan_bulanan') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-indigo-500">
+                <span class="text-lg mr-3">📈</span>
+                <span class="font-medium">Laporan Bulanan</span>
+            </a>
+            
+            <hr class="my-4">
+            
+            <!-- Pengaturan -->
+            <a href="{{ path('app_admin_pengaturan') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-yellow-500">
+                <span class="text-lg mr-3">⚙️</span>
+                <span class="font-medium">Pengaturan</span>
+            </a>
+            
+            <!-- Logout -->
+            <form method="post" action="{{ path('app_logout') }}" class="mt-4">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+                <button type="submit" class="w-full flex items-center px-4 py-3 text-red-600 hover:bg-red-50 border-l-4 border-red-500">
+                    <span class="text-lg mr-3">🚪</span>
+                    <span class="font-medium">Logout</span>
+                </button>
+            </form>
+        </nav>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 overflow-y-auto">
+        <!-- Header -->
+        <div class="bg-white shadow-sm px-6 py-4 border-b">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800">🖼️ Manajemen Banner</h2>
+                    <p class="text-gray-600 text-sm">Kelola banner slider untuk halaman user</p>
+                </div>
+                <div class="text-sm text-gray-600">
+                    <div>{{ active_count }} aktif dari {{ total_count }} banner</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Content -->
+        <div class="p-6">
+            <!-- Action Buttons -->
+            <div class="mb-6 flex justify-between items-center">
+                <div class="flex space-x-3">
+                    <a href="{{ path('app_admin_banner_new') }}" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium inline-flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                        Tambah Banner
+                    </a>
+                </div>
+                
+                <div class="text-sm text-gray-500">
+                    Total: {{ total_count }} banner
+                </div>
+            </div>
+
+            {% if sliders is empty %}
+                <!-- Empty State -->
+                <div class="bg-white rounded-lg shadow-sm p-12 text-center">
+                    <div class="text-6xl mb-4">🖼️</div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Belum Ada Banner</h3>
+                    <p class="text-gray-600 mb-6">Mulai dengan menambahkan banner pertama untuk halaman user</p>
+                    <a href="{{ path('app_admin_banner_new') }}" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium">
+                        Tambah Banner Pertama
+                    </a>
+                </div>
+            {% else %}
+                <!-- Banner Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for slider in sliders %}
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden border {{ slider.isAktif ? 'border-green-200' : 'border-gray-200' }}">
+                        <!-- Image Preview -->
+                        <div class="aspect-video bg-gray-100 relative">
+                            <img src="{{ slider.imageUrl }}" alt="{{ slider.title ?? 'Banner' }}" 
+                                 class="w-full h-full object-cover">
+                            
+                            <!-- Status Badge -->
+                            <div class="absolute top-3 left-3">
+                                {% if slider.isAktif %}
+                                    <span class="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full border border-green-200">
+                                        ✅ Aktif
+                                    </span>
+                                {% else %}
+                                    <span class="bg-gray-100 text-gray-800 text-xs font-medium px-2 py-1 rounded-full border border-gray-200">
+                                        ⏸️ Nonaktif
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Order Badge -->
+                            <div class="absolute top-3 right-3">
+                                <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full border border-blue-200">
+                                    #{{ slider.orderNo }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="p-4">
+                            <h4 class="font-medium text-gray-900 mb-2">
+                                {{ slider.title ?: 'Banner tanpa judul' }}
+                            </h4>
+                            
+                            {% if slider.description %}
+                                <p class="text-gray-600 text-sm mb-3 line-clamp-2">
+                                    {{ slider.description }}
+                                </p>
+                            {% endif %}
+
+                            {% if slider.hasLink %}
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-2 mb-3">
+                                    <div class="flex items-center text-blue-700 text-xs">
+                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                        </svg>
+                                        <span class="font-medium">Link:</span>
+                                        <span class="ml-1 truncate">{{ slider.link }}</span>
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            <div class="text-xs text-gray-500 mb-4">
+                                Dibuat: {{ slider.createdAt|date('d/m/Y H:i') }} WITA
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="flex space-x-2">
+                                <a href="{{ path('app_admin_banner_edit', {id: slider.id}) }}" 
+                                   class="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 py-2 px-3 rounded text-sm font-medium text-center">
+                                    ✏️ Edit
+                                </a>
+                                
+                                <button onclick="toggleStatus({{ slider.id }}, '{{ slider.status }}')" 
+                                        class="flex-1 {{ slider.isAktif ? 'bg-yellow-100 hover:bg-yellow-200 text-yellow-700' : 'bg-green-100 hover:bg-green-200 text-green-700' }} py-2 px-3 rounded text-sm font-medium">
+                                    {{ slider.isAktif ? '⏸️ Nonaktif' : '✅ Aktifkan' }}
+                                </button>
+                                
+                                <button onclick="deleteSlider({{ slider.id }}, '{{ slider.title ?: 'Banner' }}')" 
+                                        class="bg-red-100 hover:bg-red-200 text-red-700 py-2 px-3 rounded text-sm font-medium">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Toggle submenu function
+function toggleSubmenu(menuId) {
+    const submenu = document.getElementById(menuId);
+    const arrow = submenu.previousElementSibling.querySelector('.submenu-arrow');
+    
+    if (submenu.classList.contains('hidden')) {
+        submenu.classList.remove('hidden');
+        arrow.classList.add('rotate-180');
+    } else {
+        submenu.classList.add('hidden');
+        arrow.classList.remove('rotate-180');
+    }
+}
+
+// Toggle status function
+async function toggleStatus(sliderId, currentStatus) {
+    try {
+        const response = await fetch(`{{ path('app_admin_banner_toggle_status', {id: 'PLACEHOLDER'}) }}`.replace('PLACEHOLDER', sliderId), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification(result.message, 'success');
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        } else {
+            showNotification(result.message, 'error');
+        }
+    } catch (error) {
+        showNotification('❌ Terjadi kesalahan saat mengubah status', 'error');
+    }
+}
+
+// Delete slider function
+async function deleteSlider(sliderId, sliderTitle) {
+    if (!confirm(`⚠️ Yakin ingin menghapus banner "${sliderTitle}"?\n\nTindakan ini tidak dapat dibatalkan.`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`{{ path('app_admin_banner_delete', {id: 'PLACEHOLDER'}) }}`.replace('PLACEHOLDER', sliderId), {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification(result.message, 'success');
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        } else {
+            showNotification(result.message, 'error');
+        }
+    } catch (error) {
+        showNotification('❌ Terjadi kesalahan saat menghapus banner', 'error');
+    }
+}
+
+// Show notification helper
+function showNotification(message, type = 'info') {
+    let notification = document.getElementById('admin-notification');
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'admin-notification';
+        notification.className = 'fixed top-4 right-4 z-50 max-w-sm p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full';
+        document.body.appendChild(notification);
+    }
+    
+    notification.className = notification.className.replace(/bg-\w+-\d+/, '');
+    if (type === 'success') {
+        notification.classList.add('bg-green-500', 'text-white');
+    } else if (type === 'error') {
+        notification.classList.add('bg-red-500', 'text-white');
+    } else {
+        notification.classList.add('bg-blue-500', 'text-white');
+    }
+    
+    notification.innerHTML = message.replace(/\n/g, '<br>');
+    notification.classList.remove('translate-x-full');
+    notification.classList.add('translate-x-0');
+    
+    setTimeout(() => {
+        notification.classList.remove('translate-x-0');
+        notification.classList.add('translate-x-full');
+    }, 5000);
+}
+</script>
+
+<style>
+/* Submenu Animation */
+.submenu-arrow {
+    transition: transform 0.2s ease-in-out;
+}
+
+/* Menu Hover Effects */
+.menu-group button:hover,
+.menu-group a:hover {
+    background-color: #f9fafb;
+}
+
+/* Line clamp for text truncation */
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .flex {
+        flex-direction: column;
+    }
+    .w-64 {
+        width: 100%;
+        height: auto;
+    }
+    .flex-1 {
+        min-height: calc(100vh - 200px);
+    }
+}
+
+/* Scrollbar Styling */
+.overflow-y-auto::-webkit-scrollbar {
+    width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+</style>
+{% endblock %}

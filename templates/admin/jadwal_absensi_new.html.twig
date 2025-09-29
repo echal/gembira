@@ -1,0 +1,612 @@
+{% extends 'admin/_layout.html.twig' %}
+
+{% block title %}Buat Jadwal Absensi Baru - Admin{% endblock %}
+
+{% block page_icon %}➕{% endblock %}
+{% block page_title %}Buat Jadwal Absensi Baru{% endblock %}
+{% block page_description %}Buat jadwal absensi baru untuk seluruh pegawai{% endblock %}
+
+{% block admin_content %}
+    <!-- Breadcrumb -->
+    <nav class="flex mb-6" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+            <li class="inline-flex items-center">
+                <a href="{{ path('app_admin_dashboard') }}" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-teal-600 transition-colors">
+                    🏠 Dashboard
+                </a>
+            </li>
+            <li>
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+                    <a href="{{ path('app_admin_jadwal_absensi') }}" class="ml-1 text-sm font-medium text-gray-700 hover:text-teal-600 md:ml-2 transition-colors">⏰ Kelola Jadwal Absensi</a>
+                </div>
+            </li>
+            <li aria-current="page">
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+                    <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">➕ Buat Baru</span>
+                </div>
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Form Container -->
+    <div class="bg-white rounded-lg shadow-sm">
+        <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">➕ Form Buat Jadwal Absensi</h3>
+            <p class="text-sm text-gray-600 mt-1">Isi form di bawah untuk membuat jadwal absensi baru</p>
+        </div>
+
+        <div class="p-6">
+            <div class="max-w-4xl mx-auto">
+                <form id="formCreateJadwal" class="space-y-8">
+                    <input type="hidden" name="_token" value="{{ csrf_token('create_jadwal') }}">
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Kolom Kiri -->
+                        <div class="space-y-6">
+                            <!-- Nama Jadwal -->
+                            <div>
+                                <label for="nama_jadwal" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Nama Jadwal Absensi <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" id="nama_jadwal" name="nama_jadwal"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors"
+                                       placeholder="Contoh: Apel Pagi, Doa Bersama, Rapat Mingguan"
+                                       required autocomplete="off">
+                                <p class="text-xs text-gray-500 mt-2">Berikan nama yang jelas dan mudah dipahami pegawai</p>
+                            </div>
+
+                            <!-- Deskripsi -->
+                            <div>
+                                <label for="deskripsi" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Deskripsi (opsional)
+                                </label>
+                                <textarea id="deskripsi" name="deskripsi" rows="4"
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors"
+                                          placeholder="Deskripsi singkat tentang jadwal absensi ini..."
+                                          autocomplete="off"></textarea>
+                            </div>
+
+                            <!-- Emoji/Icon -->
+                            <div>
+                                <span class="block text-sm font-medium text-gray-700 mb-3">Emoji/Icon</span>
+                                <div class="grid grid-cols-8 gap-2 mb-3">
+                                    <button type="button" onclick="selectEmoji('🤲')" class="emoji-btn p-3 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-teal-300 transition-all text-xl">🤲</button>
+                                    <button type="button" onclick="selectEmoji('📖')" class="emoji-btn p-3 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-teal-300 transition-all text-xl">📖</button>
+                                    <button type="button" onclick="selectEmoji('🏢')" class="emoji-btn p-3 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-teal-300 transition-all text-xl">🏢</button>
+                                    <button type="button" onclick="selectEmoji('🇮🇩')" class="emoji-btn p-3 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-teal-300 transition-all text-xl">🇮🇩</button>
+                                    <button type="button" onclick="selectEmoji('🎯')" class="emoji-btn p-3 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-teal-300 transition-all text-xl">🎯</button>
+                                    <button type="button" onclick="selectEmoji('💼')" class="emoji-btn p-3 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-teal-300 transition-all text-xl">💼</button>
+                                    <button type="button" onclick="selectEmoji('📋')" class="emoji-btn p-3 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-teal-300 transition-all text-xl">📋</button>
+                                    <button type="button" onclick="selectEmoji('🎪')" class="emoji-btn p-3 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-teal-300 transition-all text-xl">🎪</button>
+                                </div>
+                                <input type="hidden" name="emoji" id="selectedEmoji" value="📅">
+                                <div id="emojiPreview" class="text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded">Dipilih: 📅</div>
+                            </div>
+
+                            <!-- Warna Kartu -->
+                            <div>
+                                <span class="block text-sm font-medium text-gray-700 mb-3">Warna Kartu</span>
+                                <div class="flex flex-wrap gap-3">
+                                    <button type="button" onclick="selectColor('#3B82F6')" class="color-btn w-12 h-12 rounded-lg border-2 border-gray-300 hover:border-gray-400 transition-all shadow-sm" style="background-color: #3B82F6" title="Biru"></button>
+                                    <button type="button" onclick="selectColor('#10B981')" class="color-btn w-12 h-12 rounded-lg border-2 border-gray-300 hover:border-gray-400 transition-all shadow-sm" style="background-color: #10B981" title="Hijau"></button>
+                                    <button type="button" onclick="selectColor('#8B5CF6')" class="color-btn w-12 h-12 rounded-lg border-2 border-gray-300 hover:border-gray-400 transition-all shadow-sm" style="background-color: #8B5CF6" title="Ungu"></button>
+                                    <button type="button" onclick="selectColor('#F59E0B')" class="color-btn w-12 h-12 rounded-lg border-2 border-gray-300 hover:border-gray-400 transition-all shadow-sm" style="background-color: #F59E0B" title="Kuning"></button>
+                                    <button type="button" onclick="selectColor('#EF4444')" class="color-btn w-12 h-12 rounded-lg border-2 border-gray-300 hover:border-gray-400 transition-all shadow-sm" style="background-color: #EF4444" title="Merah"></button>
+                                    <button type="button" onclick="selectColor('#06B6D4')" class="color-btn w-12 h-12 rounded-lg border-2 border-gray-300 hover:border-gray-400 transition-all shadow-sm" style="background-color: #06B6D4" title="Cyan"></button>
+                                </div>
+                                <input type="hidden" name="warna_kartu" id="selectedColor" value="#3B82F6">
+                                <div id="colorPreview" class="text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded mt-3">Dipilih: Biru</div>
+                            </div>
+                        </div>
+
+                        <!-- Kolom Kanan -->
+                        <div class="space-y-6">
+                            <!-- Fitur Absensi -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-3">Fitur Absensi <span class="text-red-500">*</span></label>
+                                <div class="space-y-3">
+                                    <label for="perlu_qr_code" class="flex items-start p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                                        <input type="checkbox" id="perlu_qr_code" name="perlu_qr_code" class="mt-1 mr-3 w-4 h-4 text-teal-600 rounded focus:ring-teal-500">
+                                        <div>
+                                            <div class="font-medium text-sm text-gray-900">📱 Perlu scan QR Code</div>
+                                            <div class="text-xs text-gray-600 mt-1">Pegawai harus scan QR Code sebelum absen</div>
+                                        </div>
+                                    </label>
+                                    <label for="perlu_kamera" class="flex items-start p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                                        <input type="checkbox" id="perlu_kamera" name="perlu_kamera" class="mt-1 mr-3 w-4 h-4 text-teal-600 rounded focus:ring-teal-500" checked>
+                                        <div>
+                                            <div class="font-medium text-sm text-gray-900">📷 Perlu foto selfie</div>
+                                            <div class="text-xs text-gray-600 mt-1">Pegawai wajib ambil foto selfie saat absen</div>
+                                        </div>
+                                    </label>
+                                    <label for="perlu_validasi" class="flex items-start p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                                        <input type="checkbox" id="perlu_validasi" name="perlu_validasi" class="mt-1 mr-3 w-4 h-4 text-teal-600 rounded focus:ring-teal-500">
+                                        <div>
+                                            <div class="font-medium text-sm text-gray-900">✅ Perlu validasi admin</div>
+                                            <div class="text-xs text-gray-600 mt-1">Absensi harus divalidasi admin sebelum dianggap sah</div>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <div class="text-xs text-blue-700">
+                                        <strong>💡 Tips:</strong> QR Code cocok untuk absensi di lokasi tertentu. Foto selfie memastikan identitas pegawai. <strong>Validasi admin</strong> digunakan untuk jadwal penting yang memerlukan persetujuan manual.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Rentang Hari -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-3">Rentang Hari <span class="text-red-500">*</span></label>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="hari_mulai" class="block text-xs text-gray-600 mb-2">Hari Mulai</label>
+                                        <select id="hari_mulai" name="hari_mulai" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors" required>
+                                            <option value="1">Senin</option>
+                                            <option value="2">Selasa</option>
+                                            <option value="3">Rabu</option>
+                                            <option value="4">Kamis</option>
+                                            <option value="5">Jumat</option>
+                                            <option value="6">Sabtu</option>
+                                            <option value="7">Minggu</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="hari_selesai" class="block text-xs text-gray-600 mb-2">Hari Selesai</label>
+                                        <select id="hari_selesai" name="hari_selesai" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors" required>
+                                            <option value="1">Senin</option>
+                                            <option value="2">Selasa</option>
+                                            <option value="3">Rabu</option>
+                                            <option value="4">Kamis</option>
+                                            <option value="5">Jumat</option>
+                                            <option value="6">Sabtu</option>
+                                            <option value="7">Minggu</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mt-2 text-xs text-gray-500 bg-gray-50 px-3 py-2 rounded">
+                                    💡 Jika hari mulai dan selesai sama, jadwal hanya berlaku untuk satu hari tersebut.
+                                </div>
+                            </div>
+
+                            <!-- Waktu Absensi -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-3">Waktu Absensi <span class="text-red-500">*</span></label>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="jam_mulai" class="block text-xs text-gray-600 mb-2">Jam Mulai</label>
+                                        <input type="time" id="jam_mulai" name="jam_mulai" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors" required>
+                                    </div>
+                                    <div>
+                                        <label for="jam_selesai" class="block text-xs text-gray-600 mb-2">Jam Selesai</label>
+                                        <input type="time" id="jam_selesai" name="jam_selesai" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-4 pt-8 border-t border-gray-200">
+                        <a href="{{ path('app_admin_jadwal_absensi') }}"
+                           class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-3 px-6 rounded-lg font-medium text-center transition-colors">
+                            ← Kembali
+                        </a>
+                        <button type="submit"
+                                class="flex-1 bg-teal-600 hover:bg-teal-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
+                            ✅ Buat Jadwal
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block admin_javascripts %}
+{{ parent() }}
+
+<!-- Loading Modal -->
+<div id="loadingModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-xl p-6 text-center">
+        <div class="animate-spin w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p class="text-lg font-medium loading-text">Memproses data...</p>
+    </div>
+</div>
+
+<script>
+// Global variables
+window.JadwalAbsensiNew = window.JadwalAbsensiNew || {
+    initialized: false
+};
+
+// Safe DOM helper functions
+function safeGetElement(id) {
+    try {
+        return document.getElementById(id);
+    } catch (error) {
+        console.warn('Error getting element:', id, error);
+        return null;
+    }
+}
+
+// Fungsi untuk memilih warna kartu
+function selectColor(color) {
+    try {
+        const selectedColorElement = safeGetElement('selectedColor');
+        const colorPreviewElement = safeGetElement('colorPreview');
+
+        if (selectedColorElement) {
+            selectedColorElement.value = color;
+        }
+
+        const colorNames = {
+            '#3B82F6': 'Biru',
+            '#10B981': 'Hijau',
+            '#8B5CF6': 'Ungu',
+            '#F59E0B': 'Kuning',
+            '#EF4444': 'Merah',
+            '#06B6D4': 'Cyan'
+        };
+
+        if (colorPreviewElement) {
+            colorPreviewElement.textContent = `Dipilih: ${colorNames[color] || 'Warna Custom'}`;
+        }
+
+        // Visual feedback
+        try {
+            document.querySelectorAll('.color-btn').forEach(btn => {
+                btn.classList.remove('ring-4', 'ring-teal-300', 'border-teal-500');
+                btn.classList.add('border-gray-300');
+            });
+
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.remove('border-gray-300');
+                event.currentTarget.classList.add('ring-4', 'ring-teal-300', 'border-teal-500');
+            }
+        } catch (visualError) {
+            console.warn('Error applying visual feedback:', visualError);
+        }
+    } catch (error) {
+        console.error('Error in selectColor:', error);
+    }
+}
+
+function selectEmoji(emoji) {
+    try {
+        const selectedEmojiElement = safeGetElement('selectedEmoji');
+        const emojiPreviewElement = safeGetElement('emojiPreview');
+
+        if (selectedEmojiElement) {
+            selectedEmojiElement.value = emoji;
+        }
+
+        if (emojiPreviewElement) {
+            emojiPreviewElement.textContent = `Dipilih: ${emoji}`;
+        }
+
+        // Visual feedback
+        try {
+            document.querySelectorAll('.emoji-btn').forEach(btn => {
+                btn.classList.remove('bg-teal-100', 'border-teal-500');
+                btn.classList.add('border-gray-300');
+            });
+
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.remove('border-gray-300');
+                event.currentTarget.classList.add('bg-teal-100', 'border-teal-500');
+            }
+        } catch (visualError) {
+            console.warn('Error applying emoji visual feedback:', visualError);
+        }
+    } catch (error) {
+        console.error('Error in selectEmoji:', error);
+    }
+}
+
+// Set default values
+function setDefaultValues() {
+    try {
+        // Set default emoji
+        const selectedEmojiElement = safeGetElement('selectedEmoji');
+        const emojiPreviewElement = safeGetElement('emojiPreview');
+
+        if (selectedEmojiElement) selectedEmojiElement.value = '📅';
+        if (emojiPreviewElement) emojiPreviewElement.textContent = 'Dipilih: 📅';
+
+        // Set default warna
+        const selectedColorElement = safeGetElement('selectedColor');
+        const colorPreviewElement = safeGetElement('colorPreview');
+
+        if (selectedColorElement) selectedColorElement.value = '#3B82F6';
+        if (colorPreviewElement) colorPreviewElement.textContent = 'Dipilih: Biru';
+
+        // Set default jam
+        const jamMulai = document.querySelector('[name="jam_mulai"]');
+        const jamSelesai = document.querySelector('[name="jam_selesai"]');
+
+        if (jamMulai) jamMulai.value = '07:00';
+        if (jamSelesai) jamSelesai.value = '08:15';
+
+        // Set default hari (Senin sampai Kamis)
+        const hariMulai = document.querySelector('[name="hari_mulai"]');
+        const hariSelesai = document.querySelector('[name="hari_selesai"]');
+
+        if (hariMulai) hariMulai.value = '1'; // Senin
+        if (hariSelesai) hariSelesai.value = '4'; // Kamis
+
+        // Set visual feedback for default color
+        setTimeout(() => {
+            const defaultColorBtn = document.querySelector('.color-btn[style*="#3B82F6"]');
+            if (defaultColorBtn) {
+                defaultColorBtn.classList.add('ring-4', 'ring-teal-300', 'border-teal-500');
+            }
+        }, 100);
+    } catch (error) {
+        console.error('Error in setDefaultValues:', error);
+    }
+}
+
+// Form validation
+function validateTimeInput(jamMulaiName, jamSelesaiName) {
+    try {
+        const jamMulaiElement = document.querySelector(`[name="${jamMulaiName}"]`);
+        const jamSelesaiElement = document.querySelector(`[name="${jamSelesaiName}"]`);
+
+        if (!jamMulaiElement || !jamSelesaiElement) {
+            showAlert('Elemen form tidak ditemukan', 'error');
+            return false;
+        }
+
+        const jamMulai = jamMulaiElement.value;
+        const jamSelesai = jamSelesaiElement.value;
+
+        if (!jamMulai || !jamSelesai) {
+            showAlert('Jam mulai dan jam selesai harus diisi', 'error');
+            return false;
+        }
+
+        if (jamMulai >= jamSelesai) {
+            showAlert('Jam selesai harus lebih besar dari jam mulai', 'error');
+            return false;
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Error in validateTimeInput:', error);
+        showAlert('Terjadi kesalahan validasi form', 'error');
+        return false;
+    }
+}
+
+// Create jadwal function
+async function createJadwalAbsensi() {
+    showLoading(true);
+
+    const form = document.getElementById('formCreateJadwal');
+    const formData = new FormData(form);
+
+    try {
+        const response = await fetch('{{ path('app_admin_create_jadwal') }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.success) {
+            showAlert(result.message, 'success');
+
+            // Redirect ke halaman jadwal absensi setelah sukses
+            setTimeout(() => {
+                window.location.href = '{{ path('app_admin_jadwal_absensi') }}';
+            }, 1500);
+        } else {
+            showAlert(result.message || 'Terjadi kesalahan tidak dikenal', 'error');
+        }
+    } catch (error) {
+        showAlert(`Terjadi kesalahan koneksi: ${error.message}`, 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+function showLoading(show, message = 'Memproses data...') {
+    try {
+        const loadingModal = safeGetElement('loadingModal');
+        if (!loadingModal) return;
+
+        if (show) {
+            const loadingText = loadingModal.querySelector('.loading-text');
+            if (loadingText) {
+                loadingText.textContent = message;
+            }
+            loadingModal.classList.remove('hidden');
+        } else {
+            loadingModal.classList.add('hidden');
+        }
+    } catch (error) {
+        console.error('Error in showLoading:', error);
+    }
+}
+
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+
+    let bgClass, icon;
+
+    switch(type) {
+        case 'success':
+            bgClass = 'bg-green-100 text-green-800 border border-green-200';
+            icon = '✅';
+            break;
+        case 'error':
+        default:
+            bgClass = 'bg-red-100 text-red-800 border border-red-200';
+            icon = '❌';
+            break;
+    }
+
+    alertDiv.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm ${bgClass}`;
+    alertDiv.style.opacity = '0';
+    alertDiv.style.transform = 'translateX(100px)';
+
+    alertDiv.innerHTML = `
+        <div class="flex items-start">
+            <div class="text-lg mr-3">${icon}</div>
+            <div class="flex-1">
+                <div class="text-sm font-medium whitespace-pre-line">${message}</div>
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-lg opacity-50 hover:opacity-100">
+                ×
+            </button>
+        </div>
+    `;
+
+    document.body.appendChild(alertDiv);
+
+    // Animate in
+    setTimeout(() => {
+        alertDiv.style.transition = 'all 0.3s ease-in-out';
+        alertDiv.style.opacity = '1';
+        alertDiv.style.transform = 'translateX(0)';
+    }, 10);
+
+    // Auto remove
+    setTimeout(() => {
+        alertDiv.style.opacity = '0';
+        alertDiv.style.transform = 'translateX(100px)';
+        setTimeout(() => {
+            if (document.body.contains(alertDiv)) {
+                document.body.removeChild(alertDiv);
+            }
+        }, 300);
+    }, 5000);
+}
+
+// Initialize
+function initializeJadwalAbsensiNew() {
+    try {
+        console.log('Initializing Jadwal Absensi New page...');
+
+        // Set default values
+        setDefaultValues();
+
+        // Form submission
+        const formCreateJadwal = safeGetElement('formCreateJadwal');
+        if (formCreateJadwal) {
+            formCreateJadwal.addEventListener('submit', function(e) {
+                try {
+                    e.preventDefault();
+                    if (validateTimeInput('jam_mulai', 'jam_selesai')) {
+                        createJadwalAbsensi();
+                    }
+                } catch (error) {
+                    console.error('Error in form submission:', error);
+                }
+            });
+        }
+
+        window.JadwalAbsensiNew.initialized = true;
+        console.log('Jadwal Absensi New initialized successfully');
+    } catch (error) {
+        console.error('Error initializing Jadwal Absensi New:', error);
+    }
+}
+
+// Turbo-compatible initialization with protection against multiple calls
+function initializeJadwalAbsensiNewOnce() {
+    if (!window.JadwalAbsensiNew.initialized) {
+        initializeJadwalAbsensiNew();
+    }
+}
+
+// Use appropriate events based on Turbo availability
+if (typeof Turbo !== 'undefined') {
+    // Turbo is available - use Turbo events
+    document.addEventListener('turbo:load', initializeJadwalAbsensiNewOnce);
+} else {
+    // Turbo not available - use standard events
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeJadwalAbsensiNewOnce);
+    } else {
+        initializeJadwalAbsensiNewOnce();
+    }
+}
+</script>
+{% endblock %}
+
+{% block admin_stylesheets %}
+{{ parent() }}
+<style>
+/* Enhanced form styling */
+.transition-all {
+    transition: all 0.2s ease-in-out;
+}
+
+.transition-colors {
+    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+/* Focus ring for form elements */
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+}
+
+/* Hover effects for interactive elements */
+.emoji-btn:hover, .color-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom checkbox styling */
+input[type="checkbox"]:checked {
+    background-color: #0d9488;
+    border-color: #0d9488;
+}
+
+/* Responsive grid adjustments */
+@media (max-width: 768px) {
+    .grid-cols-8 {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .lg\\:grid-cols-2 {
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+    }
+}
+
+/* Screen Reader Only */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Loading animation */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+</style>
+{% endblock %}

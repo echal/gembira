@@ -1,0 +1,51 @@
+{#
+/**
+ * KOMPONEN TOMBOL LOGOUT YANG AMAN - PERBAIKAN CSRF TOKEN
+ * ====================================================
+ *
+ * Komponen ini menangani proses logout dengan sistem keamanan CSRF yang telah diperbaiki
+ * Menggunakan route 'app_logout_secure' yang konsisten dengan konfigurasi security.yaml
+ *
+ * PERBAIKAN YANG DILAKUKAN:
+ * - Menyinkronkan route logout dengan konfigurasi firewall Symfony
+ * - Menambahkan CSRF token yang valid untuk mencegah logout yang tidak sah
+ * - Memberikan konfirmasi logout untuk menghindari logout tidak disengaja
+ *
+ * PARAMETER YANG TERSEDIA:
+ * - style (opsional): Class CSS untuk styling tombol logout
+ * - text (opsional): Teks yang ditampilkan pada tombol, default "Logout"
+ * - icon (opsional): Ikon yang ditampilkan, default "🚪"
+ */
+#}
+
+{% set logout_style = style|default('w-full flex items-center px-4 py-3 text-red-600 hover:bg-red-50 border-l-4 border-red-500') %}
+{% set logout_text = text|default('Logout') %}
+{% set logout_icon = icon|default('🚪') %}
+
+{#
+FORM LOGOUT DENGAN PERLINDUNGAN CSRF TOKEN YANG DIPERBAIKI
+========================================================
+Route 'app_logout_secure' sudah disinkronkan dengan konfigurasi security.yaml
+CSRF token 'logout' diperlukan untuk validasi keamanan logout yang sah
+#}
+<form method="post" action="{{ path('app_logout_secure') }}" class="logout-form">
+    {# CSRF Token untuk validasi keamanan - mencegah logout yang tidak sah #}
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+    <button type="submit" class="{{ logout_style }}" onclick="return confirmLogout()">
+        <span class="text-lg mr-3">{{ logout_icon }}</span>
+        <span class="font-medium">{{ logout_text }}</span>
+    </button>
+</form>
+
+<script>
+/**
+ * FUNGSI KONFIRMASI LOGOUT - KEAMANAN TAMBAHAN
+ * ==========================================
+ *
+ * Memberikan konfirmasi kepada user sebelum logout untuk mencegah logout tidak sengaja
+ * Berguna untuk pengalaman user yang lebih baik dan menghindari kehilangan session kerja
+ */
+function confirmLogout() {
+    return confirm('Apakah Anda yakin ingin logout dari sistem Gembira?');
+}
+</script>

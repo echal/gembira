@@ -1,0 +1,87 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Diluar Jam Absensi - Gembira{% endblock %}
+
+{% block body %}
+<!-- Header -->
+<div class="bg-red-500 text-white">
+    <div class="container mx-auto px-4 py-4">
+        <div class="flex items-center">
+            <a href="{{ path('app_dashboard') }}" class="text-white mr-3">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <div>
+                <h1 class="text-xl font-bold">{{ jenis_absensi }}</h1>
+                <p class="text-red-200 text-sm">Diluar Jam Absensi</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mx-auto px-4 py-6">
+    <div class="bg-white rounded-lg shadow-sm p-6 text-center">
+        <!-- Icon Warning -->
+        <div class="text-6xl mb-6">⏰</div>
+        
+        <!-- Pesan Utama -->
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Diluar Jadwal Absensi</h2>
+        <p class="text-gray-600 mb-6">
+            {% if message is defined %}
+                {{ message }}
+            {% else %}
+                Maaf, saat ini diluar jam absensi untuk <strong>{{ jenis_absensi }}</strong>.
+            {% endif %}
+        </p>
+
+        <!-- Info Waktu -->
+        <div class="bg-gray-50 rounded-lg p-4 mb-6">
+            <p class="text-sm text-gray-600 mb-2">Jadwal absensi {{ jenis_absensi }}:</p>
+            <p class="text-lg font-semibold text-sky-500">{{ waktu_buka }}</p>
+        </div>
+
+        <!-- Waktu Saat Ini -->
+        <div class="bg-red-50 rounded-lg p-4 mb-6">
+            <p class="text-sm text-red-600 mb-2">Waktu saat ini:</p>
+            <p class="text-xl font-bold text-red-700" id="waktu-sekarang">--:--:--</p>
+        </div>
+
+        <!-- Tombol Kembali -->
+        <a href="{{ path('app_dashboard') }}" 
+           class="inline-block bg-sky-500 hover:bg-sky-600 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200">
+            🏠 Kembali ke Dashboard
+        </a>
+
+        <!-- Info Tambahan -->
+        <div class="mt-8 text-xs text-gray-500">
+            <p>💡 Halaman ini akan otomatis refresh setiap menit</p>
+            <p>untuk mengecek apakah jam absensi sudah dimulai</p>
+        </div>
+    </div>
+</div>
+
+<script>
+// Update jam real-time
+function updateJam() {
+    const sekarang = new Date();
+    const jam = sekarang.getHours().toString().padStart(2, '0');
+    const menit = sekarang.getMinutes().toString().padStart(2, '0');
+    const detik = sekarang.getSeconds().toString().padStart(2, '0');
+    
+    document.getElementById('waktu-sekarang').textContent = `${jam}:${menit}:${detik}`;
+    
+    // Auto refresh jika sudah masuk jam absensi
+    // Ini akan dihandle oleh server-side validation di controller
+}
+
+// Update setiap detik
+setInterval(updateJam, 1000);
+updateJam();
+
+// Auto refresh setiap 1 menit untuk cek waktu absensi
+setInterval(() => {
+    location.reload();
+}, 60000);
+</script>
+{% endblock %}

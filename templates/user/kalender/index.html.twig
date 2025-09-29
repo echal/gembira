@@ -1,0 +1,1221 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Kalender - Gembira{% endblock %}
+
+{% block body %}
+<!-- Header -->
+<div class="bg-gradient-to-r from-sky-400 to-sky-500 text-white sticky top-0 z-40 shadow-lg">
+    <div class="container mx-auto px-4 py-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <a href="{{ path('app_dashboard') }}" class="text-white mr-3 p-2 hover:bg-sky-600 rounded-lg">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </a>
+                <div>
+                    <h1 class="text-lg font-bold">📅 Kalender</h1>
+                    <p class="text-sky-200 text-sm">Event & Kegiatan</p>
+                </div>
+            </div>
+            
+            <!-- User Info -->
+            <div class="text-right">
+                <div class="text-sm font-medium">{{ pegawai.nama }}</div>
+                <div class="text-xs text-sky-200">{{ pegawai.nip }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="min-h-screen bg-gradient-to-b from-sky-50 to-sky-100 pb-20">
+    <div class="container mx-auto px-4 py-6">
+        
+        <!-- Calendar Navigation -->
+        <div class="bg-white rounded-xl shadow-sm p-4 mb-6 border border-sky-200">
+            <!-- Mobile-first responsive navigation -->
+            <div class="flex flex-col sm:flex-row items-center justify-between mb-4 space-y-2 sm:space-y-0">
+                <!-- Navigation buttons container -->
+                <div class="flex items-center justify-between w-full sm:w-auto">
+                    <a href="{{ path('app_user_kalender', {month: prev_month.month, year: prev_month.year}) }}" 
+                       class="flex items-center text-sky-600 hover:text-sky-800 font-medium bg-sky-50 hover:bg-sky-100 px-3 py-2 rounded-lg transition-colors">
+                        <svg class="w-4 h-4 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                        <span class="text-xs sm:text-sm">Sebelumnya</span>
+                    </a>
+                    
+                    <!-- Month/Year display - centered and responsive -->
+                    <div class="flex-1 text-center sm:hidden">
+                        <h2 class="text-lg font-bold text-gray-800">{{ month_name }}</h2>
+                        <p class="text-sm text-gray-600">{{ current_year }}</p>
+                    </div>
+                    
+                    <a href="{{ path('app_user_kalender', {month: next_month.month, year: next_month.year}) }}" 
+                       class="flex items-center text-sky-600 hover:text-sky-800 font-medium bg-sky-50 hover:bg-sky-100 px-3 py-2 rounded-lg transition-colors">
+                        <span class="text-xs sm:text-sm">Selanjutnya</span>
+                        <svg class="w-4 h-4 ml-1 sm:ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </a>
+                </div>
+                
+                <!-- Desktop month/year display -->
+                <div class="hidden sm:block text-center flex-1">
+                    <h2 class="text-xl lg:text-2xl font-bold text-gray-800">{{ month_name }} {{ current_year }}</h2>
+                </div>
+                
+                <!-- Empty div for spacing on desktop -->
+                <div class="hidden sm:block w-32 lg:w-40"></div>
+            </div>
+
+            <!-- Calendar Grid -->
+            <div class="grid grid-cols-7 gap-1 text-center">
+                <!-- Day Headers -->
+                <div class="py-2 text-sm font-semibold text-gray-600">Sen</div>
+                <div class="py-2 text-sm font-semibold text-gray-600">Sel</div>
+                <div class="py-2 text-sm font-semibold text-gray-600">Rab</div>
+                <div class="py-2 text-sm font-semibold text-gray-600">Kam</div>
+                <div class="py-2 text-sm font-semibold text-gray-600">Jum</div>
+                <div class="py-2 text-sm font-semibold text-gray-600">Sab</div>
+                <div class="py-2 text-sm font-semibold text-gray-600">Min</div>
+                
+                <!-- Empty cells for days before month starts -->
+                {% for i in 1..(calendar_data.first_day_of_week - 1) %}
+                    <div class="py-2"></div>
+                {% endfor %}
+                
+                <!-- Calendar Days -->
+                {% for day in 1..calendar_data.days_in_month %}
+                    {% set is_today = (today.format('Y-m-d') == current_year ~ '-' ~ current_month|number_format(2, '0', '') ~ '-' ~ day|number_format(2, '0', '')) %}
+                    {% set has_event = calendar_data.event_days[day] is defined %}
+                    
+                    <div class="relative py-2 h-12 sm:h-14 flex items-center justify-center cursor-pointer hover:bg-sky-50 rounded-lg transition-all duration-200 {{ is_today ? 'transform scale-105' : '' }}"
+                         onclick="handleDateClick('{{ current_year }}-{{ current_month|number_format(2, '0', '') }}-{{ day|number_format(2, '0', '') }}')"
+                         data-date="{{ current_year }}-{{ current_month|number_format(2, '0', '') }}-{{ day|number_format(2, '0', '') }}">
+                        {% if is_today %}
+                            <!-- Today's date with special styling -->
+                            <div class="relative">
+                                <span class="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 bg-sky-500 text-white text-sm sm:text-base font-bold rounded-full shadow-lg ring-2 ring-sky-200 animate-pulse">
+                                    {{ day }}
+                                </span>
+                                <!-- Today indicator dot -->
+                                <div class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-sm"></div>
+                            </div>
+                        {% else %}
+                            <!-- Regular date -->
+                            <span class="text-sm sm:text-base {{ has_event ? 'text-sky-700 font-semibold bg-sky-50 px-2 py-1 rounded-full' : 'text-gray-700 hover:bg-gray-100 px-2 py-1 rounded-full' }} transition-colors">
+                                {{ day }}
+                            </span>
+                        {% endif %}
+                        
+                        {% if has_event and not is_today %}
+                            <!-- Event indicator dot (not shown for today since it has red dot) -->
+                            <div class="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-sky-400 rounded-full shadow-sm"></div>
+                        {% elseif has_event and is_today %}
+                            <!-- Event indicator for today (different position) -->
+                            <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-yellow-400 rounded-full shadow-sm"></div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Events List -->
+        <div class="bg-white rounded-xl shadow-sm p-6 border border-sky-200">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                📋 Event {{ month_name }} {{ current_year }}
+                <span class="ml-2 bg-sky-100 text-sky-800 text-xs font-medium px-2 py-1 rounded-full">
+                    {{ events|length }}
+                </span>
+            </h3>
+            
+            {% if events|length > 0 %}
+                <!-- Grid Layout untuk Event yang Lebih Baik -->
+                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-1">
+                    {% for event in events %}
+                    <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-sky-100 overflow-hidden">
+                        <!-- Header dengan Badge Kategori -->
+                        <div class="bg-gradient-to-r from-sky-50 to-sky-100 px-4 py-3 border-b border-sky-200">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <span class="text-xl mr-3">{{ event.kategoriIcon }}</span>
+                                    <h4 class="font-semibold text-gray-800 text-lg">{{ event.judulEvent }}</h4>
+                                </div>
+                                <!-- Badge Kategori dengan Emoji dan Warna -->
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium {{ event.kategoriBadgeClass }}">
+                                    {{ event.kategoriBadgeEmoji }} {{ event.kategoriNama }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Content -->
+                        <div class="p-4">
+                            <!-- Tanggal dan Waktu -->
+                            <div class="flex items-center text-sm text-gray-600 mb-2">
+                                <svg class="w-4 h-4 mr-2 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                                <strong>{{ event.tanggalMulai|date('l, d F Y')|replace({
+                                    'Monday': 'Senin',
+                                    'Tuesday': 'Selasa', 
+                                    'Wednesday': 'Rabu',
+                                    'Thursday': 'Kamis',
+                                    'Friday': 'Jumat',
+                                    'Saturday': 'Sabtu',
+                                    'Sunday': 'Minggu',
+                                    'January': 'Januari',
+                                    'February': 'Februari',
+                                    'March': 'Maret',
+                                    'April': 'April',
+                                    'May': 'Mei',
+                                    'June': 'Juni',
+                                    'July': 'Juli',
+                                    'August': 'Agustus',
+                                    'September': 'September',
+                                    'October': 'Oktober',
+                                    'November': 'November',
+                                    'December': 'Desember'
+                                }) }}</strong>
+                            </div>
+                            
+                            <!-- Waktu -->
+                            <div class="flex items-center text-sm text-gray-600 mb-2">
+                                <svg class="w-4 h-4 mr-2 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                {{ event.tanggalMulai|date('H:i') }} WITA
+                                {% if event.tanggalSelesai %}
+                                    - {{ event.tanggalSelesai|date('H:i') }} WITA
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Lokasi -->
+                            {% if event.lokasi %}
+                                <div class="flex items-center text-sm text-gray-600 mb-3">
+                                    <svg class="w-4 h-4 mr-2 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    </svg>
+                                    {{ event.lokasi }}
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Deskripsi -->
+                            {% if event.deskripsi %}
+                                <p class="text-sm text-gray-600 mb-4 leading-relaxed">{{ event.deskripsi }}</p>
+                            {% endif %}
+
+                            <!-- Status Absensi Info -->
+                            {% if event.isButuhAbsensi %}
+                                {% set absensi_validation = event.validateAbsensiTime() %}
+                                <div class="flex items-center text-xs mb-3">
+                                    <svg class="w-4 h-4 mr-2 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <strong>Status Absensi:</strong>
+                                    <span class="ml-2 {% if absensi_validation.valid %}text-green-600{% else %}text-red-600{% endif %}">
+                                        {% if absensi_validation.valid %}
+                                            Tersedia untuk absensi
+                                        {% else %}
+                                            {{ absensi_validation.message }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Action Buttons -->
+                            <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-gray-100">
+                                {% if event.hasLinkMeeting %}
+                                    {% if event.canJoinMeeting %}
+                                        <a href="{{ event.linkMeeting }}" target="_blank" 
+                                           class="inline-flex items-center text-xs bg-blue-100 text-blue-700 px-3 py-2 rounded-lg font-medium hover:bg-blue-200 transition-colors">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                                            </svg>
+                                            Join Meeting
+                                        </a>
+                                    {% else %}
+                                        <span class="inline-flex items-center text-xs bg-gray-100 text-gray-500 px-3 py-2 rounded-lg font-medium cursor-not-allowed" 
+                                              title="Meeting sudah berakhir">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                                            </svg>
+                                            Meeting Berakhir
+                                        </span>
+                                    {% endif %}
+                                {% endif %}
+                                
+                                {% if event.isButuhAbsensi %}
+                                    {% set user_absensi = event.getUserAbsensi(pegawai) %}
+                                    {% set absensi_validation = event.validateAbsensiTime() %}
+
+                                    {% if user_absensi %}
+                                        <span class="inline-flex items-center text-xs bg-green-100 text-green-700 px-3 py-2 rounded-lg font-medium">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                            </svg>
+                                            Sudah Absen
+                                        </span>
+                                    {% elseif absensi_validation.valid %}
+                                        <button onclick="handleAbsenEvent({{ event.id }})"
+                                                class="inline-flex items-center text-xs bg-sky-100 text-sky-700 px-3 py-2 rounded-lg font-medium hover:bg-sky-200 transition-colors">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-.5a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+                                            </svg>
+                                            Absen
+                                        </button>
+                                    {% else %}
+                                        <span class="inline-flex items-center text-xs bg-gray-100 text-gray-500 px-3 py-2 rounded-lg font-medium cursor-not-allowed"
+                                              title="{{ absensi_validation.message }}">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                                            </svg>
+                                            Tidak Tersedia
+                                        </span>
+                                    {% endif %}
+                                {% endif %}
+                                
+                                <!-- Status Badge -->
+                                <div class="ml-auto">
+                                    {{ event.statusBadge|raw }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <!-- Empty State -->
+                <div class="text-center py-8">
+                    <div class="text-6xl mb-4">📅</div>
+                    <h4 class="text-lg font-semibold text-gray-700 mb-2">Tidak ada event untuk bulan ini</h4>
+                    <p class="text-gray-500 text-sm">
+                        Belum ada event atau kegiatan yang dijadwalkan untuk {{ month_name }} {{ current_year }}.
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Bottom Navigation Bar -->
+<div class="fixed bottom-0 left-0 right-0 bg-sky-400 shadow-2xl border-t border-sky-500 z-50">
+    <div class="grid grid-cols-5 text-center">
+        <!-- Home -->
+        <a href="{{ path('app_dashboard') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
+            <div class="text-lg mb-1">🏠</div>
+            <div class="text-xs">Home</div>
+        </a>
+        
+        <!-- Laporan -->
+        <a href="{{ path('app_user_laporan') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
+            <div class="text-lg mb-1">📊</div>
+            <div class="text-xs">Laporan</div>
+        </a>
+        
+        <!-- Kalender - Active -->
+        <a href="{{ path('app_user_kalender') }}" class="flex flex-col items-center py-3 px-2 text-white bg-sky-600 rounded-lg mx-1">
+            <div class="text-lg mb-1">📅</div>
+            <div class="text-xs font-medium">Kalender</div>
+        </a>
+        
+        <!-- Notifikasi -->
+        <a href="{{ path('app_notifikasi_index') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1 relative">
+            <div class="text-lg mb-1">🔔</div>
+            <div class="text-xs">Notifikasi</div>
+            <span id="notif-badge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"></span>
+        </a>
+        
+        <!-- Akun Saya -->
+        <a href="{{ path('app_profile_change_password') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
+            <div class="text-lg mb-1">👤</div>
+            <div class="text-xs">Akun Saya</div>
+        </a>
+    </div>
+</div>
+
+<!-- Event Detail Modal -->
+<div id="event-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 modal-backdrop z-50 flex items-center justify-center px-4">
+    <div class="bg-white rounded-xl p-6 max-w-md w-full modal-enter shadow-2xl">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-gray-800" id="modal-title">Event untuk Tanggal</h3>
+            <button onclick="handleCloseModal()" class="text-gray-400 hover:text-sky-600 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div id="modal-content">
+            <!-- Event content will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<script>
+    // Global error handlers
+    window.addEventListener('error', function(e) {
+        console.log('JavaScript Error handled:', e.message);
+        return true;
+    });
+    
+    window.addEventListener('unhandledrejection', function(e) {
+        console.log('Promise rejection handled:', e.reason);
+        e.preventDefault();
+    });
+    
+    // Safe element selector
+    function safeGetElement(id) {
+        try {
+            return document.getElementById(id);
+        } catch (error) {
+            console.warn('Error getting element:', id, error);
+            return null;
+        }
+    }
+    
+    // Safe query selector
+    function safeQuerySelector(selector) {
+        try {
+            return document.querySelector(selector);
+        } catch (error) {
+            console.warn('Error querying selector:', selector, error);
+            return null;
+        }
+    }
+    
+    // Safe query selector all
+    function safeQuerySelectorAll(selector) {
+        try {
+            return document.querySelectorAll(selector);
+        } catch (error) {
+            console.warn('Error querying selector all:', selector, error);
+            return [];
+        }
+    }
+
+class KalenderApp {
+    constructor() {
+        try {
+            console.log('KalenderApp constructor called');
+            this.currentDate = new Date();
+            this.init();
+            console.log('KalenderApp constructor completed successfully');
+        } catch (error) {
+            console.error('Error in KalenderApp constructor:', error);
+            throw error;
+        }
+    }
+
+    init() {
+        try {
+            // Auto close modal when clicking outside
+            document.addEventListener('click', (e) => {
+                try {
+                    const modal = safeGetElement('event-modal');
+                    if (modal && e.target === modal) {
+                        this.closeEventModal();
+                    }
+                } catch (error) {
+                    console.error('Error in modal click handler:', error);
+                }
+            });
+
+            // Initialize today highlighting
+            this.highlightTodayDate();
+            
+            // Add touch feedback for mobile
+            this.addTouchFeedback();
+        } catch (error) {
+            console.error('Error in KalenderApp init:', error);
+        }
+    }
+
+    highlightTodayDate() {
+        const today = new Date();
+        const todayString = today.getFullYear() + '-' + 
+            String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+            String(today.getDate()).padStart(2, '0');
+        
+        // Find today's date element
+        const todayElement = document.querySelector(`[data-date="${todayString}"]`);
+        if (todayElement) {
+            // Add extra visual enhancements
+            todayElement.classList.add('today-highlight');
+            
+            // Add subtle animation
+            setTimeout(() => {
+                todayElement.style.transform = 'scale(1.05)';
+                todayElement.style.transition = 'transform 0.3s ease-in-out';
+            }, 500);
+
+            // Add periodic pulse effect
+            setInterval(() => {
+                if (todayElement.querySelector('.bg-sky-500')) {
+                    todayElement.querySelector('.bg-sky-500').classList.toggle('animate-pulse');
+                }
+            }, 3000);
+        }
+    }
+
+    addTouchFeedback() {
+        // Add touch feedback for all calendar dates
+        const dateElements = document.querySelectorAll('[data-date]');
+        dateElements.forEach(element => {
+            element.addEventListener('touchstart', (e) => {
+                e.currentTarget.style.transform = 'scale(0.95)';
+                e.currentTarget.style.backgroundColor = 'rgba(14, 165, 233, 0.1)';
+            });
+            
+            element.addEventListener('touchend', (e) => {
+                setTimeout(() => {
+                    const isToday = e.currentTarget.classList.contains('today-highlight');
+                    e.currentTarget.style.transform = isToday ? 'scale(1.05)' : 'scale(1)';
+                    e.currentTarget.style.backgroundColor = '';
+                }, 100);
+            });
+        });
+    }
+
+    async showEventsForDate(date) {
+        // perbaikan UX: tampilkan loading state dengan warna biru langit
+        this.showLoadingModal(date);
+        
+        try {
+            // perbaikan query event: pastikan format tanggal konsisten YYYY-MM-DD
+            const formattedDate = this.formatDateForAPI(date);
+            console.log('=== Frontend Debug - API Call ===');
+            console.log(`Frontend Debug - Original date: ${date}`);
+            console.log(`Frontend Debug - Formatted date: ${formattedDate}`);
+            console.log(`Frontend Debug - API URL: /kalender/api/events/${formattedDate}`);
+            
+            const response = await fetch(`/kalender/api/events/${formattedDate}`);
+            console.log(`Frontend Debug - Response status: ${response.status}`);
+            console.log(`Frontend Debug - Response headers:`, response.headers);
+            
+            const result = await response.json();
+            console.log('Frontend Debug - Raw response:', result);
+            console.log(`Frontend Debug - Success: ${result.success}`);
+            console.log(`Frontend Debug - Event count: ${result.count || 0}`);
+
+            if (result.success) {
+                console.log('Frontend Debug - Events data:', result.events);
+                console.log('Frontend Debug - User unit:', result.user_unit);
+                
+                // perbaikan query event: validasi data event sebelum tampilkan
+                if (result.events && Array.isArray(result.events)) {
+                    result.events.forEach((event, index) => {
+                        console.log(`Frontend Debug - Event ${index + 1}:`, {
+                            id: event.id,
+                            nama: event.nama,
+                            kategori: event.kategori,
+                            waktu: event.waktu,
+                            lokasi: event.lokasi
+                        });
+                    });
+                } else {
+                    console.warn('Frontend Debug - WARNING: Events data is not an array:', result.events);
+                }
+                
+                // perbaikan UX: tampilkan event dengan animasi smooth
+                setTimeout(() => {
+                    this.displayEventModal(result.date, result.events, result.count, result.user_unit);
+                }, 300); // delay singkat untuk UX yang smooth
+            } else {
+                // perbaikan error handling: pesan ramah user dengan warna biru langit
+                console.warn('Frontend Debug - API returned success=false:', result.message);
+                const message = result.message || 'Tidak dapat memuat event pada tanggal ini';
+                this.displayEventModal(date, [], 0, null, message);
+            }
+            
+            console.log('=== Frontend Debug - API Call END ===');
+            
+        } catch (error) {
+            // perbaikan error handling: log internal, pesan ramah untuk user
+            console.error('=== Frontend Debug - Network Error ===');
+            console.error('Network error loading events:', error);
+            console.error('Error type:', error.name);
+            console.error('Error message:', error.message);
+            console.error('=== Frontend Debug - Network Error END ===');
+            
+            this.displayEventModal(date, [], 0, null, 'Terjadi kesalahan jaringan. Silakan periksa koneksi internet Anda.');
+        }
+    }
+
+    // perbaikan query event: helper untuk format tanggal konsisten
+    formatDateForAPI(date) {
+        console.log('formatDateForAPI - Input date:', date, typeof date);
+        
+        // Jika date sudah dalam format YYYY-MM-DD, return as is
+        if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            console.log('formatDateForAPI - Already in YYYY-MM-DD format');
+            return date;
+        }
+        
+        // perbaikan query event: handle berbagai format input tanggal
+        try {
+            let dateObj;
+            
+            // Jika dari calendar click data-date attribute
+            if (typeof date === 'string' && date.includes('-')) {
+                dateObj = new Date(date);
+            } else {
+                // Fallback untuk format lain
+                dateObj = new Date(date);
+            }
+            
+            // perbaikan query event: validasi dateObj valid
+            if (isNaN(dateObj.getTime())) {
+                console.error('formatDateForAPI - Invalid date object:', dateObj);
+                throw new Error('Invalid date');
+            }
+            
+            const year = dateObj.getFullYear();
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const formatted = `${year}-${month}-${day}`;
+            
+            console.log('formatDateForAPI - Formatted result:', formatted);
+            
+            // perbaikan query event: double check format hasil
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(formatted)) {
+                console.error('formatDateForAPI - Result format invalid:', formatted);
+                throw new Error('Format result invalid');
+            }
+            
+            return formatted;
+        } catch (e) {
+            console.error('formatDateForAPI - Error formatting date:', e);
+            console.error('formatDateForAPI - Falling back to current date');
+            
+            // perbaikan query event: fallback ke tanggal hari ini
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+    }
+
+    // perbaikan UX: loading modal dengan tema biru langit
+    showLoadingModal(date) {
+        const modal = document.getElementById('event-modal');
+        const title = document.getElementById('modal-title');
+        const content = document.getElementById('modal-content');
+
+        title.textContent = `Memuat Event...`;
+        content.innerHTML = `
+            <div class="text-center py-8">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-sky-200 border-t-sky-500 mb-4"></div>
+                <p class="text-gray-600">Sedang memuat data event...</p>
+                <p class="text-sm text-sky-600 mt-1">Tanggal: ${date}</p>
+            </div>
+        `;
+        
+        modal.classList.remove('hidden');
+    }
+
+    displayEventModal(dateStr, events, count, userUnit = null, errorMessage = null) {
+        const modal = document.getElementById('event-modal');
+        const title = document.getElementById('modal-title');
+        const content = document.getElementById('modal-content');
+
+        // perbaikan UX: judul dengan informasi yang lebih lengkap
+        title.innerHTML = `
+            <div class="flex items-center justify-between">
+                <span>Event untuk ${dateStr}</span>
+                ${userUnit ? `<span class="text-xs bg-sky-100 text-sky-700 px-2 py-1 rounded-full">${userUnit}</span>` : ''}
+            </div>
+        `;
+
+        if (errorMessage) {
+            // perbaikan error handling: tampilan error dengan warna biru langit (tidak merah)
+            content.innerHTML = `
+                <div class="text-center py-6">
+                    <div class="text-4xl mb-3">⚠️</div>
+                    <h4 class="font-medium text-gray-800 mb-2">Informasi</h4>
+                    <p class="text-gray-600 text-sm leading-relaxed">${errorMessage}</p>
+                    <button onclick="handleCloseModal()" 
+                            class="mt-4 bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                        Tutup
+                    </button>
+                </div>
+            `;
+        } else if (count === 0) {
+            // perbaikan UX: pesan ramah saat tidak ada event dengan tema biru langit
+            content.innerHTML = `
+                <div class="text-center py-6">
+                    <div class="text-4xl mb-3">📅</div>
+                    <h4 class="font-medium text-gray-800 mb-2">Tidak ada event</h4>
+                    <p class="text-gray-600 text-sm">Tidak ada kegiatan yang dijadwalkan pada tanggal ini.</p>
+                    <button onclick="handleCloseModal()" 
+                            class="mt-4 bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                        Tutup
+                    </button>
+                </div>
+            `;
+        } else {
+            // perbaikan tampilan event: menggunakan badge kategori berwarna konsisten
+            let eventHtml = '<div class="space-y-4 max-h-80 overflow-y-auto">';
+            events.forEach(event => {
+                eventHtml += `
+                    <div class="bg-white rounded-lg border border-sky-200 p-4 hover:shadow-md transition-shadow">
+                        <!-- Header Event -->
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex items-center flex-1">
+                                <span class="text-xl mr-3">${event.icon}</span>
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-gray-800 text-sm">${event.nama}</h4>
+                                    ${event.waktu ? `<p class="text-xs text-gray-500 mt-1">🕐 ${event.waktu} WITA</p>` : ''}
+                                </div>
+                            </div>
+                            <!-- Badge Kategori dengan Emoji -->
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${event.badge_class || 'bg-sky-100 text-sky-800'}">
+                                ${event.emoji_badge || '📆'} ${event.kategori}
+                            </span>
+                        </div>
+                        
+                        <!-- Detail Event -->
+                        ${event.lokasi ? `
+                            <div class="flex items-center text-xs text-gray-600 mb-2">
+                                <svg class="w-3 h-3 mr-1 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                </svg>
+                                ${event.lokasi}
+                            </div>
+                        ` : ''}
+                        
+                        ${event.deskripsi ? `
+                            <p class="text-xs text-gray-600 leading-relaxed">${event.deskripsi}</p>
+                        ` : ''}
+                        
+                        <!-- Meeting Link Button -->
+                        ${event.link_meeting ? `
+                            <div class="mt-2 pt-2 border-t border-gray-100">
+                                ${event.can_join_meeting ? `
+                                    <a href="${event.link_meeting}" target="_blank" 
+                                       class="inline-flex items-center text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-medium hover:bg-blue-200 transition-colors">
+                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                                        </svg>
+                                        Join Meeting
+                                    </a>
+                                ` : `
+                                    <span class="inline-flex items-center text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded font-medium cursor-not-allowed" 
+                                          title="Meeting sudah berakhir">
+                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                                        </svg>
+                                        Meeting Berakhir
+                                    </span>
+                                `}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            eventHtml += '</div>';
+            
+            // perbaikan UX: footer dengan informasi dan tombol aksi
+            eventHtml += `
+                <div class="mt-4 pt-3 border-t border-gray-200 flex items-center justify-between">
+                    <span class="text-xs text-gray-500">
+                        ${count} event ditemukan
+                    </span>
+                    <button onclick="handleCloseModal()" 
+                            class="bg-sky-500 hover:bg-sky-600 text-white px-3 py-1 rounded-lg text-xs transition-colors">
+                        Tutup
+                    </button>
+                </div>
+            `;
+            
+            content.innerHTML = eventHtml;
+        }
+
+        modal.classList.remove('hidden');
+    }
+
+    closeEventModal() {
+        try {
+            const modal = safeGetElement('event-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        } catch (error) {
+            console.error('Error closing event modal:', error);
+        }
+    }
+
+    showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        // perbaikan konsistensi warna: gunakan tema biru langit, tidak ada warna merah
+        toast.className = `fixed top-20 left-4 right-4 z-40 px-4 py-3 rounded-xl text-white text-sm font-medium shadow-lg transition-all ${
+            type === 'success' ? 'bg-green-600' : 
+            type === 'error' ? 'bg-sky-600' : // perbaikan: error menggunakan biru langit
+            type === 'warning' ? 'bg-yellow-600' : 'bg-sky-500'
+        }`;
+        
+        // perbaikan UX: tambahkan ikon sesuai tipe pesan
+        const icons = {
+            success: '✅',
+            error: 'ℹ️', // perbaikan: gunakan info icon daripada error
+            warning: '⚠️',
+            info: '📋'
+        };
+        
+        toast.innerHTML = `
+            <div class="flex items-center">
+                <span class="mr-2">${icons[type] || icons.info}</span>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // perbaikan UX: animasi masuk
+        setTimeout(() => {
+            toast.style.transform = 'translateY(-10px)';
+            toast.style.opacity = '1';
+        }, 100);
+        
+        setTimeout(() => {
+            // perbaikan UX: animasi keluar
+            toast.style.transform = 'translateY(-20px)';
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 200);
+        }, 3000);
+    }
+}
+
+// Robust date click handler
+function handleDateClick(date) {
+    try {
+        // Ensure app is initialized first
+        ensureKalenderAppInitialized(() => {
+            if (window.kalenderApp && typeof window.kalenderApp.showEventsForDate === 'function') {
+                window.kalenderApp.showEventsForDate(date);
+            } else {
+                console.error('showEventsForDate method still not available after initialization');
+            }
+        });
+    } catch (error) {
+        console.error('Error in handleDateClick:', error);
+    }
+}
+
+// Helper function to ensure app initialization
+function ensureKalenderAppInitialized(callback, maxRetries = 5, currentRetry = 0) {
+    try {
+        if (window.kalenderApp && typeof window.kalenderApp.showEventsForDate === 'function') {
+            // App is ready
+            callback();
+            return;
+        }
+        
+        if (currentRetry >= maxRetries) {
+            console.error('Failed to initialize KalenderApp after', maxRetries, 'retries');
+            return;
+        }
+        
+        // Try to initialize if class is available
+        if (typeof KalenderApp !== 'undefined' && !window.kalenderApp) {
+            window.kalenderApp = new KalenderApp();
+            console.log('KalenderApp initialized on retry', currentRetry + 1);
+        }
+        
+        // Check again after a delay
+        setTimeout(() => {
+            ensureKalenderAppInitialized(callback, maxRetries, currentRetry + 1);
+        }, 100);
+        
+    } catch (error) {
+        console.error('Error ensuring KalenderApp initialization:', error);
+    }
+}
+
+// Backward compatibility
+function showEventsForDate(date) {
+    handleDateClick(date);
+}
+
+// Robust modal close handler
+function handleCloseModal() {
+    try {
+        // First try direct modal close
+        const modal = safeGetElement('event-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+            return;
+        }
+        
+        // Fallback to app method if available
+        if (window.kalenderApp && typeof window.kalenderApp.closeEventModal === 'function') {
+            window.kalenderApp.closeEventModal();
+        } else {
+            console.warn('Modal element not found and closeEventModal method not available');
+        }
+    } catch (error) {
+        console.error('Error in handleCloseModal:', error);
+    }
+}
+
+// Backward compatibility
+function closeEventModal() {
+    handleCloseModal();
+}
+
+// Robust absen event handler
+function handleAbsenEvent(eventId) {
+    try {
+        if (!eventId) {
+            console.warn('Event ID is required');
+            return;
+        }
+        
+        if (!confirm('Yakin ingin absen untuk event ini?')) {
+            return;
+        }
+        
+        // Call the actual absen function
+        absenEvent(eventId);
+    } catch (error) {
+        console.error('Error in handleAbsenEvent:', error);
+    }
+}
+
+async function absenEvent(eventId) {
+    try {
+        if (!eventId) {
+            console.warn('Event ID is required');
+            return;
+        }
+
+        const response = await fetch(`/kalender/api/absen-event/${eventId}`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Show success message
+            if (window.kalenderApp && typeof window.kalenderApp.showToast === 'function') {
+                window.kalenderApp.showToast(result.message, 'success');
+            } else {
+                alert(result.message || 'Absensi berhasil');
+            }
+            
+            // Reload halaman untuk update status tombol
+            setTimeout(() => {
+                if (typeof location !== 'undefined' && location.reload) {
+                    location.reload();
+                }
+            }, 1000);
+        } else {
+            // Show error message
+            if (window.kalenderApp && typeof window.kalenderApp.showToast === 'function') {
+                window.kalenderApp.showToast(result.message || 'Gagal melakukan absensi', 'error');
+            } else {
+                alert(result.message || 'Gagal melakukan absensi');
+            }
+        }
+    } catch (error) {
+        console.error('Error in absenEvent:', error);
+        if (window.kalenderApp && typeof window.kalenderApp.showToast === 'function') {
+            window.kalenderApp.showToast('Terjadi kesalahan saat absen', 'error');
+        } else {
+            alert('Terjadi kesalahan saat absen');
+        }
+    }
+}
+
+// Initialize app with better timing and multiple fallbacks
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeKalenderApp);
+    // Additional fallback with window.onload
+    window.addEventListener('load', () => {
+        if (!window.kalenderApp) {
+            console.log('Fallback initialization on window load');
+            initializeKalenderApp();
+        }
+    });
+} else if (document.readyState === 'interactive' || document.readyState === 'complete') {
+    // DOM is already loaded, initialize immediately
+    console.log('DOM already ready, initializing immediately');
+    initializeKalenderApp();
+}
+
+// Final fallback - try after 1 second
+setTimeout(() => {
+    if (!window.kalenderApp) {
+        console.log('Final fallback initialization after 1 second');
+        initializeKalenderApp();
+    }
+}, 1000);
+
+function initializeKalenderApp() {
+    try {
+        console.log('initializeKalenderApp called');
+        console.log('KalenderApp class available:', typeof KalenderApp !== 'undefined');
+        console.log('window.kalenderApp exists:', !!window.kalenderApp);
+        
+        // Ensure we don't initialize twice
+        if (!window.kalenderApp) {
+            if (typeof KalenderApp !== 'undefined') {
+                window.kalenderApp = new KalenderApp();
+                console.log('KalenderApp initialized successfully');
+                console.log('showEventsForDate method available:', typeof window.kalenderApp.showEventsForDate === 'function');
+            } else {
+                console.error('KalenderApp class not defined yet');
+                return;
+            }
+        } else {
+            console.log('KalenderApp already initialized');
+        }
+        
+        // hubungan: update counter notifikasi
+        if (typeof updateNotificationBadge === 'function') {
+            updateNotificationBadge();
+            // Auto update setiap 30 detik
+            setInterval(() => {
+                try {
+                    updateNotificationBadge();
+                } catch (error) {
+                    console.error('Error in notification badge update interval:', error);
+                }
+            }, 30000);
+        }
+    } catch (error) {
+        console.error('Error initializing kalender app:', error);
+        // Retry initialization after a short delay
+        setTimeout(() => {
+            console.log('Retrying KalenderApp initialization...');
+            initializeKalenderApp();
+        }, 500);
+    }
+}
+
+// Function untuk update badge notifikasi
+async function updateNotificationBadge() {
+    try {
+        const response = await fetch('/notifikasi/api/count');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        const badge = safeGetElement('notif-badge');
+        if (badge) {
+            if (result.count && result.count > 0) {
+                badge.textContent = result.count > 9 ? '9+' : result.count;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+    } catch (error) {
+        console.error('Error updating notification badge:', error);
+    }
+}
+</script>
+
+<style>
+/* Mobile Touch Optimization */
+.touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Better card shadows for mobile */
+@media (max-width: 768px) {
+    .shadow-sm {
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    }
+}
+
+/* Calendar day hover effect */
+.grid .cursor-pointer:hover {
+    background-color: rgba(14, 165, 233, 0.1);
+}
+
+/* Today highlight special effects */
+.today-highlight {
+    position: relative;
+    z-index: 10;
+}
+
+.today-highlight::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 120%;
+    height: 120%;
+    background: linear-gradient(45deg, rgba(14, 165, 233, 0.1), rgba(56, 189, 248, 0.1));
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    z-index: -1;
+    animation: todayGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes todayGlow {
+    0% {
+        box-shadow: 0 0 5px rgba(14, 165, 233, 0.3);
+        transform: translate(-50%, -50%) scale(1);
+    }
+    100% {
+        box-shadow: 0 0 15px rgba(14, 165, 233, 0.5);
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+}
+
+/* Enhanced pulse animation for today */
+@keyframes todayPulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.7);
+    }
+    70% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 8px rgba(14, 165, 233, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(14, 165, 233, 0);
+    }
+}
+
+.today-date-circle {
+    animation: todayPulse 2s infinite;
+}
+
+/* perbaikan animasi: CSS untuk loading dan modal transitions */
+.modal-enter {
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* perbaikan UX: animasi loading spinner custom */
+@keyframes customSpin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.custom-loading {
+    animation: customSpin 1s linear infinite;
+}
+
+/* perbaikan UX: toast animations */
+.toast-enter {
+    opacity: 0;
+    transform: translateY(-30px);
+    transition: all 0.3s ease;
+}
+
+.toast-show {
+    opacity: 1;
+    transform: translateY(-10px);
+}
+
+.toast-exit {
+    opacity: 0;
+    transform: translateY(-40px);
+    transition: all 0.2s ease;
+}
+
+/* perbaikan consistency: hover effects untuk calendar dates */
+[data-date]:hover {
+    background-color: rgba(14, 165, 233, 0.1) !important;
+    transform: scale(1.02);
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+[data-date]:active {
+    transform: scale(0.98);
+    background-color: rgba(14, 165, 233, 0.2) !important;
+}
+
+/* perbaikan UX: modal backdrop blur */
+.modal-backdrop {
+    backdrop-filter: blur(4px);
+    transition: backdrop-filter 0.3s ease;
+}
+
+/* Mobile responsive calendar adjustments */
+@media (max-width: 640px) {
+    .calendar-navigation {
+        gap: 8px;
+    }
+    
+    .calendar-date {
+        font-size: 0.875rem;
+        min-height: 48px;
+    }
+    
+    .today-highlight {
+        transform: scale(1.02);
+    }
+    
+    /* perbaikan mobile: modal sizing */
+    #event-modal .bg-white {
+        margin: 1rem;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+}
+
+/* Smooth transitions */
+* {
+    -webkit-transition: all 0.2s ease;
+    transition: all 0.2s ease;
+}
+
+/* Button enhancements for mobile */
+.nav-button {
+    min-height: 44px;
+    min-width: 44px;
+}
+
+/* Event indicator improvements */
+.event-dot {
+    transition: all 0.2s ease;
+}
+
+.event-dot:hover {
+    transform: scale(1.2);
+}
+
+/* Modal improvements for mobile */
+@media (max-width: 640px) {
+    .event-modal-content {
+        margin: 1rem;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+}
+</style>
+{% endblock %}

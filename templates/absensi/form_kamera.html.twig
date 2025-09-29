@@ -1,0 +1,555 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ page_title }} - Absensi Gembira{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+{% endblock %}
+
+{% block body %}
+<!-- Header -->
+<div class="bg-gradient-to-r from-sky-400 to-sky-500 text-white sticky top-0 z-40">
+    <div class="container mx-auto px-4 py-4">
+        <div class="flex items-center">
+            <a href="{{ path('app_absensi_dashboard') }}" class="text-white mr-3 p-2 hover:bg-sky-600 rounded-lg">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <div class="flex-1">
+                <h1 class="text-lg font-bold">{{ jadwal.emoji }} {{ jadwal.namaJadwal }}</h1>
+                <p class="text-sky-200 text-sm">{{ 'now'|date('d F Y - H:i') }} WITA</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="min-h-screen bg-gray-100 pb-20">
+    <!-- Progress Steps -->
+    <div class="bg-white shadow-sm p-4 mb-4">
+        <div class="flex justify-center">
+            <div class="flex items-center space-x-4 text-sm">
+                <div class="step-mobile active" data-step="1">
+                    <div class="step-circle">1</div>
+                    <span class="step-text">Foto Selfie</span>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step-mobile" data-step="2">
+                    <div class="step-circle">2</div>
+                    <span class="step-text">Konfirmasi</span>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step-mobile" data-step="3">
+                    <div class="step-circle">3</div>
+                    <span class="step-text">Selesai</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Container -->
+    <div class="px-4">
+        <form id="form-absensi-kamera">
+            <input type="hidden" name="jadwal_id" value="{{ jadwal.id }}">
+            <input type="hidden" name="foto" id="foto_data" value="">
+            <input type="hidden" name="_token" value="{{ csrf_token('absensi_kamera') }}">
+
+            <!-- Step 1: Ambil Foto Selfie -->
+            <div class="step-content active" id="step-camera">
+                <div class="bg-white rounded-xl shadow-sm p-6 mb-4">
+                    <div class="text-center mb-6">
+                        <div class="text-6xl mb-4">📷</div>
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">Ambil Foto Absensi</h3>
+                        <p class="text-gray-600 text-sm">Pastikan wajah Anda terlihat jelas dalam foto untuk absensi {{ jadwal.namaJadwal }}</p>
+                    </div>
+
+                    <!-- Kamera Container -->
+                    <div class="relative mb-6">
+                        <video id="kamera-video" class="w-full h-80 rounded-xl bg-black object-cover" autoplay muted playsinline style="display:none;"></video>
+                        <canvas id="kamera-canvas" class="w-full h-80 rounded-xl" style="display:none;"></canvas>
+                        <img id="foto-preview" class="w-full h-80 rounded-xl object-cover border-4 border-green-500" style="display:none;">
+                        
+                        <!-- Camera Guide Overlay -->
+                        <div id="kamera-overlay" class="absolute inset-0 pointer-events-none" style="display:none;">
+                            <div class="w-full h-full relative">
+                                <!-- Face guide circle -->
+                                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-56 border-2 border-white rounded-full opacity-60"></div>
+                                
+                                <!-- Instruction text -->
+                                <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white text-sm text-center bg-black bg-opacity-50 px-4 py-2 rounded-lg">
+                                    Posisikan wajah di dalam lingkaran
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Start Camera Button -->
+                        <div id="start-kamera-container" class="text-center">
+                            <button type="button" id="btn-start-kamera" class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg touch-manipulation min-h-[56px]">
+                                📷 Buka Kamera
+                            </button>
+                        </div>
+                        
+                        <!-- Capture Button -->
+                        <div id="capture-kamera-container" class="absolute bottom-4 left-1/2 transform -translate-x-1/2" style="display:none;">
+                            <button type="button" id="btn-capture" class="bg-white hover:bg-gray-100 active:bg-gray-200 text-gray-800 p-4 rounded-full shadow-lg border-4 border-gray-300 touch-manipulation min-h-[64px] min-w-[64px]">
+                                <div class="w-8 h-8 bg-red-500 rounded-full"></div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Camera Controls -->
+                    <div class="space-y-3">
+                        <div id="foto-actions" class="flex space-x-3" style="display:none;">
+                            <button type="button" id="btn-retake" class="flex-1 bg-gray-600 hover:bg-gray-700 active:bg-gray-800 text-white py-3 rounded-lg font-medium touch-manipulation min-h-[48px]">
+                                🔄 Ambil Ulang
+                            </button>
+                            <button type="button" id="btn-use-foto" class="flex-1 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white py-3 rounded-lg font-medium touch-manipulation min-h-[48px]">
+                                ✅ Gunakan Foto
+                            </button>
+                        </div>
+
+                        <!-- File Input Backup -->
+                        <div class="border-t pt-4">
+                            <p class="text-center text-sm text-gray-500 mb-3">Atau pilih foto dari galeri:</p>
+                            <input type="file" id="foto_file" name="foto_file" accept="image/*" capture="user" 
+                                   class="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Konfirmasi -->
+            <div class="step-content" id="step-konfirmasi">
+                <div class="bg-white rounded-xl shadow-sm p-6 mb-4">
+                    <div class="text-center">
+                        <div class="text-6xl mb-4">✅</div>
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4">Konfirmasi Absensi</h3>
+                        
+                        <div class="bg-gray-50 rounded-lg p-4 mb-6 text-left space-y-2">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Absensi:</span>
+                                <span class="font-medium">{{ jadwal.namaJadwal }}</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Waktu:</span>
+                                <span class="font-medium" id="waktu-absensi">--:--</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Pegawai:</span>
+                                <span class="font-medium">{{ pegawai.nama }}</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Foto:</span>
+                                <span class="font-medium" id="status-foto">⏳ Belum diambil</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Fixed Bottom Bar -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t p-4 safe-area-pb">
+        <button type="button" id="btn-submit" class="w-full bg-gray-400 text-white py-4 rounded-xl font-semibold text-lg shadow-lg transition-colors touch-manipulation min-h-[56px]" disabled>
+            <span id="submit-text">⏳ Ambil Foto Terlebih Dahulu</span>
+        </button>
+    </div>
+
+    <!-- Loading Modal -->
+    <div id="loading-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl p-6 text-center max-w-sm mx-4">
+            <div class="animate-spin w-12 h-12 border-4 border-sky-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p class="text-lg font-medium">Mengirim absensi...</p>
+            <p class="text-sm text-gray-600 mt-2">Mohon tunggu sebentar</p>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="success-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl p-6 text-center max-w-sm mx-4">
+            <div class="text-6xl mb-4">✅</div>
+            <h3 class="text-xl font-bold text-green-600 mb-2">Absensi Berhasil!</h3>
+            <div id="success-message" class="text-sm text-gray-700 mb-4"></div>
+            <div class="space-y-2">
+                <button onclick="window.location.href='{{ path('app_user_laporan', {success: 1}) }}'" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-medium">
+                    📊 Lihat di Laporan
+                </button>
+                <button onclick="window.location.href='{{ path('app_absensi_dashboard') }}'" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-medium">
+                    🏠 Kembali ke Dashboard
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="error-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl p-6 text-center max-w-sm mx-4">
+            <div class="text-6xl mb-4">❌</div>
+            <h3 class="text-xl font-bold text-red-600 mb-2">Absensi Gagal</h3>
+            <div id="error-message" class="text-sm text-gray-700 mb-4"></div>
+            <button onclick="document.getElementById('error-modal').classList.add('hidden')" class="w-full bg-gray-600 hover:bg-gray-700 text-white py-3 rounded-lg font-medium">
+                Tutup
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Mobile-optimized styles */
+.step-mobile {
+    @apply flex flex-col items-center space-y-1;
+}
+.step-circle {
+    @apply w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-medium;
+}
+.step-mobile.active .step-circle {
+    @apply bg-sky-500 text-white;
+}
+.step-mobile.completed .step-circle {
+    @apply bg-green-500 text-white;
+}
+.step-text {
+    @apply text-xs text-gray-600;
+}
+.step-mobile.active .step-text {
+    @apply text-sky-500 font-medium;
+}
+.step-connector {
+    @apply w-8 h-px bg-gray-300 flex-shrink-0;
+}
+
+/* Mobile Touch Optimization */
+.touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Improve button accessibility */
+button:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+/* Prevent zoom on input focus (iOS Safari) */
+input[type="file"] {
+    font-size: 16px;
+}
+
+/* Improve video element on mobile */
+video {
+    -webkit-playsinline: true;
+    -webkit-object-fit: cover;
+    object-fit: cover;
+    transform: scaleX(-1); /* Mirror effect for selfie */
+}
+
+.step-content {
+    @apply hidden;
+}
+.step-content.active {
+    @apply block;
+}
+
+/* Safe area padding for iPhone */
+.safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom, 1rem);
+}
+</style>
+
+<script>
+class GembiraMobileKamera {
+    constructor() {
+        this.currentStep = 1;
+        this.fotoTaken = false;
+        this.stream = null;
+        
+        this.init();
+    }
+
+    init() {
+        console.log('GembiraMobileKamera initialized');
+        this.setupEventListeners();
+        this.updateSteps();
+        this.updateTime();
+        setInterval(() => this.updateTime(), 1000);
+        
+        // Auto-start camera after 500ms
+        setTimeout(() => {
+            this.startCamera();
+        }, 500);
+    }
+
+    setupEventListeners() {
+        // Camera controls
+        document.getElementById('btn-start-kamera').addEventListener('click', () => this.startCamera());
+        document.getElementById('btn-capture').addEventListener('click', () => this.captureFoto());
+        document.getElementById('btn-retake').addEventListener('click', () => this.retakeFoto());
+        document.getElementById('btn-use-foto').addEventListener('click', () => this.useFoto());
+        document.getElementById('foto_file').addEventListener('change', () => this.handleFileUpload());
+        
+        // Form Submit
+        document.getElementById('btn-submit').addEventListener('click', (e) => this.submitForm(e));
+    }
+
+    updateSteps() {
+        const steps = document.querySelectorAll('.step-mobile');
+        const contents = document.querySelectorAll('.step-content');
+        
+        steps.forEach((step, index) => {
+            const stepNum = index + 1;
+            step.classList.remove('active', 'completed');
+            
+            if (stepNum < this.currentStep) {
+                step.classList.add('completed');
+            } else if (stepNum === this.currentStep) {
+                step.classList.add('active');
+            }
+        });
+
+        contents.forEach((content, index) => {
+            content.classList.remove('active');
+            const contentStep = index + 1;
+            if (contentStep === this.currentStep) {
+                content.classList.add('active');
+            }
+        });
+
+        this.updateSubmitButton();
+    }
+
+    updateTime() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('id-ID');
+        const element = document.getElementById('waktu-absensi');
+        if (element) {
+            element.textContent = timeString;
+        }
+    }
+
+    async startCamera() {
+        console.log('Starting camera');
+        try {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error('Browser tidak mendukung akses kamera');
+            }
+
+            // Request front camera for selfie
+            this.stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    facingMode: 'user', // Front camera for selfie
+                    width: { ideal: 640 },
+                    height: { ideal: 480 }
+                } 
+            });
+            
+            const video = document.getElementById('kamera-video');
+            video.srcObject = this.stream;
+            video.style.display = 'block';
+            document.getElementById('kamera-overlay').style.display = 'block';
+            document.getElementById('start-kamera-container').style.display = 'none';
+            document.getElementById('capture-kamera-container').style.display = 'block';
+            
+            this.showToast('📷 Kamera siap! Posisikan wajah dan tekan tombol merah untuk foto', 'info');
+            
+        } catch (error) {
+            console.error('Error accessing camera:', error);
+            
+            let errorMessage = '❌ Tidak dapat mengakses kamera.';
+            if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                errorMessage = '🔒 Akses kamera diblokir. Silakan izinkan akses kamera di pengaturan browser.';
+            } else if (error.name === 'NotFoundError') {
+                errorMessage = '📷 Kamera tidak ditemukan. Pastikan perangkat memiliki kamera.';
+            } else if (error.name === 'NotReadableError') {
+                errorMessage = '⚠️ Kamera sedang digunakan aplikasi lain. Tutup aplikasi lain dan coba lagi.';
+            }
+            
+            this.showToast(errorMessage, 'error');
+        }
+    }
+
+    captureFoto() {
+        const video = document.getElementById('kamera-video');
+        const canvas = document.getElementById('kamera-canvas');
+        const preview = document.getElementById('foto-preview');
+        
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        const ctx = canvas.getContext('2d');
+        // Mirror the image back to normal
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, -canvas.width, 0);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8); // 80% quality
+        preview.src = dataUrl;
+        preview.style.display = 'block';
+        video.style.display = 'none';
+        
+        document.getElementById('kamera-overlay').style.display = 'none';
+        document.getElementById('capture-kamera-container').style.display = 'none';
+        document.getElementById('foto-actions').style.display = 'flex';
+        
+        this.stopCamera();
+        this.showToast('📷 Foto berhasil diambil! Periksa dan gunakan foto', 'success');
+    }
+
+    retakeFoto() {
+        document.getElementById('foto-preview').style.display = 'none';
+        document.getElementById('foto-actions').style.display = 'none';
+        document.getElementById('start-kamera-container').style.display = 'block';
+        this.fotoTaken = false;
+        this.updateSubmitButton();
+    }
+
+    useFoto() {
+        const canvas = document.getElementById('kamera-canvas');
+        const fotoData = canvas.toDataURL('image/jpeg', 0.8);
+        document.getElementById('foto_data').value = fotoData;
+        
+        this.fotoTaken = true;
+        document.getElementById('status-foto').innerHTML = '✅ Foto Siap';
+        this.showToast('✅ Foto berhasil disimpan!', 'success');
+        this.nextStep();
+    }
+
+    handleFileUpload() {
+        const fileInput = document.getElementById('foto_file');
+        if (fileInput.files && fileInput.files[0]) {
+            const file = fileInput.files[0];
+            
+            // Validate file size (max 2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                this.showToast('❌ Ukuran foto terlalu besar. Maksimal 2MB.', 'error');
+                fileInput.value = '';
+                return;
+            }
+            
+            // Convert file to base64
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('foto_data').value = e.target.result;
+                this.fotoTaken = true;
+                document.getElementById('status-foto').innerHTML = '✅ Foto dari Galeri';
+                this.showToast('✅ Foto dari galeri berhasil dipilih!', 'success');
+                this.nextStep();
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    nextStep() {
+        if (this.currentStep === 1 && this.fotoTaken) {
+            this.currentStep = 2;
+            this.updateSteps();
+        }
+    }
+
+    updateSubmitButton() {
+        const submitBtn = document.getElementById('btn-submit');
+        const canSubmit = this.fotoTaken;
+        
+        submitBtn.disabled = !canSubmit;
+        
+        if (canSubmit) {
+            document.getElementById('submit-text').textContent = '🚀 Kirim Absensi';
+            submitBtn.className = 'w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl font-semibold text-lg shadow-lg transition-colors touch-manipulation min-h-[56px]';
+        } else {
+            document.getElementById('submit-text').textContent = '⏳ Ambil Foto Terlebih Dahulu';
+            submitBtn.className = 'w-full bg-gray-400 text-white py-4 rounded-xl font-semibold text-lg shadow-lg touch-manipulation min-h-[56px]';
+        }
+    }
+
+    async submitForm(e) {
+        e.preventDefault();
+        
+        if (!this.fotoTaken) {
+            this.showToast('❌ Foto wajib diambil terlebih dahulu', 'error');
+            return;
+        }
+        
+        const loadingModal = document.getElementById('loading-modal');
+        loadingModal.classList.remove('hidden');
+        
+        const formData = new FormData();
+        formData.append('foto', document.getElementById('foto_data').value);
+        formData.append('_token', document.querySelector('input[name="_token"]').value);
+        
+        try {
+            const response = await fetch(window.location.href, {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.berhasil) {
+                this.showSuccessModal(result.pesan, result.waktu_absensi);
+            } else {
+                this.showErrorModal(result.pesan);
+            }
+        } catch (error) {
+            this.showErrorModal('❌ Terjadi kesalahan koneksi. Silakan coba lagi.');
+            console.error(error);
+        } finally {
+            loadingModal.classList.add('hidden');
+        }
+    }
+
+    showSuccessModal(message, waktuAbsensi) {
+        const modal = document.getElementById('success-modal');
+        const messageDiv = document.getElementById('success-message');
+        messageDiv.innerHTML = message + '<br><strong>Waktu: ' + waktuAbsensi + '</strong>';
+        modal.classList.remove('hidden');
+    }
+
+    showErrorModal(message) {
+        const modal = document.getElementById('error-modal');
+        const messageDiv = document.getElementById('error-message');
+        messageDiv.innerHTML = message;
+        modal.classList.remove('hidden');
+    }
+
+    showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `fixed top-20 left-4 right-4 z-40 px-4 py-3 rounded-xl text-white text-sm font-medium shadow-lg ${
+            type === 'success' ? 'bg-green-600' : 
+            type === 'error' ? 'bg-red-600' : 
+            type === 'warning' ? 'bg-orange-600' : 'bg-blue-600'
+        }`;
+        toast.textContent = message;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 4000);
+    }
+
+    stopCamera() {
+        if (this.stream) {
+            this.stream.getTracks().forEach(track => track.stop());
+            this.stream = null;
+        }
+    }
+
+    cleanup() {
+        this.stopCamera();
+    }
+}
+
+// Initialize when page loads
+let kameraApp;
+document.addEventListener('DOMContentLoaded', () => {
+    kameraApp = new GembiraMobileKamera();
+});
+
+// Cleanup when page unloads
+window.addEventListener('beforeunload', () => {
+    if (kameraApp) {
+        kameraApp.cleanup();
+    }
+});
+</script>
+{% endblock %}

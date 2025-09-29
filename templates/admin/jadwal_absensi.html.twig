@@ -1,0 +1,617 @@
+{% extends 'admin/_layout.html.twig' %}
+
+{% block title %}Kelola Jadwal Absensi - Admin{% endblock %}
+
+{% block page_icon %}⏰{% endblock %}
+{% block page_title %}Kelola Jadwal Absensi{% endblock %}
+{% block page_description %}Buat dan kelola jadwal absensi untuk seluruh pegawai{% endblock %}
+
+{% block header_actions %}
+    <a href="{{ path('app_admin_jadwal_absensi_new') }}" class="bg-teal-600 hover:bg-teal-700 text-white py-2 px-4 rounded-lg font-medium text-sm transition-colors">
+        ➕ Buat Jadwal Baru
+    </a>
+{% endblock %}
+
+{% block admin_content %}
+            <!-- Jadwal Absensi List -->
+            <div class="bg-white rounded-lg shadow-sm">
+                <div class="bg-gray-50 px-6 py-4 border-b">
+                    <h3 class="text-lg font-semibold">📋 Daftar Jadwal Absensi</h3>
+                </div>
+                <div class="p-6">
+                    <div id="jadwalList" class="space-y-3 max-h-96 overflow-y-auto">
+                        {% for jadwal in jadwal_list %}
+                        <div id="jadwal-{{ jadwal.id }}" class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                            <div class="flex items-center space-x-4">
+                                <div class="text-3xl">{{ jadwal.emoji }}</div>
+                                <div>
+                                    <div class="font-medium text-lg">{{ jadwal.namaJadwal }}</div>
+                                    <div class="text-sm text-gray-600">{{ jadwal.namaHariTersedia }}</div>
+                                    <div class="text-sm text-gray-500">{{ jadwal.jamMulai|date('H:i') }} - {{ jadwal.jamSelesai|date('H:i') }}</div>
+                                    {% if jadwal.qrCode %}
+                                        <div class="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded mt-1 inline-block">QR: {{ jadwal.qrCode }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button onclick="editJadwal({{ jadwal.id }})" class="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors" title="Edit Jadwal">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    </svg>
+                                </button>
+                                {% if jadwal.isPerluQrCode %}
+                                <button onclick="generateQrCode({{ jadwal.id }})" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Generate QR Code Baru">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                    </svg>
+                                </button>
+                                {% endif %}
+                                <button onclick="toggleJadwal({{ jadwal.id }})" class="p-2 {{ jadwal.isAktif ? 'text-green-600 hover:bg-green-50' : 'text-red-600 hover:bg-red-50' }} rounded-lg transition-colors" title="{{ jadwal.isAktif ? 'Nonaktifkan' : 'Aktifkan' }}">
+                                    {{ jadwal.isAktif ? '✅' : '❌' }}
+                                </button>
+                                <button onclick="deleteJadwal({{ jadwal.id }}, '{{ jadwal.namaJadwal|e('js') }}')" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Hapus Jadwal">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-12 text-gray-500">
+                            <div class="text-6xl mb-4">📋</div>
+                            <div class="text-xl mb-2">Belum ada jadwal absensi</div>
+                            <div class="text-sm">Klik "Buat Jadwal Baru" untuk menambah jadwal pertama</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Preview Card Area (hidden initially) -->
+                    <div id="previewCardArea" class="hidden mt-6 p-4 bg-teal-50 rounded-lg border-2 border-dashed border-teal-300">
+                        <h4 class="text-sm font-medium text-teal-700 mb-3">📱 Preview Card untuk User Dashboard:</h4>
+                        <div id="previewCard" class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 max-w-sm">
+                            <!-- Card content will be generated by JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <!-- Info Validasi Absen -->
+                </div>
+            </div>
+{% endblock %}
+
+{% block admin_javascripts %}
+{{ parent() }}
+
+<!-- Modal Edit Jadwal Absensi -->
+<div id="editJadwalModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4 max-h-screen overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold">✏️ Edit Jadwal Absensi</h3>
+            <button onclick="closeEditJadwalModal()" class="text-gray-500 hover:text-gray-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <form id="formEditJadwal" class="space-y-4">
+            <input type="hidden" name="_token" value="{{ csrf_token('edit_jadwal') }}">
+            <input type="hidden" name="jadwal_id" id="editJadwalId">
+            
+            <div>
+                <label for="editJenisAbsensi" class="block text-sm font-medium text-gray-700 mb-2">Jenis Absensi</label>
+                <input type="text" id="editJenisAbsensi" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100" readonly autocomplete="off">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="editJamMulai" class="block text-sm font-medium text-gray-700 mb-2">
+                        Jam Mulai
+                        <span id="time-readonly-indicator-start" class="hidden text-xs text-orange-600">(Hanya Admin yang dapat mengubah)</span>
+                    </label>
+                    <input type="time" name="edit_jam_mulai" id="editJamMulai" class="w-full px-3 py-2 border border-gray-300 rounded-lg" required autocomplete="off">
+                </div>
+                <div>
+                    <label for="editJamSelesai" class="block text-sm font-medium text-gray-700 mb-2">
+                        Jam Selesai
+                        <span id="time-readonly-indicator-end" class="hidden text-xs text-orange-600">(Hanya Admin yang dapat mengubah)</span>
+                    </label>
+                    <input type="time" name="edit_jam_selesai" id="editJamSelesai" class="w-full px-3 py-2 border border-gray-300 rounded-lg" required autocomplete="off">
+                </div>
+            </div>
+
+            <div>
+                <label for="editKeterangan" class="block text-sm font-medium text-gray-700 mb-2">Keterangan</label>
+                <textarea name="edit_keterangan" id="editKeterangan" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Catatan tambahan..." autocomplete="off"></textarea>
+            </div>
+
+            <div class="flex space-x-3 pt-4">
+                <button type="button" onclick="closeEditJadwalModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-3 rounded-lg font-medium">
+                    Batal
+                </button>
+                <button type="submit" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-lg font-medium">
+                    💾 Simpan Perubahan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div id="loadingModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-xl p-6 text-center">
+        <div class="animate-spin w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p class="text-lg font-medium loading-text">Memproses data...</p>
+    </div>
+</div>
+
+<script>
+// Namespace untuk menghindari konflik dengan Turbo
+window.JadwalAbsensiAdmin = window.JadwalAbsensiAdmin || {
+    initialized: false,
+    currentLat: null,
+    currentLng: null
+};
+
+// Global error handler
+window.addEventListener('error', function(e) {
+    console.log('JavaScript Error handled:', e.message);
+    return true;
+});
+
+// Toggle submenu function
+function toggleSubmenu(menuId) {
+    try {
+        const submenu = document.getElementById(menuId);
+        if (!submenu) {
+            console.warn('Submenu not found:', menuId);
+            return;
+        }
+        
+        const button = submenu.previousElementSibling;
+        const arrow = button ? button.querySelector('.submenu-arrow') : null;
+        
+        if (submenu.classList.contains('hidden')) {
+            submenu.classList.remove('hidden');
+            if (arrow) arrow.classList.add('rotate-180');
+        } else {
+            submenu.classList.add('hidden');
+            if (arrow) arrow.classList.remove('rotate-180');
+        }
+    } catch (error) {
+        console.error('Error in toggleSubmenu:', error);
+    }
+}
+
+// Safe DOM helper functions
+function safeGetElement(id) {
+    try {
+        return document.getElementById(id);
+    } catch (error) {
+        console.warn('Error getting element:', id, error);
+        return null;
+    }
+}
+
+// Modal functions with error handling
+
+function openEditJadwalModal() {
+    try {
+        const modal = safeGetElement('editJadwalModal');
+        if (modal) modal.classList.remove('hidden');
+    } catch (error) {
+        console.error('Error opening edit modal:', error);
+    }
+}
+
+function closeEditJadwalModal() {
+    try {
+        const modal = safeGetElement('editJadwalModal');
+        const form = safeGetElement('formEditJadwal');
+        
+        if (modal) modal.classList.add('hidden');
+        if (form) form.reset();
+    } catch (error) {
+        console.error('Error closing edit modal:', error);
+    }
+}
+
+// API Functions
+
+async function toggleJadwal(id) {
+    showLoading(true);
+    
+    try {
+        const response = await fetch(`/admin/jadwal-absensi/${id}/toggle`, {
+            method: 'POST'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert(result.message, 'success');
+            // Reload untuk memperbarui tampilan
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showAlert(result.message, 'error');
+        }
+    } catch (error) {
+        showAlert('Terjadi kesalahan koneksi', 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function generateQrCode(id) {
+    showLoading(true);
+    
+    try {
+        const response = await fetch(`/admin/jadwal-absensi/${id}/generate-qr`, {
+            method: 'POST'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert(result.message, 'success');
+            // Reload untuk memperbarui QR code
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showAlert(result.message, 'error');
+        }
+    } catch (error) {
+        showAlert('Terjadi kesalahan koneksi', 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function deleteJadwal(id, namaJadwal, forceDelete = false) {
+    let confirmMessage;
+    
+    if (forceDelete) {
+        confirmMessage = `🚨 HAPUS PAKSA - PERINGATAN KERAS! 🚨\n\nAnda akan menghapus jadwal "${namaJadwal}" BESERTA SEMUA DATA ABSENSI yang terkait!\n\n💥 YANG AKAN DIHAPUS PERMANEN:\n   • Jadwal "${namaJadwal}"\n   • SEMUA riwayat absensi pegawai\n   • SEMUA foto absensi yang terkait\n   • SEMUA data validasi absensi\n\n❌ TINDAKAN INI TIDAK DAPAT DIBATALKAN!\n❌ DATA YANG DIHAPUS TIDAK DAPAT DIPULIHKAN!\n\n⚠️ Pastikan Anda benar-benar ingin menghapus SEMUA data ini!\n\n✅ Klik OK untuk HAPUS PAKSA SEMUA DATA\n❌ Klik Cancel untuk batalkan`;
+    } else {
+        confirmMessage = `⚠️ PERINGATAN!\n\nApakah Anda yakin ingin menghapus jadwal "${namaJadwal}"?\n\n❌ Tindakan ini tidak dapat dibatalkan!\n\n✅ Klik OK untuk menghapus\n❌ Klik Cancel untuk batalkan`;
+    }
+    
+    const confirmDelete = confirm(confirmMessage);
+    
+    if (!confirmDelete) {
+        return; // User cancelled
+    }
+    
+    showLoading(true, forceDelete ? 'Menghapus paksa jadwal dan data absensi...' : 'Menghapus jadwal...');
+    
+    try {
+        const formData = new FormData();
+        if (forceDelete) {
+            formData.append('force_delete', 'true');
+        }
+        
+        const response = await fetch(`/admin/jadwal-absensi/${id}/delete`, {
+            method: 'DELETE',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            let successMessage = result.message;
+            if (result.deleted_absensi > 0) {
+                successMessage += `\n\n📊 ${result.deleted_absensi} data absensi terkait juga telah dihapus.`;
+            }
+            
+            showAlert(successMessage, 'success');
+            
+            // Reload halaman setelah 2 detik
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        } else {
+            if (result.error_type === 'has_relations') {
+                const pilihan = confirm(`${result.message}\n\n📊 Ditemukan ${result.count_absensi} data absensi terkait.\n\n🎯 PILIHAN ANDA:\n\n🗑️ HAPUS PAKSA:\n   • Jadwal "${namaJadwal}" akan dihapus permanen\n   • ${result.count_absensi} riwayat absensi pegawai akan dihapus\n   • Semua foto absensi akan dihapus\n   • Data tidak dapat dipulihkan!\n\n❌ NONAKTIFKAN SAJA (DIREKOMENDASIKAN):\n   • Jadwal akan dinonaktifkan\n   • Data absensi tetap tersimpan\n   • Bisa diaktifkan kembali nanti\n\n⚠️ PERINGATAN: Hapus paksa akan menghilangkan SEMUA data!\n\n✅ Klik OK untuk HAPUS PAKSA SEMUA DATA\n❌ Klik Cancel untuk NONAKTIFKAN saja`);
+                
+                if (pilihan) {
+                    deleteJadwal(id, namaJadwal, true);
+                } else {
+                    toggleJadwal(id);
+                }
+            } else {
+                showAlert(result.message, 'error');
+            }
+        }
+    } catch (error) {
+        showAlert('Terjadi kesalahan koneksi saat menghapus jadwal: ' + error.message, 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function editJadwal(id) {
+    try {
+        const response = await fetch(`/admin/jadwal-absensi/${id}/edit`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        const jadwal = result.jadwal;
+        
+        // Populate form
+        document.getElementById('editJadwalId').value = jadwal.id;
+        document.getElementById('editJenisAbsensi').value = jadwal.nama_jadwal;
+        document.getElementById('editJamMulai').value = jadwal.jam_mulai;
+        document.getElementById('editJamSelesai').value = jadwal.jam_selesai;
+        document.getElementById('editKeterangan').value = jadwal.keterangan || '';
+        
+        openEditJadwalModal();
+        
+    } catch (error) {
+        showAlert(`Gagal memuat data jadwal: ${error.message}`, 'error');
+    }
+}
+
+async function updateJadwalAbsensi() {
+    showLoading(true);
+    
+    const form = document.getElementById('formEditJadwal');
+    const formData = new FormData(form);
+    
+    try {
+        const jadwalId = document.getElementById('editJadwalId').value;
+        const response = await fetch(`/admin/jadwal-absensi/${jadwalId}/update`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert(result.message, 'success');
+            closeEditJadwalModal();
+            
+            // Reload halaman untuk memperbarui data
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showAlert(result.message || 'Terjadi kesalahan tidak dikenal', 'error');
+        }
+    } catch (error) {
+        showAlert(`Terjadi kesalahan koneksi: ${error.message}`, 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+function showLoading(show, message = 'Memproses data...') {
+    try {
+        const loadingModal = safeGetElement('loadingModal');
+        if (!loadingModal) {
+            console.warn('Loading modal not found');
+            return;
+        }
+        
+        if (show) {
+            const loadingText = loadingModal.querySelector('.loading-text');
+            if (loadingText) {
+                loadingText.textContent = message;
+            }
+            loadingModal.classList.remove('hidden');
+        } else {
+            loadingModal.classList.add('hidden');
+        }
+    } catch (error) {
+        console.error('Error in showLoading:', error);
+    }
+}
+
+
+function showComingSoon(featureName) {
+    showAlert(`🚀 Fitur "${featureName}" sedang dalam pengembangan!\n\n✅ Checkbox "Perlu Validasi" sudah ditambahkan pada form jadwal\n🔧 Halaman validasi akan segera tersedia\n📈 Sistem workflow approval sedang dibangun`, 'info');
+}
+
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    
+    let bgClass, icon, statusText;
+    
+    switch(type) {
+        case 'success':
+            bgClass = 'bg-green-100 text-green-800 border border-green-200';
+            icon = '✅';
+            statusText = 'Berhasil diproses';
+            break;
+        case 'info':
+            bgClass = 'bg-blue-100 text-blue-800 border border-blue-200';
+            icon = '🔔';
+            statusText = 'Informasi';
+            break;
+        case 'warning':
+            bgClass = 'bg-yellow-100 text-yellow-800 border border-yellow-200';
+            icon = '⚠️';
+            statusText = 'Perhatian';
+            break;
+        case 'error':
+        default:
+            bgClass = 'bg-red-100 text-red-800 border border-red-200';
+            icon = '❌';
+            statusText = 'Terjadi kesalahan';
+            break;
+    }
+    
+    alertDiv.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm ${bgClass}`;
+    alertDiv.style.opacity = '0';
+    alertDiv.style.transform = 'translateX(100px)';
+    
+    alertDiv.innerHTML = `
+        <div class="flex items-start">
+            <div class="text-lg mr-3">${icon}</div>
+            <div class="flex-1">
+                <div class="text-sm font-medium whitespace-pre-line">${message}</div>
+                <div class="text-xs mt-1 opacity-70">${statusText}</div>
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-lg opacity-50 hover:opacity-100">
+                ×
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // Animate in
+    setTimeout(() => {
+        alertDiv.style.transition = 'all 0.3s ease-in-out';
+        alertDiv.style.opacity = '1';
+        alertDiv.style.transform = 'translateX(0)';
+    }, 10);
+    
+    // Auto remove with animation
+    setTimeout(() => {
+        alertDiv.style.opacity = '0';
+        alertDiv.style.transform = 'translateX(100px)';
+        setTimeout(() => {
+            if (document.body.contains(alertDiv)) {
+                document.body.removeChild(alertDiv);
+            }
+        }, 300);
+    }, 5000);
+}
+
+// Safe initialization to avoid Turbo conflicts
+function initializeJadwalAbsensi() {
+    try {
+        console.log('Initializing Jadwal Absensi admin page...');
+        
+
+        // Form submission untuk edit jadwal
+        const formEditJadwal = safeGetElement('formEditJadwal');
+        if (formEditJadwal) {
+            formEditJadwal.addEventListener('submit', function(e) {
+                try {
+                    e.preventDefault();
+                    if (validateTimeInput('edit_jam_mulai', 'edit_jam_selesai')) {
+                        updateJadwalAbsensi();
+                    }
+                } catch (error) {
+                    console.error('Error in form edit submission:', error);
+                }
+            });
+        }
+        
+        // Mark as initialized to prevent duplicate initialization
+        window.JadwalAbsensiAdmin.initialized = true;
+        console.log('Jadwal Absensi admin initialized successfully');
+    } catch (error) {
+        console.error('Error initializing Jadwal Absensi admin:', error);
+    }
+}
+
+// Turbo-compatible initialization with protection against multiple calls
+function initializeJadwalAbsensiOnce() {
+    if (!window.JadwalAbsensiAdmin.initialized) {
+        initializeJadwalAbsensi();
+    }
+}
+
+// Use appropriate events based on Turbo availability
+if (typeof Turbo !== 'undefined') {
+    // Turbo is available - use Turbo events
+    document.addEventListener('turbo:load', initializeJadwalAbsensiOnce);
+} else {
+    // Turbo not available - use standard events
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeJadwalAbsensiOnce);
+    } else {
+        initializeJadwalAbsensiOnce();
+    }
+}
+
+// Additional fallback
+window.addEventListener('load', () => {
+    if (!window.JadwalAbsensiAdmin.initialized) {
+        initializeJadwalAbsensi();
+    }
+});
+</script>
+{% endblock %}
+
+{# Styles untuk navigasi dan UI #}
+{% block admin_stylesheets %}
+{{ parent() }}
+<style>
+/* Submenu Animation */
+.submenu-arrow {
+    transition: transform 0.2s ease-in-out;
+}
+
+/* Menu Hover Effects */
+.menu-group button:hover,
+.menu-group a:hover {
+    background-color: #f9fafb;
+}
+
+/* Active Menu Style */
+.menu-active {
+    background-color: #f3f4f6;
+    border-left-color: #14b8a6 !important;
+    color: #14b8a6;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .flex {
+        flex-direction: column;
+    }
+    .w-64 {
+        width: 100%;
+        height: auto;
+    }
+    .flex-1 {
+        min-height: calc(100vh - 200px);
+    }
+}
+
+/* Scrollbar Styling */
+.overflow-y-auto::-webkit-scrollbar {
+    width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Screen Reader Only */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+</style>
+{% endblock %}

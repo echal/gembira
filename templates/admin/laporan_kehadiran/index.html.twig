@@ -1,0 +1,314 @@
+{% extends 'admin/_layout.html.twig' %}
+
+{% block title %}Laporan Kehadiran - Admin Gembira{% endblock %}
+
+{% block page_icon %}📊{% endblock %}
+{% block page_title %}Laporan Kehadiran{% endblock %}
+{% block page_description %}Monitor dan analisis kehadiran pegawai{% endblock %}
+
+{% block admin_content %}
+            <!-- Action Buttons -->
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex space-x-3">
+                    <button type="button" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center" onclick="location.reload()">
+                        <span class="mr-2">🔄</span> Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filter Section -->
+            <div class="bg-white rounded-lg shadow-sm mb-6">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900 flex items-center">
+                        <span class="mr-2">🔍</span> Filter Data
+                    </h3>
+                </div>
+                <div class="px-6 py-4">
+                    <form method="GET" id="filter-form">
+                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Tipe Filter</label>
+                                <select name="filter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" onchange="toggleFilterType()">
+                                    <option value="hari" {{ filter.type == 'hari' ? 'selected' : '' }}>Per Hari</option>
+                                    <option value="bulan" {{ filter.type == 'bulan' ? 'selected' : '' }}>Per Bulan</option>
+                                </select>
+                            </div>
+
+                            <div id="filter-tanggal" {{ filter.type == 'bulan' ? 'style=display:none' : '' }}>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal</label>
+                                <input type="date" name="tanggal" value="{{ filter.tanggal }}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            </div>
+
+                            <div id="filter-bulan" {{ filter.type == 'hari' ? 'style=display:none' : '' }}>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Bulan</label>
+                                <input type="month" name="bulan" value="{{ filter.bulan }}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Unit Kerja</label>
+                                <select name="unit_kerja" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    <option value="">Semua Unit Kerja</option>
+                                    {% for unit in unit_kerja_list %}
+                                    <option value="{{ unit.id }}" {{ filter.unit_kerja == unit.id ? 'selected' : '' }}>{{ unit.namaUnit }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="flex space-x-2">
+                                <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center">
+                                    <span class="mr-2">📊</span> Filter
+                                </button>
+                                <a href="{{ path('app_admin_laporan_kehadiran') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center">
+                                    <span class="mr-2">🔄</span> Reset
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-white rounded-lg shadow-sm border-l-4 border-green-500 p-6">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <div class="text-xs font-bold text-green-600 uppercase mb-1">
+                                Total Hadir
+                            </div>
+                            <div class="text-2xl font-bold text-gray-800">{{ total_hadir }}</div>
+                            <div class="text-sm text-gray-500">Pegawai hadir {{ filter.type == 'bulan' ? 'bulan ini' : 'hari ini' }}</div>
+                        </div>
+                        <div class="text-4xl text-gray-300">
+                            ✅
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-sm border-l-4 border-red-500 p-6">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <div class="text-xs font-bold text-red-600 uppercase mb-1">
+                                Total Tidak Hadir
+                            </div>
+                            <div class="text-2xl font-bold text-gray-800">{{ total_tidak_hadir }}</div>
+                            <div class="text-sm text-gray-500">Pegawai tidak hadir {{ filter.type == 'bulan' ? 'bulan ini' : 'hari ini' }}</div>
+                        </div>
+                        <div class="text-4xl text-gray-300">
+                            ❌
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-sm border-l-4 border-yellow-500 p-6">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <div class="text-xs font-bold text-yellow-600 uppercase mb-1">
+                                Tingkat Kehadiran
+                            </div>
+                            <div class="text-2xl font-bold text-gray-800">{{ total_hadir > 0 ? ((total_hadir / (total_hadir + total_tidak_hadir)) * 100)|number_format(1) : 0 }}%</div>
+                            <div class="text-sm text-gray-500">Rata-rata kehadiran {{ filter.type == 'bulan' ? 'bulan ini' : 'hari ini' }}</div>
+                        </div>
+                        <div class="text-4xl text-gray-300">
+                            📊
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export Buttons -->
+            {% if data_absensi|length > 0 %}
+            <div class="bg-white rounded-lg shadow-sm mb-6">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900 flex items-center">
+                        <span class="mr-2">📄</span> Export Data
+                    </h3>
+                </div>
+                <div class="px-6 py-4">
+                    <div class="flex space-x-3">
+                        <button type="button" onclick="downloadRekapData()"
+                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center">
+                            <span class="mr-2">📊</span> Download CSV
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Data Table -->
+            <div class="bg-white rounded-lg shadow-sm">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900 flex items-center">
+                        <span class="mr-2">📋</span> Data Kehadiran
+                        <span class="ml-2 text-sm text-gray-500">({{ filter.type == 'bulan' ? 'Bulan: ' ~ filter.bulan : 'Tanggal: ' ~ filter.tanggal }})</span>
+                    </h3>
+                </div>
+
+                {% if data_absensi|length > 0 %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Pegawai
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Unit Kerja
+                                </th>
+                                {% if filter.type == 'hari' %}
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Waktu Masuk
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Waktu Keluar
+                                </th>
+                                {% endif %}
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Status
+                                </th>
+                                {% if filter.type == 'bulan' %}
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    % Kehadiran
+                                </th>
+                                {% endif %}
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Aksi
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for absensi in data_absensi %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">{{ absensi.pegawai.nama }}</div>
+                                            <div class="text-sm text-gray-500">{{ absensi.pegawai.nip }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">{{ absensi.pegawai.namaUnitKerja }}</div>
+                                </td>
+                                {% if filter.type == 'hari' %}
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">
+                                        {% if absensi.waktuMasuk %}
+                                            {{ absensi.waktuMasuk|date('H:i') }}
+                                        {% else %}
+                                            <span class="text-gray-400">-</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">
+                                        {% if absensi.waktuKeluar %}
+                                            {{ absensi.waktuKeluar|date('H:i') }}
+                                        {% else %}
+                                            <span class="text-gray-400">-</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                {% endif %}
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% set status_classes = {
+                                        'hadir': 'bg-green-100 text-green-800',
+                                        'tidak_hadir': 'bg-red-100 text-red-800',
+                                        'izin': 'bg-yellow-100 text-yellow-800',
+                                        'sakit': 'bg-blue-100 text-blue-800'
+                                    } %}
+                                    {% set current_status = absensi.status ?? absensi.statusKehadiran ?? 'tidak_hadir' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ status_classes[current_status] ?? 'bg-gray-100 text-gray-800' }}">
+                                        {% if current_status == 'hadir' %}✅{% elseif current_status == 'tidak_hadir' %}❌{% elseif current_status == 'izin' %}📄{% elseif current_status == 'sakit' %}🏥{% endif %}
+                                        {{ current_status|title }}
+                                    </span>
+                                </td>
+                                {% if filter.type == 'bulan' %}
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% set pegawai_id = absensi.pegawai.id %}
+                                    {% if persentase_kehadiran_data[pegawai_id] is defined %}
+                                        {% set persentase = persentase_kehadiran_data[pegawai_id] %}
+                                        <div class="text-sm font-semibold {{ persentase >= 90 ? 'text-green-600' : (persentase >= 70 ? 'text-yellow-600' : 'text-red-600') }}">
+                                            {{ persentase|number_format(1) }}%
+                                        </div>
+                                        <div class="text-xs text-gray-500">
+                                            {% if persentase >= 90 %}🟢 Sangat Baik
+                                            {% elseif persentase >= 70 %}🟡 Baik
+                                            {% else %}🔴 Perlu Perhatian
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-xs text-gray-400">N/A</span>
+                                    {% endif %}
+                                </td>
+                                {% endif %}
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <button onclick="lihatDetail('{{ absensi.pegawai.id }}', '{{ filter.tanggal ?? filter.bulan }}')"
+                                            class="text-purple-600 hover:text-purple-900 text-sm">
+                                        👁️ Detail
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-12">
+                    <div class="text-gray-400 text-6xl mb-4">📊</div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Tidak ada data kehadiran</h3>
+                    <p class="text-gray-500">Belum ada data kehadiran untuk periode yang dipilih.</p>
+                </div>
+                {% endif %}
+            </div>
+{% endblock %}
+
+{% block admin_javascripts %}
+<script>
+function toggleFilterType() {
+    const filterSelect = document.querySelector('select[name="filter"]');
+    const tanggalDiv = document.getElementById('filter-tanggal');
+    const bulanDiv = document.getElementById('filter-bulan');
+
+    if (filterSelect.value === 'hari') {
+        tanggalDiv.style.display = 'block';
+        bulanDiv.style.display = 'none';
+    } else {
+        tanggalDiv.style.display = 'none';
+        bulanDiv.style.display = 'block';
+    }
+}
+
+function lihatDetail(pegawaiId, periode) {
+    // Get current filter type
+    const filterType = document.querySelector('select[name="filter"]').value;
+
+    // Redirect to detail page
+    const detailUrl = `/admin/laporan-kehadiran/detail/${pegawaiId}?periode=${periode}&filter=${filterType}`;
+    window.location.href = detailUrl;
+}
+
+function downloadRekapData() {
+    // Ambil parameter filter saat ini
+    const filterForm = document.getElementById('filter-form');
+    const formData = new FormData(filterForm);
+
+    // Buat URL download dengan parameter yang sama
+    const downloadUrl = new URL('{{ path('app_admin_laporan_kehadiran_download') }}', window.location.origin);
+
+    // Tambahkan parameter filter ke URL
+    for (let [key, value] of formData.entries()) {
+        if (value) {
+            downloadUrl.searchParams.append(key, value);
+        }
+    }
+
+    // Redirect ke URL download
+    window.location.href = downloadUrl.toString();
+}
+
+// Initialize filter visibility on page load
+document.addEventListener('DOMContentLoaded', function() {
+    toggleFilterType();
+});
+</script>
+{% endblock %}

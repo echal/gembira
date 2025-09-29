@@ -2,16 +2,31 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <title>{% block title %}Welcome!{% endblock %}</title>
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{% block title %}Gembira - Gerakan Munajat Bersama Untuk Kinerja{% endblock %}</title>
+        <!-- Favicon untuk berbagai platform -->
+        <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/logo-kemenag.png') }}">
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/logo-kemenag.png') }}">
+        <link rel="apple-touch-icon" href="{{ asset('images/logo-kemenag.png') }}">
+        <meta name="msapplication-TileImage" content="{{ asset('images/logo-kemenag.png') }}">
+        
+        <!-- Tailwind CSS - Production Build -->
+        <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+        
+        <!-- Alpine.js -->
+        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+        
+        <!-- QR Code Detection Library -->
+        <script src="https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.umd.min.js"></script>
+        
         {% block stylesheets %}
         {% endblock %}
 
         {% block javascripts %}
-            {% block importmap %}{{ importmap('app') }}{% endblock %}
         {% endblock %}
     </head>
-    <body>
+    <body class="bg-gray-100">
         {% block body %}{% endblock %}
     </body>
 </html>

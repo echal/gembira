@@ -1,0 +1,1133 @@
+{% extends 'admin/_layout.html.twig' %}
+
+{% block title %}Pegawai - Admin Gembira{% endblock %}
+
+{% block page_icon %}👨‍💼{% endblock %}
+{% block page_title %}Kelola Pegawai & Unit Kerja{% endblock %}
+{% block page_description %}Mengelola data pegawai dan unit kerja dalam sistem{% endblock %}
+
+{% block header_actions %}
+    <a href="{{ path('app_struktur_organisasi_export_template_pegawai') }}" class="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg font-medium text-sm mr-2">
+        📄 Template Excel
+    </a>
+    <button onclick="openImportModal()" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium text-sm mr-2">
+        📊 Import Excel
+    </button>
+    <button onclick="syncToPegawai()" class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium text-sm mr-2">
+        🔄 Sync Admin ke Pegawai
+    </button>
+    <button class="bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg font-medium text-sm">
+        🏢 Assign Pegawai ke Unit
+    </button>
+{% endblock %}
+
+{% block admin_content %}
+<div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">👥 Daftar Pegawai (Dikelompokkan per Unit Kerja)</h3>
+                    <div class="flex space-x-2">
+                        <button type="button" @click="expandAll()"
+                                class="px-3 py-1 text-xs bg-blue-100 text-blue-600 rounded hover:bg-blue-200 cursor-pointer border border-blue-200 transition-all duration-200 hover:shadow-sm active:bg-blue-200 active:scale-95">
+                            📂 Buka Semua
+                        </button>
+                        <button type="button" @click="collapseAll()"
+                                class="px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded hover:bg-gray-200 cursor-pointer border border-gray-200 transition-all duration-200 hover:shadow-sm active:bg-gray-200 active:scale-95">
+                            📁 Tutup Semua
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Info Notice -->
+                <div class="mb-4 p-3 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg">
+                    <div class="flex items-center">
+                        <div class="text-blue-400 mr-2">ℹ️</div>
+                        <div class="text-sm text-blue-700">
+                            <strong>Catatan:</strong> Data pegawai ditampilkan dari 2 sumber: Table Pegawai dan Admin dengan role pegawai.
+                            User dengan label <span class="bg-blue-100 text-blue-800 px-1 rounded">Admin</span> berasal dari import sebelumnya.
+                            <br><strong>Import Excel:</strong> Gunakan tombol "Import Excel" di atas untuk menambah pegawai baru melalui file Excel.
+                            Admin tetap dibuat manual di halaman User Management.
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Search Box -->
+                <div class="mb-4">
+                    <form method="GET" id="searchForm" class="space-y-3">
+                        <div class="flex items-center space-x-2">
+                            <div class="relative flex-1 max-w-md">
+                                <input type="text" 
+                                       name="search" 
+                                       value="{{ search ?? '' }}" 
+                                       placeholder="Cari pegawai (nama, NIP, jabatan, unit kerja)..." 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-10">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                                🔍 Cari
+                            </button>
+                            {% if search or selected_unit_id %}
+                            <a href="{{ path('app_admin_pegawai') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                                🔄 Reset
+                            </a>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Filter Unit Kerja -->
+                        <div class="flex items-center space-x-2">
+                            <label class="text-sm font-medium text-gray-700 whitespace-nowrap">Filter Unit:</label>
+                            <select name="unit_kerja_id" class="flex-1 max-w-xs border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="this.form.submit()">
+                                <option value="">Semua Unit Kerja</option>
+                                {% for unit in unit_kerja_list %}
+                                <option value="{{ unit.id }}" {{ selected_unit_id == unit.id ? 'selected' : '' }}>
+                                    {{ unit.namaUnit }} ({{ unit.kodeUnit }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                
+                {% if search or selected_unit_id %}
+                <div class="mb-4 p-3 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg">
+                    <div class="flex items-center">
+                        <div class="text-blue-400 mr-2">ℹ️</div>
+                        <div class="text-sm text-blue-700">
+                            {% if search and selected_unit_id %}
+                                {% set selected_unit_name = '' %}
+                                {% for unit in unit_kerja_list %}
+                                    {% if unit.id == selected_unit_id %}
+                                        {% set selected_unit_name = unit.namaUnit %}
+                                    {% endif %}
+                                {% endfor %}
+                                Menampilkan hasil pencarian "<span class="font-medium">{{ search }}</span>" 
+                                di unit kerja "<span class="font-medium">{{ selected_unit_name }}</span>"
+                            {% elseif search %}
+                                Menampilkan hasil pencarian untuk: "<span class="font-medium">{{ search }}</span>"
+                            {% elseif selected_unit_id %}
+                                {% set selected_unit_name = '' %}
+                                {% for unit in unit_kerja_list %}
+                                    {% if unit.id == selected_unit_id %}
+                                        {% set selected_unit_name = unit.namaUnit %}
+                                    {% endif %}
+                                {% endfor %}
+                                Menampilkan pegawai di unit kerja: "<span class="font-medium">{{ selected_unit_name }}</span>"
+                            {% endif %}
+                            <span class="ml-2 font-semibold text-blue-800">({{ all_pegawai|length }} pegawai ditemukan)</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Unit Kerja Summary -->
+                {% if grouped_pegawai is not empty %}
+                <div class="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+                    <h4 class="font-medium text-blue-900 mb-3">📊 Ringkasan per Unit Kerja</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-sm">
+                        {% for unitKerjaId, unitData in grouped_pegawai %}
+                        <div class="bg-white p-2 rounded border border-blue-100">
+                            <div class="font-medium text-gray-800 text-xs truncate" title="{{ unitData.unit_kerja.nama }}">
+                                {{ unitData.unit_kerja.nama }}
+                            </div>
+                            <div class="text-blue-600 font-semibold">{{ unitData.pegawai|length }} pegawai</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="space-y-6" x-data="unitToggleManager()">
+                    {% for unitKerjaId, unitData in grouped_pegawai %}
+                    <div class="unit-kerja-group bg-gray-50 rounded-lg p-4" x-data="{ isOpen: false }">
+                        <!-- Unit Kerja Header -->
+                        <div class="unit-kerja-header flex items-center justify-between mb-4 p-3 rounded-lg cursor-pointer"
+                             @click="isOpen = !isOpen">
+                            <div class="flex items-center space-x-3">
+                                <div class="text-2xl">
+                                    {% if unitData.unit_kerja.nama == 'Tanpa Unit Kerja' %}
+                                        🏢
+                                    {% else %}
+                                        🏛️
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-800">
+                                        {{ unitData.unit_kerja.nama }}
+                                        {% if unitData.unit_kerja.kode %}
+                                            <span class="text-sm text-gray-500">({{ unitData.unit_kerja.kode }})</span>
+                                        {% endif %}
+                                    </h3>
+                                    <p class="text-sm text-gray-600">{{ unitData.pegawai|length }} pegawai</p>
+                                </div>
+                            </div>
+                            <!-- Toggle Arrow -->
+                            <div class="p-1">
+                                <svg class="toggle-arrow w-5 h-5 text-gray-400 transition-transform duration-200"
+                                     :class="{ 'rotate-180': isOpen }"
+                                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Pegawai List -->
+                        <div class="space-y-2 transition-all duration-300"
+                             x-show="isOpen"
+                             x-transition:enter="transition ease-out duration-300"
+                             x-transition:enter-start="opacity-0 transform -translate-y-2"
+                             x-transition:enter-end="opacity-100 transform translate-y-0"
+                             x-transition:leave="transition ease-in duration-200"
+                             x-transition:leave-start="opacity-100 transform translate-y-0"
+                             x-transition:leave-end="opacity-0 transform -translate-y-2">
+                            {% for pegawai in unitData.pegawai %}
+                            <div class="pegawai-card flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
+                                <div class="flex items-center space-x-4">
+                                    <div class="text-xl">👤</div>
+                                    <div>
+                                        <div class="font-medium text-gray-800">
+                                            {{ pegawai.nama }}
+                                            {% if pegawai.source == 'admin' %}
+                                                <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded ml-2">Admin</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="text-sm text-gray-600">NIP: {{ pegawai.nip }}</div>
+                                        <div class="text-sm text-gray-600">{{ pegawai.jabatan }}</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    {% if pegawai.source == 'pegawai' %}
+                                        <button onclick="editPegawai({{ pegawai.entity.id }})" class="p-2 text-green-600 hover:bg-green-50 rounded-lg" title="Edit Data Pegawai">✏️</button>
+                                    {% else %}
+                                        <button onclick="editAdminPegawai({{ pegawai.entity.id }})" class="p-2 text-purple-600 hover:bg-purple-50 rounded-lg" title="Edit Admin Pegawai">✏️</button>
+                                    {% endif %}
+                                    <button class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="Pindah Unit Kerja">🔄</button>
+                                    <button class="p-2 text-orange-600 hover:bg-orange-50 rounded-lg" title="Lepas dari Unit Kerja">❌</button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-12 text-gray-500">
+                        <div class="text-6xl mb-4">🔍</div>
+                        {% if search or selected_unit_id %}
+                            <div class="text-lg font-medium text-gray-700 mb-2">Tidak ada pegawai ditemukan</div>
+                            {% if search and selected_unit_id %}
+                                {% set selected_unit_name = '' %}
+                                {% for unit in unit_kerja_list %}
+                                    {% if unit.id == selected_unit_id %}
+                                        {% set selected_unit_name = unit.namaUnit %}
+                                    {% endif %}
+                                {% endfor %}
+                                <div class="text-sm">Tidak ada pegawai dengan pencarian "<span class="font-medium">{{ search }}</span>" di unit "<span class="font-medium">{{ selected_unit_name }}</span>"</div>
+                            {% elseif search %}
+                                <div class="text-sm">Tidak ada pegawai yang sesuai dengan pencarian "<span class="font-medium">{{ search }}</span>"</div>
+                            {% elseif selected_unit_id %}
+                                {% set selected_unit_name = '' %}
+                                {% for unit in unit_kerja_list %}
+                                    {% if unit.id == selected_unit_id %}
+                                        {% set selected_unit_name = unit.namaUnit %}
+                                    {% endif %}
+                                {% endfor %}
+                                <div class="text-sm">Belum ada pegawai di unit kerja "<span class="font-medium">{{ selected_unit_name }}</span>"</div>
+                            {% endif %}
+                            <div class="text-sm text-gray-400 mt-2">Coba kata kunci lain atau ubah filter pencarian</div>
+                        {% else %}
+                            <div class="text-lg font-medium text-gray-700 mb-2">Belum ada pegawai yang terdaftar</div>
+                            <div class="text-sm">Tambahkan pegawai untuk mengelola data kepegawaian</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+<!-- Modal Edit Pegawai -->
+<div id="editPegawaiModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">✏️ Edit Data Pegawai</h3>
+                <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <form id="editPegawaiForm">
+                <input type="hidden" id="editPegawaiId" name="pegawai_id">
+
+                <div class="mb-4">
+                    <label for="editNama" class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap *</label>
+                    <input type="text" id="editNama" name="nama" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+
+                <div class="mb-4">
+                    <label for="editNip" class="block text-sm font-medium text-gray-700 mb-1">NIP *</label>
+                    <input type="text" id="editNip" name="nip" required maxlength="18"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="18 digit angka">
+                </div>
+
+                <div class="mb-4">
+                    <label for="editJabatan" class="block text-sm font-medium text-gray-700 mb-1">Jabatan *</label>
+                    <input type="text" id="editJabatan" name="jabatan" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+
+                <div class="mb-4">
+                    <label for="editUnitKerja" class="block text-sm font-medium text-gray-700 mb-1">Unit Kerja</label>
+                    <select id="editUnitKerja" name="unit_kerja_id"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Pilih Unit Kerja</option>
+                        {% for unit in unit_kerja_list %}
+                        <option value="{{ unit.id }}">{{ unit.namaUnit }} ({{ unit.kodeUnit }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeEditModal()"
+                            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                        Batal
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        💾 Simpan Perubahan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Import Pegawai -->
+<div id="importPegawaiModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+    <div class="relative top-20 mx-auto p-5 border w-2/3 max-w-4xl shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">📊 Import Data Pegawai dari Excel</h3>
+                <button onclick="closeImportModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div id="importSteps">
+                <!-- Step 1: Upload File -->
+                <div id="step1" class="import-step">
+                    <div class="mb-4">
+                        <h4 class="font-medium text-gray-900 mb-2">1. Upload File Excel</h4>
+                        <p class="text-sm text-gray-600 mb-4">
+                            Upload file Excel dengan data pegawai. Pastikan menggunakan template yang telah disediakan.
+                        </p>
+
+                        <form id="uploadForm" enctype="multipart/form-data">
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">File Excel (.xlsx, .xls)</label>
+                                <input type="file" id="excelFile" name="excelFile" accept=".xlsx,.xls" required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <p class="text-xs text-gray-500 mt-1">Format yang didukung: .xlsx, .xls (Maksimal 5MB)</p>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="updateExisting" name="updateExisting" value="1" class="mr-2">
+                                    <span class="text-sm text-gray-700">Update pegawai yang sudah ada (berdasarkan email/username)</span>
+                                </label>
+                            </div>
+
+                            <div class="flex justify-end space-x-3">
+                                <button type="button" onclick="closeImportModal()"
+                                        class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                                    Batal
+                                </button>
+                                <button type="submit"
+                                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                    🔍 Preview Data
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Step 2: Preview Data -->
+                <div id="step2" class="import-step hidden">
+                    <div class="mb-4">
+                        <h4 class="font-medium text-gray-900 mb-2">2. Preview Data</h4>
+                        <div id="previewContent">
+                            <!-- Preview data akan ditampilkan di sini -->
+                        </div>
+
+                        <div class="flex justify-end space-x-3 mt-4">
+                            <button type="button" onclick="backToStep1()"
+                                    class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                                ⬅️ Kembali
+                            </button>
+                            <button type="button" onclick="proceedImport()"
+                                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                                ✅ Import Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Import Result -->
+                <div id="step3" class="import-step hidden">
+                    <div class="mb-4">
+                        <h4 class="font-medium text-gray-900 mb-2">3. Hasil Import</h4>
+                        <div id="importResult">
+                            <!-- Hasil import akan ditampilkan di sini -->
+                        </div>
+
+                        <div class="flex justify-end space-x-3 mt-4">
+                            <button type="button" onclick="closeImportModal()"
+                                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                ✅ Selesai
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{# Script JavaScript untuk interaksi #}
+{% block admin_javascripts %}
+{{ parent() }}
+<script>
+// =================== GLOBAL FUNCTION DECLARATIONS ===================
+// Definisikan semua function di global scope dulu sebelum DOM ready
+
+function toggleSubmenu(menuId) {
+    const submenu = document.getElementById(menuId);
+    const arrow = submenu.previousElementSibling.querySelector('.submenu-arrow');
+
+    if (submenu.classList.contains('hidden')) {
+        submenu.classList.remove('hidden');
+        arrow.classList.add('rotate-180');
+    } else {
+        submenu.classList.add('hidden');
+        arrow.classList.remove('rotate-180');
+    }
+}
+
+// Import Modal Functions - HARUS DIDEFINISIKAN DI GLOBAL SCOPE
+function openImportModal() {
+    console.log('🔄 Opening import modal...');
+    const modal = document.getElementById('importPegawaiModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        showStep(1);
+
+        // Setup form handler setiap kali modal dibuka
+        setTimeout(() => {
+            setupPreviewFormHandler();
+        }, 100);
+
+        console.log('✅ Import modal opened successfully');
+    } else {
+        console.error('❌ Import modal element not found');
+        alert('Error: Modal import tidak ditemukan. Refresh halaman dan coba lagi.');
+    }
+}
+
+function closeImportModal() {
+    const modal = document.getElementById('importPegawaiModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        // Reset form and steps
+        const uploadForm = document.getElementById('uploadForm');
+        if (uploadForm) uploadForm.reset();
+        showStep(1);
+    }
+}
+
+function showStep(stepNumber) {
+    console.log(`🔄 Switching to step ${stepNumber}`);
+
+    // Hide all steps
+    const allSteps = document.querySelectorAll('.import-step');
+    console.log(`📋 Found ${allSteps.length} total steps`);
+
+    allSteps.forEach((step, index) => {
+        step.classList.add('hidden');
+        console.log(`⚪ Hidden step ${index + 1}`);
+    });
+
+    // Show current step
+    const currentStep = document.getElementById('step' + stepNumber);
+    if (currentStep) {
+        currentStep.classList.remove('hidden');
+        console.log(`✅ Showed step ${stepNumber}`);
+    } else {
+        console.error(`❌ Step ${stepNumber} element not found`);
+    }
+}
+
+function backToStep1() {
+    showStep(1);
+}
+
+// Sync function - GLOBAL SCOPE
+function syncToPegawai() {
+    if (!confirm('Apakah Anda yakin ingin melakukan sync data admin dengan role pegawai ke table pegawai? Proses ini akan membuat copy data yang belum ada.')) {
+        return;
+    }
+
+    fetch('/admin/user/sync-to-pegawai', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Terjadi kesalahan saat melakukan sync');
+    });
+}
+
+// Alpine.js Unit Toggle Manager - GLOBAL SCOPE
+function unitToggleManager() {
+    return {
+        expandAll() {
+            console.log('🔓 Expanding all groups with Alpine.js...');
+
+            // Get all unit components
+            const unitComponents = document.querySelectorAll('[x-data*="isOpen"]');
+            console.log('📊 Found', unitComponents.length, 'unit components');
+
+            if (unitComponents.length === 0) {
+                console.log('⚠️ No unit components found!');
+                return;
+            }
+
+            let expanded = 0;
+            unitComponents.forEach((component) => {
+                // Use Alpine's data access to set isOpen to true
+                if (component._x_dataStack && component._x_dataStack[0]) {
+                    component._x_dataStack[0].isOpen = true;
+                    expanded++;
+                    console.log('📂 Expanded unit component');
+                }
+            });
+
+            console.log('✅ Successfully expanded', expanded, 'groups');
+        },
+
+        collapseAll() {
+            console.log('🔒 Collapsing all groups with Alpine.js...');
+
+            // Get all unit components
+            const unitComponents = document.querySelectorAll('[x-data*="isOpen"]');
+            console.log('📊 Found', unitComponents.length, 'unit components');
+
+            if (unitComponents.length === 0) {
+                console.log('⚠️ No unit components found!');
+                return;
+            }
+
+            let collapsed = 0;
+            unitComponents.forEach((component) => {
+                // Use Alpine's data access to set isOpen to false
+                if (component._x_dataStack && component._x_dataStack[0]) {
+                    component._x_dataStack[0].isOpen = false;
+                    collapsed++;
+                    console.log('📁 Collapsed unit component');
+                }
+            });
+
+            console.log('✅ Successfully collapsed', collapsed, 'groups');
+        }
+    }
+}
+
+// Expand/Collapse All Groups - GLOBAL SCOPE
+function expandAllGroups() {
+    console.log('🔓 Expanding all groups...');
+
+    // Get all unit kerja groups
+    const allPegawaiLists = document.querySelectorAll('div[id^="pegawai-"]');
+    const allArrows = document.querySelectorAll('svg[id^="arrow-"]');
+
+    console.log('📊 Found', allPegawaiLists.length, 'pegawai lists and', allArrows.length, 'arrows');
+
+    if (allPegawaiLists.length === 0) {
+        console.log('⚠️ No pegawai lists found! Check if data exists.');
+        alert('Tidak ada grup pegawai yang ditemukan. Pastikan data pegawai tersedia.');
+        return;
+    }
+
+    let expanded = 0;
+    allPegawaiLists.forEach((list, index) => {
+        if (list) {
+            console.log('📂 Expanding list:', list.id);
+            list.style.display = 'block';
+            list.classList.remove('hidden');
+            expanded++;
+        }
+    });
+
+    allArrows.forEach((arrow, index) => {
+        if (arrow) {
+            console.log('⬇️ Rotating arrow down:', arrow.id);
+            arrow.classList.remove('rotated');
+        }
+    });
+
+    console.log('✅ Successfully expanded', expanded, 'groups');
+
+    // Show visual feedback
+    const expandBtn = document.querySelector('button[onclick*="expandAllGroups"]');
+    if (expandBtn) {
+        expandBtn.style.backgroundColor = '#dbeafe';
+        setTimeout(() => {
+            expandBtn.style.backgroundColor = '';
+        }, 200);
+    }
+}
+
+function collapseAllGroups() {
+    console.log('🔒 Collapsing all groups...');
+
+    const allPegawaiLists = document.querySelectorAll('div[id^="pegawai-"]');
+    const allArrows = document.querySelectorAll('svg[id^="arrow-"]');
+
+    console.log('📊 Found', allPegawaiLists.length, 'pegawai lists and', allArrows.length, 'arrows');
+
+    if (allPegawaiLists.length === 0) {
+        console.log('⚠️ No pegawai lists found! Check if data exists.');
+        alert('Tidak ada grup pegawai yang ditemukan. Pastikan data pegawai tersedia.');
+        return;
+    }
+
+    let collapsed = 0;
+    allPegawaiLists.forEach((list, index) => {
+        if (list) {
+            console.log('📁 Collapsing list:', list.id);
+            list.style.display = 'none';
+            list.classList.add('hidden');
+            collapsed++;
+        }
+    });
+
+    allArrows.forEach((arrow, index) => {
+        if (arrow) {
+            console.log('⬆️ Rotating arrow up:', arrow.id);
+            arrow.classList.add('rotated');
+        }
+    });
+
+    console.log('✅ Successfully collapsed', collapsed, 'groups');
+
+    // Show visual feedback
+    const collapseBtn = document.querySelector('button[onclick*="collapseAllGroups"]');
+    if (collapseBtn) {
+        collapseBtn.style.backgroundColor = '#f3f4f6';
+        setTimeout(() => {
+            collapseBtn.style.backgroundColor = '';
+        }, 200);
+    }
+}
+
+// Edit Pegawai Functions - GLOBAL SCOPE
+function editPegawai(pegawaiId) {
+    console.log('🔍 Loading pegawai data for edit:', pegawaiId);
+
+    fetch(`/admin/struktur-organisasi/pegawai/${pegawaiId}/edit`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('✅ Pegawai data loaded successfully:', data.pegawai);
+
+                // Populate form
+                document.getElementById('editPegawaiId').value = data.pegawai.id;
+                document.getElementById('editNama').value = data.pegawai.nama;
+                document.getElementById('editNip').value = data.pegawai.nip;
+                document.getElementById('editJabatan').value = data.pegawai.jabatan;
+
+                // Set unit kerja dropdown
+                const unitKerjaSelect = document.getElementById('editUnitKerja');
+                if (unitKerjaSelect) {
+                    unitKerjaSelect.value = data.pegawai.unit_kerja_id || '';
+                }
+
+                // Show modal
+                const modal = document.getElementById('editPegawaiModal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    console.log('✅ Edit modal opened successfully');
+                } else {
+                    console.error('❌ Edit modal element not found');
+                }
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading pegawai data:', error);
+            alert('Terjadi kesalahan saat memuat data pegawai');
+        });
+}
+
+function editAdminPegawai(adminId) {
+    console.log('🔍 Loading admin pegawai data for edit:', adminId);
+    // Implement admin pegawai edit if needed
+    alert('Edit Admin Pegawai - Feature belum diimplementasi');
+}
+
+function closeEditModal() {
+    const modal = document.getElementById('editPegawaiModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+// =================== PREVIEW DATA FORM HANDLER ===================
+function setupPreviewFormHandler() {
+    console.log('🔧 Setting up preview form handler...');
+
+    const uploadForm = document.getElementById('uploadForm');
+
+    if (!uploadForm) {
+        console.error('❌ Upload form not found');
+        // Retry after a short delay
+        setTimeout(() => {
+            console.log('🔄 Retrying setup preview form handler...');
+            setupPreviewFormHandler();
+        }, 500);
+        return;
+    }
+
+    // Remove existing event listeners to prevent duplicates
+    if (uploadForm.classList.contains('_preview_handler_attached')) {
+        console.log('⚠️ Handler already attached, skipping...');
+        return;
+    }
+
+    // Mark as handled to prevent duplicates
+    uploadForm.classList.add('_preview_handler_attached');
+
+    // Add new event listener
+    uploadForm.addEventListener('submit', handlePreviewSubmit);
+
+    console.log('✅ Preview form handler setup successfully');
+
+    // Test elements
+    const fileInput = uploadForm.querySelector('input[type="file"]');
+    const submitBtn = uploadForm.querySelector('button[type="submit"]');
+
+    console.log('📝 Form elements check:');
+    console.log('  - File input:', fileInput ? '✅ Found' : '❌ Missing');
+    console.log('  - Submit button:', submitBtn ? '✅ Found' : '❌ Missing');
+}
+
+function handlePreviewSubmit(e) {
+    e.preventDefault();
+
+    console.log('🔍 Preview form submitted');
+
+    const form = e.target;
+    const formData = new FormData(form);
+
+    // Validate file input
+    const fileInput = form.querySelector('input[type="file"]');
+    if (!fileInput || !fileInput.files.length) {
+        alert('❌ Silakan pilih file Excel terlebih dahulu');
+        return;
+    }
+
+    console.log('📄 File selected:', fileInput.files[0].name);
+
+    // Show loading state
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '⏳ Memproses...';
+    submitBtn.disabled = true;
+
+    fetch('/admin/struktur-organisasi/pegawai/preview-import', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        console.log('📡 Preview response received:', response.status);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Response bukan JSON: ' + contentType);
+        }
+
+        return response.json();
+    })
+    .then(data => {
+        console.log('📊 Preview data:', data);
+
+        if (data.success) {
+            displayPreviewData(data.data);
+            showStep(2);
+            console.log('✅ Preview data displayed successfully');
+        } else {
+            alert('❌ Error: ' + data.message);
+            if (data.errors) {
+                console.log('⚠️ Import errors:', data.errors);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('❌ Preview error:', error);
+        alert('🔥 Terjadi kesalahan saat memproses file: ' + error.message);
+    })
+    .finally(() => {
+        // Restore button state
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+}
+
+function displayPreviewData(data) {
+    console.log('📊 Displaying preview data:', data);
+
+    const previewContent = document.getElementById('previewContent');
+
+    if (!previewContent) {
+        console.error('❌ Preview content element not found');
+        alert('Error: Elemen preview tidak ditemukan');
+        return;
+    }
+
+    if (!data || data.length === 0) {
+        previewContent.innerHTML = '<p class="text-red-600">❌ Tidak ada data valid ditemukan dalam file Excel.</p>';
+        console.log('⚠️ No valid data found');
+        return;
+    }
+
+    console.log(`✅ Displaying ${data.length} rows of preview data`);
+
+    let html = `
+        <div class="mb-4">
+            <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                <p class="text-green-800 font-medium">✅ Ditemukan ${data.length} data pegawai yang valid</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white border border-gray-300">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 border-b text-left font-medium text-gray-700">Nama Lengkap</th>
+                            <th class="px-4 py-2 border-b text-left font-medium text-gray-700">NIP</th>
+                            <th class="px-4 py-2 border-b text-left font-medium text-gray-700">Email</th>
+                            <th class="px-4 py-2 border-b text-left font-medium text-gray-700">Jabatan</th>
+                            <th class="px-4 py-2 border-b text-left font-medium text-gray-700">Unit Kerja</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+    `;
+
+    data.slice(0, 10).forEach(row => { // Show only first 10 rows
+        html += `
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-2 border-b">${row.namaLengkap}</td>
+                <td class="px-4 py-2 border-b">${row.nip || row.username}</td>
+                <td class="px-4 py-2 border-b">${row.email || '-'}</td>
+                <td class="px-4 py-2 border-b">${row.jabatan || 'Pegawai'}</td>
+                <td class="px-4 py-2 border-b">${row.unitKerja || '-'}</td>
+            </tr>
+        `;
+    });
+
+    html += `
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+
+    if (data.length > 10) {
+        html += `<p class="text-sm text-gray-600 mt-2">Menampilkan 10 dari ${data.length} data. Semua data akan diimport.</p>`;
+    }
+
+    html += `
+        <div class="flex justify-end space-x-3 mt-4">
+            <button onclick="backToStep1()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                Kembali
+            </button>
+            <button onclick="proceedImport()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                ✅ Import Data
+            </button>
+        </div>
+    `;
+
+    previewContent.innerHTML = html;
+}
+
+function proceedImport() {
+    const formData = new FormData(document.getElementById('uploadForm'));
+
+    // Show loading
+    document.getElementById('previewContent').innerHTML = '<div class="text-center py-4">⏳ Sedang mengimport data...</div>';
+
+    fetch('/admin/struktur-organisasi/pegawai/import', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers.get('content-type'));
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Response bukan JSON: ' + contentType);
+        }
+
+        return response.json();
+    })
+    .then(data => {
+        console.log('Import result:', data);
+        displayImportResult(data);
+        showStep(3);
+    })
+    .catch(error => {
+        console.error('Import error:', error);
+
+        // Show detailed error in the UI
+        const errorResult = {
+            success: false,
+            message: 'Error: ' + error.message,
+            statistics: { imported: 0, updated: 0, skipped: 0 },
+            errors: [error.message]
+        };
+
+        displayImportResult(errorResult);
+        showStep(3);
+    });
+}
+
+function displayImportResult(result) {
+    const resultContent = document.getElementById('step3');
+
+    let html = `
+        <div class="mb-4">
+            <h4 class="font-medium text-gray-900 mb-2">3. Hasil Import</h4>
+    `;
+
+    if (result.success) {
+        html += `
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                <div class="flex items-center">
+                    <div class="text-green-400 mr-3">✅</div>
+                    <div>
+                        <h5 class="font-medium text-green-800">${result.message}</h5>
+                        <div class="text-sm text-green-700 mt-1">
+                            ${result.statistics.imported} pegawai baru ditambahkan,
+                            ${result.statistics.updated} pegawai diupdate
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        if (result.statistics.unit_kerja) {
+            html += `
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <h6 class="font-medium text-blue-800 mb-2">📊 Statistik Unit Kerja:</h6>
+                    <div class="text-sm text-blue-700">
+                        • ${result.statistics.unit_kerja.found} pegawai berhasil di-assign ke unit kerja<br>
+                        • ${result.statistics.unit_kerja.not_found} unit kerja tidak ditemukan<br>
+                        • ${result.statistics.unit_kerja.empty} pegawai tanpa unit kerja
+                    </div>
+                </div>
+            `;
+        }
+    } else {
+        html += `
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <div class="flex items-center">
+                    <div class="text-red-400 mr-3">❌</div>
+                    <div>
+                        <h5 class="font-medium text-red-800">Import Gagal</h5>
+                        <p class="text-sm text-red-700">${result.message}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    if (result.errors && result.errors.length > 0) {
+        html += `
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                <h6 class="font-medium text-yellow-800 mb-2">⚠️ Peringatan:</h6>
+                <ul class="text-sm text-yellow-700 list-disc list-inside">
+        `;
+        result.errors.forEach(error => {
+            html += `<li>${error}</li>`;
+        });
+        html += `
+                </ul>
+            </div>
+        `;
+    }
+
+    html += `
+            <div class="flex justify-end space-x-3 mt-4">
+                <button onclick="closeImportModal()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                    Tutup
+                </button>
+                <button onclick="window.location.reload()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    Refresh Halaman
+                </button>
+            </div>
+        </div>
+    `;
+
+    resultContent.innerHTML = html;
+}
+
+// =================== DOM READY INITIALIZATION ===================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 DOM ready - Testing all functions...');
+
+    // Assign all functions to window object
+    window.openImportModal = openImportModal;
+    window.closeImportModal = closeImportModal;
+    window.backToStep1 = backToStep1;
+    window.proceedImport = proceedImport;
+    window.displayPreviewData = displayPreviewData;
+    window.syncToPegawai = syncToPegawai;
+    window.unitToggleManager = unitToggleManager;
+    window.expandAllGroups = expandAllGroups;
+    window.collapseAllGroups = collapseAllGroups;
+    window.editPegawai = editPegawai;
+    window.editAdminPegawai = editAdminPegawai;
+    window.closeEditModal = closeEditModal;
+
+    // Test all global functions
+    const globalFunctions = [
+        'openImportModal',
+        'closeImportModal',
+        'backToStep1',
+        'proceedImport',
+        'displayPreviewData',
+        'syncToPegawai',
+        'unitToggleManager',
+        'expandAllGroups',
+        'collapseAllGroups',
+        'editPegawai',
+        'editAdminPegawai',
+        'closeEditModal'
+    ];
+
+    globalFunctions.forEach(funcName => {
+        if (typeof window[funcName] === 'function') {
+            console.log(`✅ ${funcName} is available globally`);
+        } else {
+            console.error(`❌ ${funcName} is NOT available globally`);
+        }
+    });
+
+    // Test import button specifically
+    const importBtn = document.querySelector('button[onclick*="openImportModal"]');
+    if (importBtn) {
+        console.log('✅ Import button found in DOM');
+        console.log('Import button onclick:', importBtn.getAttribute('onclick'));
+    } else {
+        console.log('⚠️ Import button NOT found in current DOM');
+    }
+
+    console.log('🎯 All function tests completed');
+
+    // Setup import modal event handlers setelah DOM ready
+    console.log('🔧 Setting up import modal handlers...');
+
+    // Setup form handler jika modal sudah ada
+    setupPreviewFormHandler();
+
+    console.log('✅ Import modal setup completed');
+
+    // Test modal functionality
+    testImportModalFunctionality();
+
+// Enhanced search functionality dengan debounce untuk efisiensi
+    const searchInput = document.querySelector('input[name="search"]');
+    const searchForm = document.querySelector('#searchForm');
+    const unitSelect = document.querySelector('select[name="unit_kerja_id"]');
+    let searchTimeout;
+    
+    if (searchInput && searchForm) {
+        // Auto-submit setelah user berhenti mengetik selama 800ms
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            
+            // Jangan auto-submit jika input kosong dan tidak ada filter unit
+            const hasSearch = this.value.trim().length > 0;
+            const hasUnitFilter = unitSelect && unitSelect.value !== '';
+            
+            if (hasSearch || hasUnitFilter) {
+                searchTimeout = setTimeout(() => {
+                    searchForm.submit();
+                }, 800);
+            }
+        });
+        
+        // Handle Enter key untuk pencarian langsung
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                clearTimeout(searchTimeout);
+                searchForm.submit();
+            }
+        });
+    }
+    
+    // Focus pada search input saat halaman dimuat
+    if (searchInput) {
+        searchInput.focus();
+        
+        // Pindah cursor ke akhir teks jika ada value
+        if (searchInput.value) {
+            searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+        }
+    }
+});
+
+</script>
+
+<style>
+.toggle-arrow.rotated {
+    transform: rotate(180deg);
+}
+
+/* Fix for rotated class on any arrow */
+[id^="arrow-"].rotated {
+    transform: rotate(180deg) !important;
+}
+
+/* Ensure buttons are clickable */
+button[onclick] {
+    pointer-events: auto !important;
+}
+</style>
+{% endblock %}

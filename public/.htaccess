@@ -1,0 +1,19 @@
+<IfModule mod_rewrite.c>
+    # Set production environment
+    SetEnv APP_ENV prod
+    SetEnv APP_DEBUG 0
+
+    RewriteEngine On
+
+    # Allow direct access to uploads folder
+    RewriteCond %{REQUEST_URI} ^/uploads/
+    RewriteRule ^ - [L]
+
+    # Jangan rewrite file atau folder yang ada
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Semua request lain lempar ke index.php
+    RewriteRule ^ index.php [L]
+</IfModule>

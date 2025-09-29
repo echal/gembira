@@ -1,0 +1,935 @@
+{% extends 'admin/_layout.html.twig' %}
+
+{% block title %}Pengaturan Admin - Gembira{% endblock %}
+
+{% block page_icon %}⚙️{% endblock %}
+{% block page_title %}Pengaturan Admin{% endblock %}
+{% block page_description %}Konfigurasi sistem dan pengaturan aplikasi{% endblock %}
+
+{% block admin_content %}
+    <div class="min-h-full">
+        
+        <!-- Tab Navigation -->
+        <div class="bg-white rounded-xl shadow-sm mb-6">
+            <div class="border-b border-gray-200">
+                <!-- Navigation responsif dengan scroll horizontal untuk mobile -->
+                <nav class="-mb-px flex space-x-8 px-6 overflow-x-auto scrollbar-hide">
+                    <!-- Tab Navigation dengan highlight biru langit -->
+                    <a href="#sistem" class="tab-link active py-4 px-1 border-b-2 border-sky-500 font-medium text-sm text-sky-600 transition-all duration-200">
+                        💻 Sistem
+                    </a>
+                    <a href="#keamanan" class="tab-link py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-all duration-200">
+                        🔒 Keamanan
+                    </a>
+                    <a href="#notifikasi" class="tab-link py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-all duration-200">
+                        🔔 Notifikasi
+                    </a>
+                    <a href="#backup" class="tab-link py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-all duration-200">
+                        💾 Backup
+                    </a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Tab Content Container -->
+        <div id="tabContent">
+            
+            <!-- Tab Sistem - Konten default yang ditampilkan -->
+            <div id="sistem" class="tab-content active" style="display: block;">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    
+                    <!-- Informasi Sistem -->
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <h3 class="text-lg font-semibold mb-4">📊 Informasi Sistem</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Nama Aplikasi:</span>
+                                <span class="font-medium">Gembira</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Versi:</span>
+                                <span class="font-medium">1.0.0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Framework:</span>
+                                <span class="font-medium">Symfony 7.3</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Database:</span>
+                                <span class="font-medium">MySQL 10.4.32</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">PHP Version:</span>
+                                <span class="font-medium">8.4.11</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Server Timezone:</span>
+                                <span class="flex items-center">
+                                    <span class="text-blue-600 mr-2">🕐</span>
+                                    <span class="font-medium text-blue-700">{{ server_timezone }}</span>
+                                    <span class="text-xs text-blue-500 ml-2">(WITA)</span>
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Waktu Server:</span>
+                                <span class="flex items-center">
+                                    <span class="text-green-600 mr-2">⏰</span>
+                                    <span class="font-medium text-green-700">{{ current_time }}</span>
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Status Server:</span>
+                                <span class="flex items-center">
+                                    <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                    <span class="text-green-600 font-medium">Online</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Storage & Performance -->
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <h3 class="text-lg font-semibold mb-4">💾 Storage & Performa</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>Storage Foto Selfie</span>
+                                    <span>2.1 GB / 10 GB</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-blue-600 h-2 rounded-full" style="width: 21%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>Database Size</span>
+                                    <span>156 MB</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-green-600 h-2 rounded-full" style="width: 15%"></div>
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button id="btn-clear-cache" onclick="clearCache()" class="flex-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-600 py-2 px-4 rounded-lg font-medium text-sm transition-all duration-200">
+                                    <span id="clear-cache-text">🧹 Clear Cache</span>
+                                    <span id="clear-cache-loading" class="hidden">⏳ Clearing...</span>
+                                </button>
+                                <button id="btn-clean-files" onclick="cleanOldFiles()" class="flex-1 bg-red-100 hover:bg-red-200 text-red-600 py-2 px-4 rounded-lg font-medium text-sm transition-all duration-200">
+                                    <span id="clean-files-text">🗑️ Clean Old Files</span>
+                                    <span id="clean-files-loading" class="hidden">⏳ Cleaning...</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Maintenance Mode -->
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <h3 class="text-lg font-semibold mb-4">🔧 Mode Maintenance</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="font-medium">Status Maintenance</div>
+                                    <div class="text-sm text-gray-600">Nonaktifkan akses pegawai sementara</div>
+                                    <div class="text-xs {{ maintenance_mode_enabled ? 'text-orange-600' : 'text-green-600' }} mt-1">
+                                        {{ maintenance_mode_enabled ? '🔧 Aktif - Sistem dalam maintenance' : '✅ Nonaktif - Sistem normal' }}
+                                    </div>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="maintenanceToggle" class="sr-only peer" {{ maintenance_mode_enabled ? 'checked' : '' }} onchange="toggleMaintenanceMode()">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                </label>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Pesan Maintenance</label>
+                                <div class="relative">
+                                    <textarea id="maintenanceMessage" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Sistem sedang dalam pemeliharaan...">{{ maintenance_message }}</textarea>
+                                    <button onclick="updateMaintenanceMessage()" class="absolute bottom-2 right-2 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs transition-colors">
+                                        💾 Simpan
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Keamanan - Disembunyikan secara default -->
+            <div id="keamanan" class="tab-content hidden" style="display: none;">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Password Settings -->
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <h3 class="text-lg font-semibold mb-4">🔐 Ubah Password</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Password Saat Ini</label>
+                                <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Password Baru</label>
+                                <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Konfirmasi Password Baru</label>
+                                <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            </div>
+                            <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg font-medium">
+                                🔐 Update Password
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Security Logs -->
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <h3 class="text-lg font-semibold mb-4">📋 Log Keamanan</h3>
+                        <div class="space-y-3 max-h-64 overflow-y-auto">
+                            <div class="text-xs text-gray-500 border-b pb-2">
+                                <div class="flex justify-between">
+                                    <span>✅ Login berhasil</span>
+                                    <span>{{ 'now'|date('d/m/Y H:i') }}</span>
+                                </div>
+                                <div class="text-gray-400">IP: 127.0.0.1</div>
+                            </div>
+                            <div class="text-xs text-gray-500 border-b pb-2">
+                                <div class="flex justify-between">
+                                    <span>❌ Login gagal</span>
+                                    <span>{{ 'now'|date('d/m/Y H:i') }}</span>
+                                </div>
+                                <div class="text-gray-400">IP: 192.168.1.100</div>
+                            </div>
+                            <div class="text-xs text-gray-500 border-b pb-2">
+                                <div class="flex justify-between">
+                                    <span>⚙️ Pengaturan diubah</span>
+                                    <span>{{ 'now'|date('d/m/Y H:i') }}</span>
+                                </div>
+                                <div class="text-gray-400">User: {{ admin.username }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Notifikasi - Disembunyikan secara default -->
+            <div id="notifikasi" class="tab-content hidden" style="display: none;">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-lg font-semibold mb-4">🔔 Pengaturan Notifikasi</h3>
+                    <div class="space-y-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="font-medium">Email Notifikasi</div>
+                                <div class="text-sm text-gray-600">Kirim email untuk aktivitas penting</div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" class="sr-only peer" checked>
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                            </label>
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="font-medium">Notifikasi Absensi Terlambat</div>
+                                <div class="text-sm text-gray-600">Alert untuk notifikasi sistem</div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" class="sr-only peer" checked>
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                            </label>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="font-medium">Laporan Harian</div>
+                                <div class="text-sm text-gray-600">Kirim ringkasan absensi harian</div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Backup - Disembunyikan secara default -->
+            <div id="backup" class="tab-content hidden" style="display: none;">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Database Backup -->
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <h3 class="text-lg font-semibold mb-4">💾 Backup Database</h3>
+                        <div class="space-y-4">
+                            {% if not mysqldump_available %}
+                                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm">
+                                    <div class="flex items-center text-yellow-600">
+                                        <span class="mr-2">⚠️</span>
+                                        <span class="font-medium">mysqldump tidak tersedia</span>
+                                    </div>
+                                    <div class="text-yellow-700 mt-1">
+                                        Fitur backup memerlukan mysqldump terinstall di server.
+                                    </div>
+                                </div>
+                            {% endif %}
+                            
+                            <div class="text-sm text-gray-600">
+                                Backup terakhir: 
+                                <span class="font-medium">
+                                    {% if latest_backup %}
+                                        {{ latest_backup.formatted_date }} ({{ latest_backup.formatted_size }})
+                                    {% else %}
+                                        Belum ada backup
+                                    {% endif %}
+                                </span>
+                            </div>
+                            
+                            {% if backup_info.file_count > 0 %}
+                                <div class="text-xs text-gray-500">
+                                    Total backup: {{ backup_info.file_count }} file, {{ backup_info.formatted_size }}
+                                </div>
+                            {% endif %}
+                            
+                            <div class="space-y-2">
+                                <button id="btn-backup" onclick="createBackup()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg font-medium" {{ not mysqldump_available ? 'disabled' : '' }}>
+                                    <span id="backup-text">💾 Backup Sekarang</span>
+                                    <span id="backup-loading" class="hidden">⏳ Membuat backup...</span>
+                                </button>
+                                <button id="btn-download" onclick="downloadLatestBackup()" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium" {{ not latest_backup ? 'disabled' : '' }}>
+                                    📥 Download Backup Terbaru
+                                </button>
+                                <button onclick="showBackupList()" class="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg font-medium text-sm">
+                                    📋 Lihat Semua Backup
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Auto Backup Settings -->
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <h3 class="text-lg font-semibold mb-4">🔄 Auto Backup</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="font-medium">Enable Auto Backup</div>
+                                    <div class="text-sm text-gray-600">Backup otomatis setiap hari</div>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer" checked>
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                </label>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Waktu Backup</label>
+                                <input type="time" value="02:00" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Simpan Backup (hari)</label>
+                                <input type="number" value="30" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+{% endblock %}
+
+{% block admin_stylesheets %}
+<style>
+/* Animasi fade in untuk tab content yang halus dan responsif */
+.tab-content {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Hide scrollbar untuk nav horizontal di mobile sambil tetap bisa di-scroll */
+.scrollbar-hide {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Safari and Chrome */
+}
+
+/* Responsive tab navigation dengan breakpoint yang optimal */
+@media (max-width: 640px) {
+    .tab-link {
+        white-space: nowrap;
+        min-width: fit-content;
+        flex-shrink: 0; /* Mencegah tab menyusut pada mobile */
+    }
+
+    /* Sedikit lebih besar padding untuk touch target */
+    .tab-link {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+}
+
+/* Untuk tablet dan desktop kecil */
+@media (min-width: 641px) and (max-width: 1024px) {
+    .tab-link {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block admin_javascripts %}
+<script>
+// Tab functionality dengan perbaikan masalah hash dan event listener duplikasi
+// Menggunakan singleton pattern untuk mencegah inisialisasi berulang
+window.TabController = window.TabController || (function() {
+    let isInitialized = false;
+    let tabLinks, tabContents;
+    
+    // Fungsi untuk mengganti tab dengan highlight biru langit dan animasi yang smooth
+    function switchTab(targetId) {
+        console.log('Switching to tab:', targetId);
+        
+        if (!tabLinks || !tabContents) return;
+        
+        // Hapus kelas active dari semua tab dan konten
+        tabLinks.forEach(link => {
+            link.classList.remove('active', 'border-sky-500', 'text-sky-600', 'border-indigo-500', 'text-indigo-600');
+            link.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+        });
+        
+        // Sembunyikan semua konten tab dengan transisi yang halus
+        tabContents.forEach(content => {
+            content.classList.add('hidden');
+            content.classList.remove('active');
+            content.style.display = 'none'; // Pastikan benar-benar tersembunyi
+        });
+        
+        // Temukan dan aktifkan tab target dengan highlight biru langit
+        const targetLink = document.querySelector(`a[href="#${targetId}"]`);
+        if (targetLink) {
+            targetLink.classList.add('active', 'border-sky-500', 'text-sky-600'); // Gunakan sky-500 untuk biru langit
+            targetLink.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+        }
+        
+        // Tampilkan konten tab yang dipilih dengan animasi fadeIn
+        const targetContent = document.getElementById(targetId);
+        if (targetContent) {
+            targetContent.classList.remove('hidden');
+            targetContent.classList.add('active');
+            targetContent.style.display = 'block'; // Pastikan ditampilkan
+        }
+        
+        // Update URL hash tanpa memicu hashchange event
+        if (history.replaceState) {
+            history.replaceState(null, null, '#' + targetId);
+        } else {
+            // Temporary disable hashchange listener
+            window.removeEventListener('hashchange', handleHashChange);
+            window.location.hash = targetId;
+            setTimeout(() => {
+                window.addEventListener('hashchange', handleHashChange);
+            }, 100);
+        }
+    }
+    
+    // Handle navigasi browser back/forward dengan hash change
+    function handleHashChange(e) {
+        const hash = window.location.hash.substring(1) || 'sistem';
+        if (document.getElementById(hash)) {
+            switchTab(hash);
+        }
+    }
+    
+    // Event handler untuk klik tab
+    function handleTabClick(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const targetId = this.getAttribute('href').substring(1);
+        switchTab(targetId);
+    }
+    
+    function initializeTabs() {
+        // Cegah inisialisasi berulang
+        if (isInitialized) {
+            console.log('Tabs already initialized, skipping');
+            return;
+        }
+        
+        tabLinks = document.querySelectorAll('.tab-link');
+        tabContents = document.querySelectorAll('.tab-content');
+        
+        // Pastikan elemen tersedia sebelum inisialisasi
+        if (!tabLinks.length || !tabContents.length) {
+            console.log('Tab elements not found, skipping initialization');
+            return;
+        }
+
+        // Event handler untuk klik tab
+        tabLinks.forEach(link => {
+            link.addEventListener('click', handleTabClick);
+        });
+
+        // Handle navigasi browser back/forward dengan hash change
+        window.addEventListener('hashchange', handleHashChange);
+
+        // Handle hash awal saat halaman dimuat
+        let hash = window.location.hash.substring(1);
+        if (!hash || !document.getElementById(hash)) {
+            hash = 'sistem';
+        }
+        switchTab(hash);
+        
+        isInitialized = true;
+        console.log('Tabs initialized successfully');
+    }
+    
+    // Reset function untuk Turbo navigation
+    function resetTabs() {
+        if (isInitialized) {
+            // Cleanup existing event listeners
+            if (tabLinks) {
+                tabLinks.forEach(link => {
+                    link.removeEventListener('click', handleTabClick);
+                });
+            }
+            window.removeEventListener('hashchange', handleHashChange);
+            isInitialized = false;
+        }
+    }
+    
+    return {
+        init: initializeTabs,
+        reset: resetTabs,
+        switchTo: switchTab
+    };
+})();
+
+// Inisialisasi tab dengan event listeners yang tepat
+document.addEventListener('DOMContentLoaded', window.TabController.init);
+// Re-initialize after Turbo navigation untuk SPA compatibility
+document.addEventListener('turbo:before-render', window.TabController.reset);
+document.addEventListener('turbo:render', window.TabController.init);
+
+// Close menu when clicking outside - dipindah ke luar fungsi initializeTabs
+document.addEventListener('click', function(event) {
+    const menu = document.getElementById('userMenu');
+    if (!menu) return;
+    
+    const button = event.target.closest('button[onclick="toggleUserMenu()"]');
+    
+    if (!button && !menu.contains(event.target)) {
+        menu.classList.add('hidden');
+    }
+});
+
+// Inisialisasi event listeners lainnya setelah DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+    // Form submission untuk create jadwal
+    const formCreateJadwal = document.getElementById('formCreateJadwal');
+    if (formCreateJadwal) {
+        formCreateJadwal.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (validateTimeInput('jam_mulai', 'jam_selesai')) {
+                createJadwalAbsensi();
+            }
+        });
+    }
+
+    // Form submission untuk edit jadwal
+    const formEditJadwal = document.getElementById('formEditJadwal');
+    if (formEditJadwal) {
+        formEditJadwal.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (validateTimeInput('edit_jam_mulai', 'edit_jam_selesai')) {
+                updateJadwalAbsensi();
+            }
+        });
+    }
+});
+
+// Global functions
+function toggleUserMenu() {
+    const menu = document.getElementById('userMenu');
+    menu.classList.toggle('hidden');
+}
+
+// Clear Cache functionality
+async function clearCache() {
+    const btn = document.getElementById('btn-clear-cache');
+    const textSpan = document.getElementById('clear-cache-text');
+    const loadingSpan = document.getElementById('clear-cache-loading');
+    
+    // Show loading state
+    btn.disabled = true;
+    textSpan.classList.add('hidden');
+    loadingSpan.classList.remove('hidden');
+    
+    try {
+        const response = await fetch('{{ path('app_admin_clear_cache') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Show success
+            textSpan.textContent = '✅ Cache Cleared';
+            textSpan.classList.remove('hidden');
+            loadingSpan.classList.add('hidden');
+            
+            // Show success message
+            showNotification(result.message, 'success');
+            
+            // Reset button after 3 seconds
+            setTimeout(() => {
+                textSpan.textContent = '🧹 Clear Cache';
+                btn.disabled = false;
+            }, 3000);
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        // Show error
+        textSpan.textContent = '❌ Failed';
+        textSpan.classList.remove('hidden');
+        loadingSpan.classList.add('hidden');
+        
+        showNotification(error.message, 'error');
+        
+        // Reset button after 3 seconds
+        setTimeout(() => {
+            textSpan.textContent = '🧹 Clear Cache';
+            btn.disabled = false;
+        }, 3000);
+    }
+}
+
+// Clean Old Files functionality
+async function cleanOldFiles() {
+    const btn = document.getElementById('btn-clean-files');
+    const textSpan = document.getElementById('clean-files-text');
+    const loadingSpan = document.getElementById('clean-files-loading');
+    
+    // Confirm action
+    if (!confirm('⚠️ Yakin ingin membersihkan file lama?\n\nFile yang akan dihapus:\n- Foto selfie > 6 bulan\n- File temporary > 1 minggu\n- Log files > 1 bulan')) {
+        return;
+    }
+    
+    // Show loading state
+    btn.disabled = true;
+    textSpan.classList.add('hidden');
+    loadingSpan.classList.remove('hidden');
+    
+    try {
+        const response = await fetch('{{ path('app_admin_clean_old_files') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Show success
+            textSpan.textContent = '✅ Files Cleaned';
+            textSpan.classList.remove('hidden');
+            loadingSpan.classList.add('hidden');
+            
+            // Show detailed success message
+            showNotification(`${result.message}\nSpace freed: ${result.freed_space}`, 'success');
+            
+            // Reset button after 5 seconds
+            setTimeout(() => {
+                textSpan.textContent = '🗑️ Clean Old Files';
+                btn.disabled = false;
+            }, 5000);
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        // Show error
+        textSpan.textContent = '❌ Failed';
+        textSpan.classList.remove('hidden');
+        loadingSpan.classList.add('hidden');
+        
+        showNotification(error.message, 'error');
+        
+        // Reset button after 3 seconds
+        setTimeout(() => {
+            textSpan.textContent = '🗑️ Clean Old Files';
+            btn.disabled = false;
+        }, 3000);
+    }
+}
+
+// Toggle Maintenance Mode
+async function toggleMaintenanceMode() {
+    const toggle = document.getElementById('maintenanceToggle');
+    const messageTextarea = document.getElementById('maintenanceMessage');
+    const isEnabled = toggle.checked;
+
+    try {
+        const response = await fetch('{{ path('app_admin_maintenance_toggle') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: new URLSearchParams({
+                enable: isEnabled ? '1' : '0',
+                message: messageTextarea.value || 'Sistem sedang dalam pemeliharaan. Mohon coba beberapa saat lagi.'
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showNotification(result.message, 'success');
+            
+            // Update status text
+            const statusElement = toggle.closest('.flex').querySelector('.text-xs');
+            if (statusElement) {
+                if (isEnabled) {
+                    statusElement.className = 'text-xs text-orange-600 mt-1';
+                    statusElement.textContent = '🔧 Aktif - Sistem dalam maintenance';
+                } else {
+                    statusElement.className = 'text-xs text-green-600 mt-1';
+                    statusElement.textContent = '✅ Nonaktif - Sistem normal';
+                }
+            }
+        } else {
+            // Revert toggle if failed
+            toggle.checked = !isEnabled;
+            showNotification(result.message, 'error');
+        }
+    } catch (error) {
+        // Revert toggle if failed
+        toggle.checked = !isEnabled;
+        showNotification('❌ Gagal mengubah mode maintenance: ' + error.message, 'error');
+    }
+}
+
+// Update Maintenance Message
+async function updateMaintenanceMessage() {
+    const messageTextarea = document.getElementById('maintenanceMessage');
+    const message = messageTextarea.value.trim();
+
+    if (!message) {
+        showNotification('❌ Pesan maintenance tidak boleh kosong', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch('{{ path('app_admin_maintenance_message') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: new URLSearchParams({
+                message: message
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showNotification(result.message, 'success');
+        } else {
+            showNotification(result.message, 'error');
+        }
+    } catch (error) {
+        showNotification('❌ Gagal mengupdate pesan maintenance: ' + error.message, 'error');
+    }
+}
+
+// Show notification helper
+function showNotification(message, type = 'info') {
+    // Create notification element if it doesn't exist
+    let notification = document.getElementById('admin-notification');
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'admin-notification';
+        notification.className = 'fixed top-4 right-4 z-50 max-w-sm p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full';
+        document.body.appendChild(notification);
+    }
+    
+    // Set notification style based on type
+    notification.className = notification.className.replace(/bg-\w+-\d+/, '');
+    if (type === 'success') {
+        notification.classList.add('bg-green-500', 'text-white');
+    } else if (type === 'error') {
+        notification.classList.add('bg-red-500', 'text-white');
+    } else {
+        notification.classList.add('bg-blue-500', 'text-white');
+    }
+    
+    // Set message (convert \n to <br>)
+    notification.innerHTML = message.replace(/\n/g, '<br>');
+    
+    // Show notification
+    notification.classList.remove('translate-x-full');
+    notification.classList.add('translate-x-0');
+    
+    // Hide after 5 seconds
+    setTimeout(() => {
+        notification.classList.remove('translate-x-0');
+        notification.classList.add('translate-x-full');
+    }, 5000);
+}
+
+// Backup Database functionality
+async function createBackup() {
+    const btn = document.getElementById('btn-backup');
+    const textSpan = document.getElementById('backup-text');
+    const loadingSpan = document.getElementById('backup-loading');
+    
+    // Show loading state
+    btn.disabled = true;
+    textSpan.classList.add('hidden');
+    loadingSpan.classList.remove('hidden');
+    
+    try {
+        const response = await fetch('{{ path('app_admin_backup_create') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Show success
+            textSpan.textContent = '✅ Backup Created';
+            textSpan.classList.remove('hidden');
+            loadingSpan.classList.add('hidden');
+            
+            // Show detailed success message
+            showNotification(`${result.message}\nFile: ${result.filename}\nSize: ${result.size}`, 'success');
+            
+            // Enable download button if it was disabled
+            const downloadBtn = document.getElementById('btn-download');
+            downloadBtn.disabled = false;
+            
+            // Reset button after 3 seconds
+            setTimeout(() => {
+                textSpan.textContent = '💾 Backup Sekarang';
+                btn.disabled = false;
+            }, 3000);
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        // Show error
+        textSpan.textContent = '❌ Failed';
+        textSpan.classList.remove('hidden');
+        loadingSpan.classList.add('hidden');
+        
+        showNotification(error.message, 'error');
+        
+        // Reset button after 3 seconds
+        setTimeout(() => {
+            textSpan.textContent = '💾 Backup Sekarang';
+            btn.disabled = false;
+        }, 3000);
+    }
+}
+
+// Download Latest Backup
+async function downloadLatestBackup() {
+    try {
+        // Get backup list first to find the latest
+        const response = await fetch('{{ path('app_admin_backup_list') }}', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success && result.backups.length > 0) {
+            const latestBackup = result.backups[0];
+            const downloadUrl = '{{ path('app_admin_backup_download', {filename: 'PLACEHOLDER'}) }}'.replace('PLACEHOLDER', latestBackup.filename);
+            
+            // Create temporary link to trigger download
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = latestBackup.filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showNotification(`📥 Downloading ${latestBackup.filename} (${latestBackup.formatted_size})`, 'success');
+        } else {
+            showNotification('❌ Tidak ada backup yang tersedia untuk didownload', 'error');
+        }
+    } catch (error) {
+        showNotification('❌ Gagal mendownload backup: ' + error.message, 'error');
+    }
+}
+
+// Show Backup List Modal (simplified version)
+async function showBackupList() {
+    try {
+        const response = await fetch('{{ path('app_admin_backup_list') }}', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            let message = `📋 Daftar Backup Database:\n\n`;
+            
+            if (result.backups.length === 0) {
+                message += 'Belum ada backup tersedia.';
+            } else {
+                result.backups.forEach((backup, index) => {
+                    message += `${index + 1}. ${backup.filename}\n`;
+                    message += `   Tanggal: ${backup.formatted_date}\n`;
+                    message += `   Ukuran: ${backup.formatted_size}\n\n`;
+                });
+                
+                message += `Total: ${result.info.file_count} file, ${result.info.formatted_size}`;
+            }
+            
+            alert(message);
+        } else {
+            showNotification('❌ Gagal mengambil daftar backup: ' + result.message, 'error');
+        }
+    } catch (error) {
+        showNotification('❌ Gagal mengambil daftar backup: ' + error.message, 'error');
+    }
+}
+
+// Submenu toggle functionality
+function toggleSubmenu(submenuId) {
+    const submenu = document.getElementById(submenuId);
+    const arrow = submenu.previousElementSibling.querySelector('.submenu-arrow');
+
+    if (submenu.classList.contains('hidden')) {
+        submenu.classList.remove('hidden');
+        arrow.style.transform = 'rotate(180deg)';
+    } else {
+        submenu.classList.add('hidden');
+        arrow.style.transform = 'rotate(0deg)';
+    }
+}
+</script>
+{% endblock %}

@@ -204,6 +204,121 @@ class AttendanceCalculationService
     }
 
     /**
+     * Hitung skor harian berdasarkan jam masuk pegawai
+     *
+     * Logika:
+     * - Acuan waktu: 07:00 WITA
+     * - Skor maksimal: 75 poin
+     * - Semakin cepat absen = skor semakin tinggi
+     * - Rumus: 75 - (selisih menit dari 07:00)
+     *
+     * Contoh:
+     * - Jam 07:00 = skor 75 (maksimal)
+     * - Jam 07:15 = skor 60
+     * - Jam 08:00 = skor 15
+     * - Jam 08:15 = skor 0
+     *
+     * @param \DateTimeInterface $jamMasuk Waktu absen masuk pegawai
+     * @return int Skor harian (0-75)
+     */
+    public function hitungSkorHarian(\DateTimeInterface $jamMasuk): int
+    {
+        $timezone = new \DateTimeZone('Asia/Makassar'); // WITA
+
+        // Buat waktu acuan 07:00 pada tanggal yang sama
+        $jamAcuan = \DateTime::createFromFormat(
+            'Y-m-d H:i',
+            $jamMasuk->format('Y-m-d') . ' 07:00',
+            $timezone
+        );
+
+        // Hitung selisih dalam menit
+        $selisihMenit = 0;
+        if ($jamMasuk >= $jamAcuan) {
+            // Pegawai terlambat dari 07:00
+            $interval = $jamAcuan->diff($jamMasuk);
+            $selisihMenit = ($interval->h * 60) + $interval->i;
+        } else {
+            // Pegawai lebih awal dari 07:00 (bonus: skor tetap maksimal)
+            $selisihMenit = 0;
+        }
+
+        // Hitung skor (maksimal 75, minimal 0)
+        $skor = 75 - $selisihMenit;
+
+        return max(0, $skor); // Pastikan tidak negatif
+    }
+
+    /**
+     * Validasi apakah waktu absen dalam rentang valid (07:00 - 08:15 WITA)
+     *
+     * @param \DateTimeInterface $jamMasuk
+     * @return bool
+     */
+    public function isWaktuAbsenValid(\DateTimeInterface $jamMasuk): bool
+    {
+        $timezone = new \DateTimeZone('Asia/Makassar');
+
+        // Buat batas waktu
+        $jamBuka = \DateTime::createFromFormat(
+            'Y-m-d H:i',
+            $jamMasuk->format('Y-m-d') . ' 07:00',
+            $timezone
+        );
+
+        $jamTutup = \DateTime::createFromFormat(
+            'Y-m-d H:i',
+            $jamMasuk->format('Y-m-d') . ' 08:15',
+            $timezone
+        );
+
+        // Cek apakah jam masuk dalam rentang
+        return ($jamMasuk >= $jamBuka && $jamMasuk <= $jamTutup);
+    }
+
+    /**
+     * Dapatkan informasi lengkap skor harian
+     *
+     * @param \DateTimeInterface $jamMasuk
+     * @return array ['skor' => int, 'selisih_menit' => int, 'status' => string, 'valid' => bool]
+     */
+    public function getInfoSkorHarian(\DateTimeInterface $jamMasuk): array
+    {
+        $timezone = new \DateTimeZone('Asia/Makassar');
+
+        $jamAcuan = \DateTime::createFromFormat(
+            'Y-m-d H:i',
+            $jamMasuk->format('Y-m-d') . ' 07:00',
+            $timezone
+        );
+
+        $selisihMenit = 0;
+        $status = 'Tepat Waktu';
+
+        if ($jamMasuk > $jamAcuan) {
+            $interval = $jamAcuan->diff($jamMasuk);
+            $selisihMenit = ($interval->h * 60) + $interval->i;
+            $status = "Terlambat {$selisihMenit} menit";
+        } elseif ($jamMasuk < $jamAcuan) {
+            $interval = $jamMasuk->diff($jamAcuan);
+            $selisihMenit = -(($interval->h * 60) + $interval->i);
+            $status = "Lebih Awal " . abs($selisihMenit) . " menit";
+        }
+
+        $skor = $this->hitungSkorHarian($jamMasuk);
+        $valid = $this->isWaktuAbsenValid($jamMasuk);
+
+        return [
+            'skor' => $skor,
+            'selisih_menit' => $selisihMenit,
+            'status' => $status,
+            'valid' => $valid,
+            'jam_masuk' => $jamMasuk->format('H:i'),
+            'jam_acuan' => '07:00'
+        ];
+    }
+
+    /**
      * Mendapatkan statistik kehadiran untuk unit kerja
      *
      * @param string $unitKerjaId

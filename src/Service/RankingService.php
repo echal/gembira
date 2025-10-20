@@ -3,9 +3,15 @@
 namespace App\Service;
 
 use App\Entity\Pegawai;
+use App\Entity\AbsensiDurasi;
+use App\Entity\RankingHarian;
+use App\Entity\RankingBulanan;
 use App\Repository\AbsensiRepository;
 use App\Repository\PegawaiRepository;
 use App\Repository\KonfigurasiJadwalAbsensiRepository;
+use App\Repository\AbsensiDurasiRepository;
+use App\Repository\RankingHarianRepository;
+use App\Repository\RankingBulananRepository;
 use App\Service\AttendanceCalculationService;
 use App\Service\UiHelper;
 use Doctrine\ORM\EntityManagerInterface;
@@ -23,12 +29,18 @@ use Doctrine\ORM\EntityManagerInterface;
  */
 class RankingService
 {
+    // Jam ideal untuk absensi (default: 07:00)
+    private const JAM_IDEAL = '07:00';
+
     public function __construct(
         private AbsensiRepository $absensiRepo,
         private PegawaiRepository $pegawaiRepo,
         private KonfigurasiJadwalAbsensiRepository $jadwalRepo,
         private EntityManagerInterface $entityManager,
-        private AttendanceCalculationService $attendanceService
+        private AttendanceCalculationService $attendanceService,
+        private AbsensiDurasiRepository $absensiDurasiRepo,
+        private RankingHarianRepository $rankingHarianRepo,
+        private RankingBulananRepository $rankingBulananRepo
     ) {}
 
     /**
@@ -480,5 +492,718 @@ class RankingService
             ->getOneOrNullResult();
 
         return $absensi ? $absensi['waktuAbsensi'] : null;
+    }
+
+    // ============================================================
+    // SISTEM RANKING DINAMIS BARU
+    // ============================================================
+
+    /**
+     * Update ranking harian secara dinamis setelah absensi baru
+     *
+     * Method ini dipanggil setiap kali pegawai melakukan absensi.
+     * Alur:
+     * 1. Hitung durasi absensi (selisih dengan jam ideal)
+     * 2. Simpan ke tabel absensi_durasi
+     * 3. Update ranking harian untuk hari ini
+     * 4. Update ranking bulanan (akumulasi)
+     *
+     * @param Pegawai $pegawai Pegawai yang baru melakukan absensi
+     * @param \DateTimeInterface|null $waktuAbsensi Waktu absensi (default: sekarang)
+     * @return array ['success' => bool, 'message' => string, 'durasi_menit' => int, 'peringkat_harian' => int]
+     */
+    public function updateDailyRanking(Pegawai $pegawai, ?\DateTimeInterface $waktuAbsensi = null): array
+    {
+        try {
+            $timezone = new \DateTimeZone('Asia/Makassar');
+
+            // Default waktu absensi adalah sekarang jika tidak ada parameter
+            if (!$waktuAbsensi) {
+                $waktuAbsensi = new \DateTime('now', $timezone);
+            }
+
+            $tanggal = (clone $waktuAbsensi)->setTime(0, 0, 0);
+
+            // 1. Hitung durasi absensi
+            $durasiMenit = $this->hitungDurasiAbsensi($waktuAbsensi);
+
+            // 2. Cek apakah sudah ada record absensi durasi untuk hari ini
+            $absensiDurasi = $this->absensiDurasiRepo->findByPegawaiAndTanggal($pegawai, $tanggal);
+
+            if (!$absensiDurasi) {
+                // Buat record baru
+                $absensiDurasi = new AbsensiDurasi();
+                $absensiDurasi->setPegawai($pegawai);
+                $absensiDurasi->setTanggal($tanggal);
+            }
+
+            // Update jam masuk dan durasi (bisa jadi pegawai absen beberapa kali dalam sehari)
+            $absensiDurasi->setJamMasuk($waktuAbsensi);
+            $absensiDurasi->setDurasiMenit($durasiMenit);
+
+            $this->absensiDurasiRepo->save($absensiDurasi, true);
+
+            // 3. Update ranking harian untuk hari ini (seluruh pegawai yang absen hari ini)
+            $this->recalculateRankingHarian($tanggal);
+
+            // 4. Update ranking bulanan (akumulasi)
+            $this->calculateMonthlyAccumulation($waktuAbsensi->format('Y'), (int)$waktuAbsensi->format('n'));
+
+            // Dapatkan peringkat pegawai setelah update
+            $rankingHarian = $this->rankingHarianRepo->findByPegawaiAndTanggal($pegawai, $tanggal);
+            $peringkat = $rankingHarian ? $rankingHarian->getPeringkat() : 0;
+
+            return [
+                'success' => true,
+                'message' => 'Ranking berhasil diupdate',
+                'durasi_menit' => $durasiMenit,
+                'peringkat_harian' => $peringkat,
+                'formatted_durasi' => $this->formatDurasi($durasiMenit)
+            ];
+
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Gagal update ranking: ' . $e->getMessage(),
+                'durasi_menit' => 0,
+                'peringkat_harian' => 0
+            ];
+        }
+    }
+
+    /**
+     * Hitung durasi absensi dalam menit (selisih dari jam ideal)
+     *
+     * Nilai positif = terlambat
+     * Nilai negatif = lebih awal dari jam ideal
+     *
+     * @param \DateTimeInterface $waktuAbsensi
+     * @return int Durasi dalam menit
+     */
+    private function hitungDurasiAbsensi(\DateTimeInterface $waktuAbsensi): int
+    {
+        $timezone = new \DateTimeZone('Asia/Makassar');
+
+        // Buat waktu ideal pada tanggal yang sama dengan absensi
+        $jamIdeal = \DateTime::createFromFormat(
+            'Y-m-d H:i',
+            $waktuAbsensi->format('Y-m-d') . ' ' . self::JAM_IDEAL,
+            $timezone
+        );
+
+        // Hitung selisih dalam menit
+        $interval = $jamIdeal->diff($waktuAbsensi);
+        $totalMenit = ($interval->h * 60) + $interval->i;
+
+        // Jika absensi lebih awal dari jam ideal, beri nilai negatif
+        if ($waktuAbsensi < $jamIdeal) {
+            $totalMenit = -$totalMenit;
+        }
+
+        return $totalMenit;
+    }
+
+    /**
+     * Recalculate ranking harian untuk tanggal tertentu
+     *
+     * Method ini menghitung ulang peringkat semua pegawai yang absen pada tanggal tersebut.
+     * Diurutkan berdasarkan total durasi (yang paling kecil/paling awal mendapat peringkat 1)
+     *
+     * @param \DateTimeInterface $tanggal
+     * @return int Jumlah pegawai yang di-rank
+     */
+    private function recalculateRankingHarian(\DateTimeInterface $tanggal): int
+    {
+        // Ambil semua data absensi durasi untuk tanggal tersebut
+        $daftarAbsensiDurasi = $this->absensiDurasiRepo->findByTanggal($tanggal);
+
+        if (empty($daftarAbsensiDurasi)) {
+            return 0;
+        }
+
+        // Urutkan berdasarkan durasi (yang terkecil/paling awal di ranking 1)
+        usort($daftarAbsensiDurasi, function($a, $b) {
+            return $a->getDurasiMenit() <=> $b->getDurasiMenit();
+        });
+
+        // Update atau create ranking harian
+        $peringkat = 1;
+        foreach ($daftarAbsensiDurasi as $absensiDurasi) {
+            $pegawai = $absensiDurasi->getPegawai();
+
+            // Cari atau buat ranking harian
+            $rankingHarian = $this->rankingHarianRepo->findByPegawaiAndTanggal($pegawai, $tanggal);
+
+            if (!$rankingHarian) {
+                $rankingHarian = new RankingHarian();
+                $rankingHarian->setPegawai($pegawai);
+                $rankingHarian->setTanggal($tanggal);
+            }
+
+            // Update data
+            $rankingHarian->setTotalDurasi($absensiDurasi->getDurasiMenit());
+            $rankingHarian->setPeringkat($peringkat);
+            $rankingHarian->setUpdatedAt(new \DateTime());
+
+            $this->rankingHarianRepo->save($rankingHarian, false);
+
+            $peringkat++;
+        }
+
+        // Flush semua perubahan sekaligus untuk performa
+        $this->entityManager->flush();
+
+        return count($daftarAbsensiDurasi);
+    }
+
+    /**
+     * Hitung dan update ranking bulanan (akumulasi dari ranking harian)
+     *
+     * Method ini menghitung total durasi dari semua ranking harian dalam satu bulan,
+     * lalu membuat/update ranking bulanan untuk semua pegawai.
+     *
+     * @param int $tahun
+     * @param int $bulan
+     * @return array ['total_pegawai' => int, 'periode' => string]
+     */
+    public function calculateMonthlyAccumulation(int $tahun, int $bulan): array
+    {
+        $periode = sprintf('%04d-%02d', $tahun, $bulan);
+
+        // Hitung tanggal mulai dan selesai bulan tersebut
+        $mulai = new \DateTime("{$tahun}-{$bulan}-01");
+        $selesai = (clone $mulai)->modify('last day of this month');
+
+        // Ambil semua pegawai aktif
+        $pegawaiList = $this->pegawaiRepo->findBy(
+            ['statusKepegawaian' => 'aktif'],
+            ['nama' => 'ASC']
+        );
+
+        $dataRanking = [];
+
+        foreach ($pegawaiList as $pegawai) {
+            // Dapatkan agregasi data dari ranking harian
+            $agregasi = $this->rankingHarianRepo->getAgregasiByPeriode($pegawai, $mulai, $selesai);
+
+            // Skip jika pegawai tidak punya data absensi bulan ini
+            if ($agregasi['jumlah_hari'] === 0) {
+                continue;
+            }
+
+            $dataRanking[] = [
+                'pegawai' => $pegawai,
+                'total_durasi' => $agregasi['total_durasi'],
+                'rata_rata' => $agregasi['rata_rata'],
+                'jumlah_hari' => $agregasi['jumlah_hari']
+            ];
+        }
+
+        // Urutkan berdasarkan total durasi (yang terkecil ranking 1)
+        usort($dataRanking, function($a, $b) {
+            return $a['total_durasi'] <=> $b['total_durasi'];
+        });
+
+        // Update atau create ranking bulanan
+        $peringkat = 1;
+        foreach ($dataRanking as $data) {
+            $pegawai = $data['pegawai'];
+
+            // Cari atau buat ranking bulanan
+            $rankingBulanan = $this->rankingBulananRepo->findByPegawaiAndPeriode($pegawai, $periode);
+
+            if (!$rankingBulanan) {
+                $rankingBulanan = new RankingBulanan();
+                $rankingBulanan->setPegawai($pegawai);
+                $rankingBulanan->setPeriode($periode);
+            }
+
+            // Update data
+            $rankingBulanan->setTotalDurasi($data['total_durasi']);
+            $rankingBulanan->setRataRataDurasi($data['rata_rata']);
+            $rankingBulanan->setPeringkat($peringkat);
+            $rankingBulanan->setUpdatedAt(new \DateTime());
+
+            $this->rankingBulananRepo->save($rankingBulanan, false);
+
+            $peringkat++;
+        }
+
+        // Flush semua perubahan
+        $this->entityManager->flush();
+
+        return [
+            'total_pegawai' => count($dataRanking),
+            'periode' => $periode
+        ];
+    }
+
+    /**
+     * Reset ranking bulanan (untuk awal bulan baru)
+     *
+     * Method ini TIDAK menghapus data lama, hanya mempersiapkan untuk bulan baru.
+     * Data bulan lalu tetap tersimpan untuk history.
+     *
+     * @param int|null $tahun Tahun yang akan direset (default: tahun sekarang)
+     * @param int|null $bulan Bulan yang akan direset (default: bulan sekarang)
+     * @return array ['message' => string, 'periode' => string]
+     */
+    public function resetMonthlyRanking(?int $tahun = null, ?int $bulan = null): array
+    {
+        $now = new \DateTime();
+        $tahun = $tahun ?? (int)$now->format('Y');
+        $bulan = $bulan ?? (int)$now->format('n');
+
+        $periode = sprintf('%04d-%02d', $tahun, $bulan);
+
+        // Hitung ulang ranking bulanan untuk periode ini BERDASARKAN SKOR HARIAN
+        // Ini akan membuat data baru untuk bulan ini berdasarkan data harian yang ada
+        $result = $this->calculateMonthlyAccumulationBySkor($tahun, $bulan);
+
+        return [
+            'message' => "Ranking bulanan berhasil direset untuk periode {$periode}",
+            'periode' => $periode,
+            'total_pegawai' => $result['total_pegawai']
+        ];
+    }
+
+    /**
+     * Format durasi menit ke format yang mudah dibaca
+     *
+     * @param int $menit
+     * @return string
+     */
+    private function formatDurasi(int $menit): string
+    {
+        $absMenit = abs($menit);
+        $jam = floor($absMenit / 60);
+        $sisa = $absMenit % 60;
+
+        $status = $menit > 0 ? 'Terlambat' : ($menit < 0 ? 'Lebih Awal' : 'Tepat Waktu');
+
+        if ($jam > 0) {
+            return "{$status} {$jam} jam {$sisa} menit";
+        }
+
+        if ($sisa > 0) {
+            return "{$status} {$sisa} menit";
+        }
+
+        return $status;
+    }
+
+    /**
+     * Set jam ideal untuk absensi (untuk testing atau konfigurasi custom)
+     *
+     * @param string $jamIdeal Format: HH:MM
+     * @return void
+     */
+    private $customJamIdeal = null;
+
+    public function setJamIdeal(string $jamIdeal): void
+    {
+        $this->customJamIdeal = $jamIdeal;
+    }
+
+    private function getJamIdeal(): string
+    {
+        return $this->customJamIdeal ?? self::JAM_IDEAL;
+    }
+
+    // ============================================================
+    // METHOD BARU UNTUK SISTEM RANKING BERDASARKAN SKOR (07:00-08:15)
+    // ============================================================
+
+    /**
+     * Recalculate ranking harian berdasarkan skor (BUKAN durasi)
+     *
+     * Method ini menghitung ulang peringkat semua pegawai yang absen pada tanggal tersebut.
+     * Diurutkan berdasarkan SKOR TERTINGGI dan JAM MASUK TERCEPAT (untuk tie-breaking)
+     *
+     * @param \DateTimeInterface $tanggal
+     * @return int Jumlah pegawai yang di-rank
+     */
+    private function recalculateRankingHarianBySkor(\DateTimeInterface $tanggal): int
+    {
+        // Ambil semua ranking harian untuk tanggal tersebut
+        $daftarRanking = $this->rankingHarianRepo->findByTanggal($tanggal);
+
+        if (empty($daftarRanking)) {
+            return 0;
+        }
+
+        // Urutkan berdasarkan:
+        // 1. Skor tertinggi (DESC)
+        // 2. Jam masuk tercepat (ASC) untuk tie-breaking
+        usort($daftarRanking, function($a, $b) {
+            // Skor tertinggi dulu
+            if ($a->getSkorHarian() !== $b->getSkorHarian()) {
+                return $b->getSkorHarian() <=> $a->getSkorHarian();
+            }
+
+            // Jika skor sama, jam masuk tercepat menang
+            if ($a->getJamMasuk() && $b->getJamMasuk()) {
+                return $a->getJamMasuk() <=> $b->getJamMasuk();
+            }
+
+            return 0;
+        });
+
+        // Update peringkat
+        $peringkat = 1;
+        foreach ($daftarRanking as $ranking) {
+            $ranking->setPeringkat($peringkat);
+            $ranking->setUpdatedAt(new \DateTime());
+            $this->rankingHarianRepo->save($ranking, false);
+            $peringkat++;
+        }
+
+        // Flush semua perubahan
+        $this->entityManager->flush();
+
+        return count($daftarRanking);
+    }
+
+    /**
+     * Dapatkan semua ranking harian untuk tanggal tertentu (untuk admin)
+     *
+     * @param \DateTimeInterface|null $tanggal Default: hari ini
+     * @return array Array of RankingHarian entities
+     */
+    public function getAllDailyRanking(?\DateTimeInterface $tanggal = null): array
+    {
+        if (!$tanggal) {
+            $tanggal = new \DateTime('now', new \DateTimeZone('Asia/Makassar'));
+            $tanggal->setTime(0, 0, 0);
+        }
+
+        return $this->rankingHarianRepo->findByTanggal($tanggal);
+    }
+
+    /**
+     * Dapatkan semua ranking bulanan untuk periode tertentu (untuk admin)
+     *
+     * @param string|null $periode Format: YYYY-MM (default: bulan ini)
+     * @return array Array of RankingBulanan entities
+     */
+    public function getAllMonthlyRanking(?string $periode = null): array
+    {
+        if (!$periode) {
+            $now = new \DateTime();
+            $periode = $now->format('Y-m');
+        }
+
+        return $this->rankingBulananRepo->findByPeriode($periode);
+    }
+
+    /**
+     * Dapatkan ranking per unit kerja untuk tanggal tertentu (untuk admin)
+     *
+     * Menghitung rata-rata skor harian per unit kerja
+     *
+     * @param \DateTimeInterface|null $tanggal Default: hari ini
+     * @return array Array of ['unit_kerja' => string, 'rata_rata_skor' => float, 'total_pegawai' => int, 'peringkat' => int]
+     */
+    public function getAllGroupRanking(?\DateTimeInterface $tanggal = null): array
+    {
+        if (!$tanggal) {
+            $tanggal = new \DateTime('now', new \DateTimeZone('Asia/Makassar'));
+            $tanggal->setTime(0, 0, 0);
+        }
+
+        // Ambil semua ranking harian untuk tanggal tersebut
+        $rankingHarian = $this->rankingHarianRepo->findByTanggal($tanggal);
+
+        // Group by unit kerja dan hitung rata-rata
+        $groupData = [];
+
+        foreach ($rankingHarian as $ranking) {
+            $pegawai = $ranking->getPegawai();
+            $unitKerja = $pegawai->getUnitKerjaEntity();
+
+            if (!$unitKerja) {
+                continue;
+            }
+
+            $unitKerjaId = $unitKerja->getId();
+            $namaUnit = $unitKerja->getNamaUnit();
+
+            if (!isset($groupData[$unitKerjaId])) {
+                $groupData[$unitKerjaId] = [
+                    'unit_kerja_id' => $unitKerjaId,
+                    'nama_unit' => $namaUnit,
+                    'total_skor' => 0,
+                    'total_pegawai' => 0,
+                    'rata_rata_skor' => 0
+                ];
+            }
+
+            $groupData[$unitKerjaId]['total_skor'] += $ranking->getSkorHarian();
+            $groupData[$unitKerjaId]['total_pegawai']++;
+        }
+
+        // Hitung rata-rata per unit
+        foreach ($groupData as $key => $data) {
+            if ($data['total_pegawai'] > 0) {
+                $groupData[$key]['rata_rata_skor'] = round($data['total_skor'] / $data['total_pegawai'], 2);
+            }
+        }
+
+        // Urutkan berdasarkan rata-rata skor tertinggi
+        usort($groupData, function($a, $b) {
+            return $b['rata_rata_skor'] <=> $a['rata_rata_skor'];
+        });
+
+        // Tambahkan peringkat
+        $peringkat = 1;
+        foreach ($groupData as &$data) {
+            $data['peringkat'] = $peringkat++;
+        }
+
+        return array_values($groupData);
+    }
+
+    /**
+     * Hitung ranking bulanan berdasarkan total skor harian (BUKAN durasi)
+     *
+     * @param int $tahun
+     * @param int $bulan
+     * @return array ['total_pegawai' => int, 'periode' => string]
+     */
+    public function calculateMonthlyAccumulationBySkor(int $tahun, int $bulan): array
+    {
+        $periode = sprintf('%04d-%02d', $tahun, $bulan);
+
+        // Hitung tanggal mulai dan selesai bulan tersebut
+        $mulai = new \DateTime("{$tahun}-{$bulan}-01");
+        $selesai = (clone $mulai)->modify('last day of this month');
+
+        // Ambil semua pegawai aktif
+        $pegawaiList = $this->pegawaiRepo->findBy(
+            ['statusKepegawaian' => 'aktif'],
+            ['nama' => 'ASC']
+        );
+
+        $dataRanking = [];
+
+        foreach ($pegawaiList as $pegawai) {
+            // Ambil semua ranking harian pegawai ini dalam sebulan
+            $rankingHarianList = $this->rankingHarianRepo->findByPegawaiAndPeriode($pegawai, $mulai, $selesai);
+
+            if (empty($rankingHarianList)) {
+                continue;
+            }
+
+            // Hitung total skor
+            $totalSkor = 0;
+            $jumlahHari = count($rankingHarianList);
+
+            foreach ($rankingHarianList as $ranking) {
+                $totalSkor += $ranking->getSkorHarian();
+            }
+
+            $rataRata = $jumlahHari > 0 ? round($totalSkor / $jumlahHari, 2) : 0;
+
+            $dataRanking[] = [
+                'pegawai' => $pegawai,
+                'total_skor' => $totalSkor,
+                'rata_rata' => $rataRata,
+                'jumlah_hari' => $jumlahHari
+            ];
+        }
+
+        // Urutkan berdasarkan total skor tertinggi
+        usort($dataRanking, function($a, $b) {
+            return $b['total_skor'] <=> $a['total_skor'];
+        });
+
+        // Update atau create ranking bulanan
+        $peringkat = 1;
+        foreach ($dataRanking as $data) {
+            $pegawai = $data['pegawai'];
+
+            // Cari atau buat ranking bulanan
+            $rankingBulanan = $this->rankingBulananRepo->findByPegawaiAndPeriode($pegawai, $periode);
+
+            if (!$rankingBulanan) {
+                $rankingBulanan = new RankingBulanan();
+                $rankingBulanan->setPegawai($pegawai);
+                $rankingBulanan->setPeriode($periode);
+            }
+
+            // Update data dengan TOTAL SKOR (bukan durasi)
+            $rankingBulanan->setTotalDurasi($data['total_skor']); // Field ini digunakan untuk total skor
+            $rankingBulanan->setRataRataDurasi($data['rata_rata']);
+            $rankingBulanan->setPeringkat($peringkat);
+            $rankingBulanan->setUpdatedAt(new \DateTime());
+
+            $this->rankingBulananRepo->save($rankingBulanan, false);
+
+            $peringkat++;
+        }
+
+        // Flush semua perubahan
+        $this->entityManager->flush();
+
+        return [
+            'total_pegawai' => count($dataRanking),
+            'periode' => $periode
+        ];
+    }
+
+    // ============================================================
+    // METHOD UNTUK FRONTEND PEGAWAI (GABUNGAN SKOR + PERSENTASE)
+    // ============================================================
+
+    /**
+     * Dapatkan ranking pribadi pegawai berdasarkan SKOR hari ini
+     *
+     * @param Pegawai $pegawai
+     * @param \DateTimeInterface|null $tanggal Default: hari ini
+     * @return array ['posisi' => int, 'total_pegawai' => int, 'skor' => int, 'jam_masuk' => string|null]
+     */
+    public function getRankingPribadiByScore(Pegawai $pegawai, ?\DateTimeInterface $tanggal = null): array
+    {
+        if (!$tanggal) {
+            $tanggal = new \DateTime('now', new \DateTimeZone('Asia/Makassar'));
+            $tanggal->setTime(0, 0, 0);
+        }
+
+        // Ambil ranking harian pegawai
+        $rankingHarian = $this->rankingHarianRepo->findByPegawaiAndTanggal($pegawai, $tanggal);
+
+        if (!$rankingHarian) {
+            // Pegawai belum absen hari ini
+            $totalPegawaiHariIni = count($this->rankingHarianRepo->findByTanggal($tanggal));
+
+            return [
+                'posisi' => 0,
+                'total_pegawai' => $totalPegawaiHariIni,
+                'skor' => 0,
+                'jam_masuk' => null,
+                'status' => 'Belum Absen'
+            ];
+        }
+
+        $totalPegawaiHariIni = count($this->rankingHarianRepo->findByTanggal($tanggal));
+
+        return [
+            'posisi' => $rankingHarian->getPeringkat(),
+            'total_pegawai' => $totalPegawaiHariIni,
+            'skor' => $rankingHarian->getSkorHarian(),
+            'jam_masuk' => $rankingHarian->getJamMasuk() ? $rankingHarian->getJamMasuk()->format('H:i') : null,
+            'status' => $this->getStatusBySkor($rankingHarian->getSkorHarian())
+        ];
+    }
+
+    /**
+     * Dapatkan top 10 pegawai berdasarkan SKOR hari ini
+     *
+     * @param \DateTimeInterface|null $tanggal Default: hari ini
+     * @return array Array of ranking data
+     */
+    public function getTop10ByScore(?\DateTimeInterface $tanggal = null): array
+    {
+        if (!$tanggal) {
+            $tanggal = new \DateTime('now', new \DateTimeZone('Asia/Makassar'));
+            $tanggal->setTime(0, 0, 0);
+        }
+
+        // Ambil semua ranking harian untuk hari ini
+        $rankingList = $this->rankingHarianRepo->findByTanggal($tanggal);
+
+        // Ambil 10 teratas saja
+        $top10 = array_slice($rankingList, 0, 10);
+
+        $result = [];
+        foreach ($top10 as $ranking) {
+            $pegawai = $ranking->getPegawai();
+
+            $result[] = [
+                'peringkat' => $ranking->getPeringkat(),
+                'nip' => $pegawai->getNip(),
+                'nama' => $pegawai->getNama(),
+                'unit_kerja' => $pegawai->getNamaUnitKerja(),
+                'skor' => $ranking->getSkorHarian(),
+                'jam_masuk' => $ranking->getJamMasuk() ? $ranking->getJamMasuk()->format('H:i') : '-',
+                'status' => $this->getStatusBySkor($ranking->getSkorHarian())
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Dapatkan ranking unit kerja berdasarkan SKOR hari ini
+     *
+     * @param Pegawai $pegawai
+     * @param \DateTimeInterface|null $tanggal Default: hari ini
+     * @return array ['posisi' => int, 'nama_unit' => string, 'rata_rata_skor' => float, 'total_pegawai' => int]
+     */
+    public function getRankingGroupByScore(Pegawai $pegawai, ?\DateTimeInterface $tanggal = null): array
+    {
+        if (!$tanggal) {
+            $tanggal = new \DateTime('now', new \DateTimeZone('Asia/Makassar'));
+            $tanggal->setTime(0, 0, 0);
+        }
+
+        $unitKerja = $pegawai->getUnitKerjaEntity();
+        $namaUnit = $unitKerja ? $unitKerja->getNamaUnit() : 'Unit Tidak Diketahui';
+
+        if (!$unitKerja) {
+            return [
+                'posisi' => 0,
+                'nama_unit' => $namaUnit,
+                'rata_rata_skor' => 0.0,
+                'total_pegawai' => 0,
+                'total_unit' => 0
+            ];
+        }
+
+        // Dapatkan semua ranking unit
+        $allGroupRanking = $this->getAllGroupRanking($tanggal);
+
+        // Cari posisi unit kerja pegawai
+        $posisi = 0;
+        $rataRataSkor = 0.0;
+        $totalPegawai = 0;
+
+        foreach ($allGroupRanking as $group) {
+            if ($group['unit_kerja_id'] === $unitKerja->getId()) {
+                $posisi = $group['peringkat'];
+                $rataRataSkor = $group['rata_rata_skor'];
+                $totalPegawai = $group['total_pegawai'];
+                break;
+            }
+        }
+
+        return [
+            'posisi' => $posisi,
+            'nama_unit' => $namaUnit,
+            'rata_rata_skor' => $rataRataSkor,
+            'total_pegawai' => $totalPegawai,
+            'total_unit' => count($allGroupRanking)
+        ];
+    }
+
+    /**
+     * Helper method untuk mendapatkan status berdasarkan skor
+     *
+     * @param int $skor
+     * @return string
+     */
+    private function getStatusBySkor(int $skor): string
+    {
+        if ($skor >= 70) {
+            return '🏆 Excellent';
+        } elseif ($skor >= 60) {
+            return '🥇 Sangat Baik';
+        } elseif ($skor >= 45) {
+            return '🥈 Baik';
+        } elseif ($skor >= 30) {
+            return '🥉 Cukup';
+        } else {
+            return '⚠️ Perlu Perbaikan';
+        }
     }
 }

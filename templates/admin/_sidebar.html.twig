@@ -111,6 +111,13 @@
             <span class="font-medium">Laporan Kehadiran {{ app.user.isSuperAdmin() ? '' : '(Unit Saya)' }}</span>
         </a>
 
+        <!-- Lihat Ranking -->
+        <a href="{{ path('admin_ranking_index') }}"
+           class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 {{ app.request.attributes.get('_route') starts with 'admin_ranking' ? 'bg-yellow-50 border-yellow-500 text-yellow-700' : 'border-transparent hover:border-yellow-500' }}">
+            <span class="text-lg mr-3">🏆</span>
+            <span class="font-medium">Lihat Ranking</span>
+        </a>
+
         <!-- Validasi Absen - Badge hanya tampil jika ada data pending -->
         <a href="{{ path('app_admin_validasi_absen') }}"
            class="flex items-center px-4 py-3 border-l-4 {{ app.request.attributes.get('_route') starts with 'app_admin_validasi_absen' ? 'text-white bg-orange-500 border-orange-600' : 'text-gray-700 hover:bg-gray-50 border-transparent hover:border-orange-500' }}">

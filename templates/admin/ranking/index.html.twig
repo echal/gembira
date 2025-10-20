@@ -1,0 +1,353 @@
+{% extends 'admin/_layout.html.twig' %}
+
+{% block title %}{{ page_title }} - Admin GEMBIRA{% endblock %}
+
+{% block page_icon %}🏆{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock %}
+{% block page_description %}Sistem Ranking Berdasarkan Skor Harian (07:00-08:15 WITA){% endblock %}
+
+{% block admin_stylesheets %}
+<style>
+    .badge-rank {
+        font-size: 1.2rem;
+        padding: 4px 12px;
+        border-radius: 20px;
+        color: white;
+        font-weight: bold;
+        display: inline-block;
+    }
+    .badge-rank-1 { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); }
+    .badge-rank-2 { background: linear-gradient(135deg, #C0C0C0 0%, #808080 100%); }
+    .badge-rank-3 { background: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%); }
+
+    .score-badge {
+        font-size: 1rem;
+        font-weight: bold;
+        padding: 4px 12px;
+        border-radius: 12px;
+        display: inline-block;
+    }
+    .score-badge-high { color: #155724; background-color: #d4edda; }
+    .score-badge-medium { color: #856404; background-color: #fff3cd; }
+    .score-badge-low { color: #721c24; background-color: #f8d7da; }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+    <!-- Action Buttons -->
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex space-x-3">
+            <button type="button" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center" onclick="refreshAllRankings()">
+                <span class="mr-2">🔄</span> Refresh Data
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="bg-white rounded-lg shadow-sm mb-6">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900 flex items-center">
+                <span class="mr-2">🔍</span> Filter Data
+            </h3>
+        </div>
+        <div class="px-6 py-4">
+            <form method="GET" action="{{ path('admin_ranking_index') }}">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div>
+                        <label for="tanggal" class="block text-sm font-medium text-gray-700 mb-2">
+                            📅 Tanggal (Ranking Harian & Unit)
+                        </label>
+                        <input
+                            type="date"
+                            id="tanggal"
+                            name="tanggal"
+                            value="{{ tanggal_dipilih|date('Y-m-d') }}"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        >
+                    </div>
+                    <div>
+                        <label for="periode" class="block text-sm font-medium text-gray-700 mb-2">
+                            📆 Periode (Ranking Bulanan)
+                        </label>
+                        <input
+                            type="month"
+                            id="periode"
+                            name="periode"
+                            value="{{ periode_dipilih }}"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        >
+                    </div>
+                    <div class="flex space-x-2">
+                        <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center">
+                            <span class="mr-2">🔍</span> Filter
+                        </button>
+                        <a href="{{ path('admin_ranking_index') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center">
+                            <span class="mr-2">🔄</span> Reset
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Ranking Harian -->
+    <div class="bg-white rounded-lg shadow-sm mb-6">
+        <div class="px-6 py-4 border-b border-gray-200" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-medium text-white flex items-center">
+                    <span class="mr-2">🏆</span> Ranking Harian - {{ tanggal_dipilih|date('d/m/Y') }}
+                </h3>
+                <span class="bg-white text-gray-700 text-sm font-medium px-3 py-1 rounded-full">{{ ranking_harian|length }} Pegawai</span>
+            </div>
+        </div>
+        {% if ranking_harian|length > 0 %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Peringkat</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Pegawai</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIP</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Kerja</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Jam Masuk</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Skor</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for ranking in ranking_harian %}
+                    <tr class="hover:bg-gray-50 {{ ranking.peringkat <= 3 ? 'bg-yellow-50' : '' }}">
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            {% if ranking.peringkat == 1 %}
+                                <span class="badge-rank badge-rank-1">🥇 #1</span>
+                            {% elseif ranking.peringkat == 2 %}
+                                <span class="badge-rank badge-rank-2">🥈 #2</span>
+                            {% elseif ranking.peringkat == 3 %}
+                                <span class="badge-rank badge-rank-3">🥉 #3</span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">#{{ ranking.peringkat }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">{{ ranking.pegawai.nama }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-500">{{ ranking.pegawai.nip }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {{ ranking.pegawai.namaUnitKerja }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            {% if ranking.jamMasuk %}
+                                <code class="bg-gray-100 px-2 py-1 rounded text-sm">{{ ranking.jamMasuk|date('H:i') }}</code>
+                            {% else %}
+                                <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            {% set skor = ranking.skorHarian %}
+                            {% if skor >= 60 %}
+                                <span class="score-badge score-badge-high">{{ skor }}</span>
+                            {% elseif skor >= 30 %}
+                                <span class="score-badge score-badge-medium">{{ skor }}</span>
+                            {% else %}
+                                <span class="score-badge score-badge-low">{{ skor }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <div class="text-gray-400 text-6xl mb-4">📭</div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Belum Ada Data Ranking Harian</h3>
+            <p class="text-gray-500">Data ranking harian untuk tanggal {{ tanggal_dipilih|date('d/m/Y') }} belum tersedia.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Ranking Bulanan -->
+    <div class="bg-white rounded-lg shadow-sm mb-6">
+        <div class="px-6 py-4 border-b border-gray-200" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-medium text-white flex items-center">
+                    <span class="mr-2">📅</span> Ranking Bulanan - {{ periode_dipilih|date('F Y') }}
+                </h3>
+                <span class="bg-white text-gray-700 text-sm font-medium px-3 py-1 rounded-full">{{ ranking_bulanan|length }} Pegawai</span>
+            </div>
+        </div>
+        {% if ranking_bulanan|length > 0 %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Peringkat</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Pegawai</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIP</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Kerja</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Total Skor</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Rata-rata</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for ranking in ranking_bulanan %}
+                    <tr class="hover:bg-gray-50 {{ ranking.peringkat <= 3 ? 'bg-green-50' : '' }}">
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            {% if ranking.peringkat == 1 %}
+                                <span class="badge-rank badge-rank-1">🥇 #1</span>
+                            {% elseif ranking.peringkat == 2 %}
+                                <span class="badge-rank badge-rank-2">🥈 #2</span>
+                            {% elseif ranking.peringkat == 3 %}
+                                <span class="badge-rank badge-rank-3">🥉 #3</span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">#{{ ranking.peringkat }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">{{ ranking.pegawai.nama }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-500">{{ ranking.pegawai.nip }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {{ ranking.pegawai.namaUnitKerja }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <span class="text-lg font-bold text-green-600">{{ ranking.totalDurasi }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                {{ ranking.rataRataDurasi|number_format(2) }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <div class="text-gray-400 text-6xl mb-4">📭</div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Belum Ada Data Ranking Bulanan</h3>
+            <p class="text-gray-500">Data ranking bulanan untuk periode {{ periode_dipilih|date('F Y') }} belum tersedia.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Ranking Unit Kerja -->
+    <div class="bg-white rounded-lg shadow-sm mb-6">
+        <div class="px-6 py-4 border-b border-gray-200" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-medium text-white flex items-center">
+                    <span class="mr-2">🏢</span> Ranking Unit Kerja - {{ tanggal_dipilih|date('d/m/Y') }}
+                </h3>
+                <span class="bg-white text-gray-700 text-sm font-medium px-3 py-1 rounded-full">{{ ranking_group|length }} Unit</span>
+            </div>
+        </div>
+        {% if ranking_group|length > 0 %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Peringkat</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Unit Kerja</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Total Pegawai</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Rata-rata Skor</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for group in ranking_group %}
+                    <tr class="hover:bg-gray-50 {{ group.peringkat <= 3 ? 'bg-cyan-50' : '' }}">
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            {% if group.peringkat == 1 %}
+                                <span class="badge-rank badge-rank-1">🥇 #1</span>
+                            {% elseif group.peringkat == 2 %}
+                                <span class="badge-rank badge-rank-2">🥈 #2</span>
+                            {% elseif group.peringkat == 3 %}
+                                <span class="badge-rank badge-rank-3">🥉 #3</span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">#{{ group.peringkat }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">{{ group.nama_unit }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                {{ group.total_pegawai }} orang
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <span class="text-lg font-bold text-blue-600">{{ group.rata_rata_skor }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            {% if group.rata_rata_skor >= 60 %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    ✅ Excellent
+                                </span>
+                            {% elseif group.rata_rata_skor >= 40 %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                    ⚠️ Good
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                    ❌ Need Improvement
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <div class="text-gray-400 text-6xl mb-4">📭</div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Belum Ada Data Ranking Unit Kerja</h3>
+            <p class="text-gray-500">Data ranking unit kerja untuk tanggal {{ tanggal_dipilih|date('d/m/Y') }} belum tersedia.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Info Section -->
+    <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <span class="text-2xl">ℹ️</span>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-blue-800 mb-2">Informasi Sistem Ranking</h3>
+                <div class="text-sm text-blue-700">
+                    <ul class="list-disc list-inside space-y-1">
+                        <li><strong>Jam Absensi:</strong> 07:00 - 08:15 WITA (Check-in Only)</li>
+                        <li><strong>Skor Maksimal:</strong> 75 poin (diberikan kepada pegawai yang absen tepat jam 07:00)</li>
+                        <li><strong>Formula Skor:</strong> 75 - (selisih menit dari 07:00)</li>
+                        <li><strong>Ranking Harian:</strong> Diurutkan berdasarkan skor tertinggi, lalu jam masuk tercepat</li>
+                        <li><strong>Ranking Bulanan:</strong> Total akumulasi skor harian selama sebulan</li>
+                        <li><strong>Ranking Unit:</strong> Rata-rata skor pegawai per unit kerja</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block admin_javascripts %}
+<script>
+function refreshAllRankings() {
+    location.reload();
+}
+
+// Auto-refresh every 5 minutes
+setInterval(() => {
+    console.log('Auto-refreshing ranking data...');
+    refreshAllRankings();
+}, 5 * 60 * 1000);
+</script>
+{% endblock %}

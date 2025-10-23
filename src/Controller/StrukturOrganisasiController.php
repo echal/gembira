@@ -1236,13 +1236,48 @@ final class StrukturOrganisasiController extends AbstractController
             $pegawai->setUnitKerjaEntity($unitKerja);
             $pegawai->setUpdatedAt(new \DateTime());
 
+            // Handle password reset if requested
+            $changePassword = $request->request->get('change_password');
+            $passwordMessage = '';
+            if ($changePassword) {
+                $newPassword = $request->request->get('new_password');
+                $confirmPassword = $request->request->get('confirm_password');
+
+                // Validate password
+                if (empty($newPassword) || empty($confirmPassword)) {
+                    return new JsonResponse([
+                        'success' => false,
+                        'message' => '❌ Password baru dan konfirmasi password harus diisi'
+                    ]);
+                }
+
+                if (strlen($newPassword) < 6) {
+                    return new JsonResponse([
+                        'success' => false,
+                        'message' => '❌ Password minimal 6 karakter'
+                    ]);
+                }
+
+                if ($newPassword !== $confirmPassword) {
+                    return new JsonResponse([
+                        'success' => false,
+                        'message' => '❌ Password dan konfirmasi password tidak sama'
+                    ]);
+                }
+
+                // Hash new password
+                $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
+                $pegawai->setPassword($hashedPassword);
+                $passwordMessage = ' Password berhasil direset.';
+            }
+
             $em->flush();
 
             $unitKerjaName = $unitKerja ? $unitKerja->getNamaUnit() : 'Tidak ada unit';
 
             return new JsonResponse([
                 'success' => true,
-                'message' => "✅ Data pegawai '{$nama}' berhasil diperbarui",
+                'message' => "✅ Data pegawai '{$nama}' berhasil diperbarui.{$passwordMessage}",
                 'pegawai' => [
                     'id' => $pegawai->getId(),
                     'nama' => $pegawai->getNama(),

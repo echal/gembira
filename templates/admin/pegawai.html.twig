@@ -289,6 +289,50 @@
                     </select>
                 </div>
 
+                <!-- Section Reset Password -->
+                <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div class="flex items-start">
+                        <div class="text-yellow-500 mr-2 mt-0.5">🔐</div>
+                        <div class="flex-1">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" id="changePassword" name="change_password" value="1"
+                                       onchange="togglePasswordFields()"
+                                       class="mr-2 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                <span class="text-sm font-medium text-gray-700">Ubah Password</span>
+                            </label>
+                            <p class="text-xs text-gray-600 mt-1">Centang jika ingin mereset password pegawai</p>
+                        </div>
+                    </div>
+
+                    <!-- Password Fields (Hidden by default) -->
+                    <div id="passwordFields" class="hidden mt-3 space-y-3">
+                        <div>
+                            <label for="newPassword" class="block text-sm font-medium text-gray-700 mb-1">
+                                Password Baru *
+                            </label>
+                            <input type="password" id="newPassword" name="new_password"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="Minimal 6 karakter">
+                        </div>
+
+                        <div>
+                            <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-1">
+                                Konfirmasi Password *
+                            </label>
+                            <input type="password" id="confirmPassword" name="confirm_password"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="Ketik ulang password">
+                        </div>
+
+                        <div class="bg-blue-50 border border-blue-200 rounded p-2">
+                            <p class="text-xs text-blue-700">
+                                💡 <strong>Tips:</strong> Gunakan kombinasi huruf, angka, dan simbol untuk keamanan lebih baik.
+                                Password minimal 6 karakter.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="flex justify-end space-x-3">
                     <button type="button" onclick="closeEditModal()"
                             class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
@@ -691,10 +735,32 @@ function editAdminPegawai(adminId) {
     alert('Edit Admin Pegawai - Feature belum diimplementasi');
 }
 
+function togglePasswordFields() {
+    const checkbox = document.getElementById('changePassword');
+    const passwordFields = document.getElementById('passwordFields');
+    const newPasswordInput = document.getElementById('newPassword');
+    const confirmPasswordInput = document.getElementById('confirmPassword');
+
+    if (checkbox.checked) {
+        passwordFields.classList.remove('hidden');
+        newPasswordInput.required = true;
+        confirmPasswordInput.required = true;
+    } else {
+        passwordFields.classList.add('hidden');
+        newPasswordInput.required = false;
+        confirmPasswordInput.required = false;
+        newPasswordInput.value = '';
+        confirmPasswordInput.value = '';
+    }
+}
+
 function closeEditModal() {
     const modal = document.getElementById('editPegawaiModal');
     if (modal) {
         modal.classList.add('hidden');
+        // Reset password fields
+        document.getElementById('changePassword').checked = false;
+        togglePasswordFields();
     }
 }
 
@@ -1023,6 +1089,56 @@ document.addEventListener('DOMContentLoaded', function() {
     window.editPegawai = editPegawai;
     window.editAdminPegawai = editAdminPegawai;
     window.closeEditModal = closeEditModal;
+    window.togglePasswordFields = togglePasswordFields;
+
+    // Setup Edit Pegawai Form Submit Handler
+    const editPegawaiForm = document.getElementById('editPegawaiForm');
+    if (editPegawaiForm) {
+        editPegawaiForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // Validate password if change_password is checked
+            const changePassword = document.getElementById('changePassword').checked;
+            if (changePassword) {
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+
+                if (newPassword.length < 6) {
+                    alert('❌ Password minimal 6 karakter');
+                    return;
+                }
+
+                if (newPassword !== confirmPassword) {
+                    alert('❌ Password dan konfirmasi password tidak sama');
+                    return;
+                }
+            }
+
+            // Get form data
+            const formData = new FormData(editPegawaiForm);
+            const pegawaiId = document.getElementById('editPegawaiId').value;
+
+            try {
+                const response = await fetch(`/admin/struktur-organisasi/pegawai/${pegawaiId}/update`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('✅ ' + result.message);
+                    closeEditModal();
+                    location.reload(); // Reload to show updated data
+                } else {
+                    alert('❌ ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Terjadi kesalahan saat menyimpan data');
+            }
+        });
+    }
 
     // Test all global functions
     const globalFunctions = [

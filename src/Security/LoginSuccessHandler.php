@@ -50,25 +50,31 @@ class LoginSuccessHandler implements AuthenticationSuccessHandlerInterface
             $session->remove('_security.main.target_path');
         }
 
-        // Redirect berdasarkan tipe ENTITY dan ROLE
-        // Prioritas: role field > entity type
+        // Redirect berdasarkan tipe ENTITY
         //
-        // Logika:
-        // 1. Jika Admin dengan role='pegawai' → /absensi (user yang di-sync dari pegawai)
-        // 2. Jika Admin dengan role='admin' atau 'super_admin' → /admin/dashboard
-        // 3. Jika Pegawai (entity) → /absensi
+        // Struktur Data:
+        // 1. Table 'admin' → Hanya untuk Admin & Super Admin (role='admin' atau 'super_admin')
+        // 2. Table 'pegawai' → Untuk semua pegawai
+        //
+        // Login Redirect:
+        // - Admin (entity Admin) → /admin/dashboard (Panel Kontrol Admin)
+        // - Pegawai (entity Pegawai) → /absensi (Halaman Absensi)
+        //
+        // Note: Admin dengan role='pegawai' TIDAK SEHARUSNYA ada (data error)
+        //       Jika ada, tetap diarahkan ke /absensi untuk backward compatibility
 
         if ($user instanceof Admin) {
-            // Cek field role di entity Admin
+            // Cek field role untuk backward compatibility
             if ($user->getRole() === 'pegawai') {
-                // Admin dengan role pegawai → diarahkan ke halaman absensi
+                // BACKWARD COMPATIBILITY: Admin dengan role='pegawai' (data error)
+                // Redirect ke absensi, tapi data ini seharusnya tidak ada
                 $targetUrl = $this->urlGenerator->generate('app_absensi_dashboard');
             } else {
                 // Admin dengan role 'admin' atau 'super_admin' → panel admin
                 $targetUrl = $this->urlGenerator->generate('app_admin_dashboard');
             }
         } elseif ($user instanceof Pegawai) {
-            // PENTING: Pegawai diarahkan ke halaman absensi, bukan dashboard
+            // Pegawai → halaman absensi
             $targetUrl = $this->urlGenerator->generate('app_absensi_dashboard');
         } else {
             // Fallback jika tipe user tidak diketahui

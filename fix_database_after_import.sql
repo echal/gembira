@@ -16,7 +16,12 @@ ADD COLUMN IF NOT EXISTS `longitude` DECIMAL(11,8) NULL AFTER `latitude`;
 -- 2. FIX TABEL PEGAWAI - Tambah kolom XP & Level
 -- ============================================
 ALTER TABLE `pegawai`
-ADD COLUMN IF NOT EXISTS `total_xp` INT DEFAULT 0 AFTER `nomor_telepon`,
+ADD COLUMN IF NOT EXISTS `photo` VARCHAR(255) NULL AFTER `email`,
+ADD COLUMN IF NOT EXISTS `tanda_tangan` VARCHAR(255) NULL AFTER `nomor_telepon`,
+ADD COLUMN IF NOT EXISTS `tanda_tangan_uploaded_at` DATETIME NULL AFTER `tanda_tangan`,
+ADD COLUMN IF NOT EXISTS `last_login_at` DATETIME NULL AFTER `tanda_tangan_uploaded_at`,
+ADD COLUMN IF NOT EXISTS `last_login_ip` VARCHAR(45) NULL AFTER `last_login_at`,
+ADD COLUMN IF NOT EXISTS `total_xp` INT DEFAULT 0 AFTER `last_login_ip`,
 ADD COLUMN IF NOT EXISTS `current_level` INT DEFAULT 1 AFTER `total_xp`,
 ADD COLUMN IF NOT EXISTS `current_badge` VARCHAR(10) DEFAULT '🌱' AFTER `current_level`,
 ADD COLUMN IF NOT EXISTS `level_title` VARCHAR(50) DEFAULT 'Pemula Ikhlas' AFTER `current_badge`;

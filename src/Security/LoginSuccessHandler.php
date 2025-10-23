@@ -35,14 +35,24 @@ class LoginSuccessHandler implements AuthenticationSuccessHandlerInterface
             if (!$user instanceof Admin) {
                 // Redirect non-admin users back to login with maintenance message
                 $loginUrl = $this->urlGenerator->generate('app_login');
-                $request->getSession()->getFlashBag()->add('maintenance_error', 
+                $request->getSession()->getFlashBag()->add('maintenance_error',
                     'Sistem sedang dalam pemeliharaan. Hanya admin yang dapat mengakses sistem saat ini.'
                 );
                 return new RedirectResponse($loginUrl);
             }
         }
 
-        // Redirect berdasarkan tipe user
+        // PENTING: Hapus target_path dari session untuk memastikan redirect yang benar
+        // Ini mencegah user diarahkan ke halaman yang salah (contoh: pegawai ke admin panel)
+        // terutama setelah ganti password atau logout
+        $session = $request->getSession();
+        if ($session->has('_security.main.target_path')) {
+            $session->remove('_security.main.target_path');
+        }
+
+        // Redirect berdasarkan tipe ENTITY (bukan role)
+        // Prioritas: entity type > role
+        // Ini memastikan Pegawai SELALU ke user dashboard, meskipun punya ROLE_ADMIN
         if ($user instanceof Admin) {
             $targetUrl = $this->urlGenerator->generate('app_admin_dashboard');
         } elseif ($user instanceof Pegawai) {

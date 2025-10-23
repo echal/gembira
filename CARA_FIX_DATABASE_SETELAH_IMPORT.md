@@ -10,6 +10,31 @@ Database backup dari production tidak memiliki tabel/kolom baru yang dibuat untu
 
 ---
 
+## 🔍 Check Database Dulu (RECOMMENDED)
+
+Sebelum fix, cek dulu apa yang missing:
+
+```bash
+php check_missing_columns.php
+```
+
+**Output jika OK:**
+```
+✅ ALL TABLES & COLUMNS EXIST!
+Database structure is complete. 🎉
+```
+
+**Output jika ada masalah:**
+```
+❌ FOUND MISSING TABLES/COLUMNS!
+  ❌ Missing table: quote
+  ❌ Missing column: latitude
+```
+
+Jika ada yang missing, lanjut ke Solusi 1 di bawah.
+
+---
+
 ## ✅ Solusi 1: Import SQL Fix (PALING MUDAH)
 
 ### Langkah 1: Import SQL Fix via phpMyAdmin

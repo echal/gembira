@@ -150,6 +150,12 @@ VALUES
 ('DoctrineMigrations\\Version20250124000000', NOW(), 1000);
 
 -- ============================================
+-- 12. FIX TABEL KONFIGURASI_JADWAL_ABSENSI
+-- ============================================
+ALTER TABLE `konfigurasi_jadwal_absensi`
+ADD COLUMN IF NOT EXISTS `perlu_validasi_admin` TINYINT(1) DEFAULT 0;
+
+-- ============================================
 -- SELESAI!
 -- ============================================
 

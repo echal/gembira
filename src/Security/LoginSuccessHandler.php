@@ -50,12 +50,23 @@ class LoginSuccessHandler implements AuthenticationSuccessHandlerInterface
             $session->remove('_security.main.target_path');
         }
 
-        // Redirect berdasarkan tipe ENTITY (bukan role)
-        // Prioritas: entity type > role
-        // Admin → /admin/dashboard (panel kontrol admin)
-        // Pegawai → /absensi (halaman absensi pegawai)
+        // Redirect berdasarkan tipe ENTITY dan ROLE
+        // Prioritas: role field > entity type
+        //
+        // Logika:
+        // 1. Jika Admin dengan role='pegawai' → /absensi (user yang di-sync dari pegawai)
+        // 2. Jika Admin dengan role='admin' atau 'super_admin' → /admin/dashboard
+        // 3. Jika Pegawai (entity) → /absensi
+
         if ($user instanceof Admin) {
-            $targetUrl = $this->urlGenerator->generate('app_admin_dashboard');
+            // Cek field role di entity Admin
+            if ($user->getRole() === 'pegawai') {
+                // Admin dengan role pegawai → diarahkan ke halaman absensi
+                $targetUrl = $this->urlGenerator->generate('app_absensi_dashboard');
+            } else {
+                // Admin dengan role 'admin' atau 'super_admin' → panel admin
+                $targetUrl = $this->urlGenerator->generate('app_admin_dashboard');
+            }
         } elseif ($user instanceof Pegawai) {
             // PENTING: Pegawai diarahkan ke halaman absensi, bukan dashboard
             $targetUrl = $this->urlGenerator->generate('app_absensi_dashboard');

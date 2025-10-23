@@ -76,18 +76,28 @@ Dengan menghapus `target_path` dari session, kita memaksa sistem untuk:
 - ✅ **Menggunakan LoginSuccessHandler logic** (berdasarkan entity type)
 - ❌ Bukan menggunakan target_path yang tersimpan di session
 
-### 3. Entity Type vs Role
+### 3. Entity Type vs Role Field
 ```php
 if ($user instanceof Admin) {
-    $targetUrl = $this->urlGenerator->generate('app_admin_dashboard');
+    // Cek field role di entity Admin
+    if ($user->getRole() === 'pegawai') {
+        // Admin dengan role pegawai → ke /absensi
+        $targetUrl = $this->urlGenerator->generate('app_absensi_dashboard');
+    } else {
+        // Admin dengan role 'admin' atau 'super_admin' → ke /admin/dashboard
+        $targetUrl = $this->urlGenerator->generate('app_admin_dashboard');
+    }
 } elseif ($user instanceof Pegawai) {
     $targetUrl = $this->urlGenerator->generate('app_absensi_dashboard');
 }
 ```
 
+**Prioritas: Role Field > Entity Type**
+
 Ini memastikan bahwa:
-- Entity `Admin` → selalu ke `/admin/dashboard` (Panel Kontrol Admin)
-- Entity `Pegawai` → selalu ke `/absensi` (Halaman Absensi Pegawai)
+- Entity `Admin` dengan `role='pegawai'` → `/absensi` (User yang di-sync dari tabel pegawai)
+- Entity `Admin` dengan `role='admin'` atau `'super_admin'` → `/admin/dashboard`
+- Entity `Pegawai` → `/absensi` (Halaman Absensi Pegawai)
 
 ## 🧪 Testing
 
@@ -116,10 +126,15 @@ Ini memastikan bahwa:
 3. Logout → Login ulang
 4. **Expected:** Redirect ke `/admin/dashboard` ✅
 
-### Test Case 5: Pegawai dengan ROLE_ADMIN
-1. Login sebagai pegawai yang punya `ROLE_ADMIN` di field `roles`
-2. **Expected:** Tetap ke `/absensi` ✅
-3. **Reasoning:** Entity type adalah `Pegawai`, bukan `Admin`
+### Test Case 5: Admin dengan Role Pegawai (Sync dari Tabel Pegawai)
+1. Login sebagai user yang ada di tabel `admin` dengan field `role='pegawai'`
+2. **Expected:** Redirect ke `/absensi` ✅
+3. **Reasoning:** Meskipun entity type `Admin`, tapi field role='pegawai' maka ke absensi
+
+### Test Case 6: Entity Pegawai Login Normal
+1. Login sebagai user yang ada di tabel `pegawai` (entity Pegawai)
+2. **Expected:** Redirect ke `/absensi` ✅
+3. **Reasoning:** Entity type adalah `Pegawai`
 
 ## 🔒 Security Considerations
 
@@ -155,28 +170,39 @@ Jadi meskipun ada bug redirect, user tidak bisa akses halaman yang tidak sesuai 
 
 ## 🔑 Perbedaan Konsep User
 
-### Admin/Operator (Entity: `Admin`)
+### 1. Admin/Operator (Entity: `Admin` + role='admin' atau 'super_admin')
 - **Akun untuk:** Operator admin di setiap bidang/unit kerja
 - **Login dengan:** Username + Password
 - **Redirect ke:** `/admin/dashboard` (Panel kontrol admin)
-- **Role:** `ROLE_ADMIN`
+- **Role Symfony:** `ROLE_ADMIN`, `ROLE_SUPER_ADMIN`
+- **Field role:** `'admin'` atau `'super_admin'`
 - **Fungsi:** Mengelola sistem, data pegawai, laporan, dll
 
-### Pegawai (Entity: `Pegawai`)
+### 2. Pegawai (Entity: `Pegawai`)
 - **Akun untuk:** Setiap pegawai/karyawan
 - **Login dengan:** NIP + Password
 - **Redirect ke:** `/absensi` (Halaman absensi)
-- **Role:** `ROLE_USER`
+- **Role Symfony:** `ROLE_USER`
 - **Fungsi:** Melakukan absensi, lihat laporan kehadiran pribadi
+
+### 3. User dengan Role Pegawai (Entity: `Admin` + role='pegawai')
+- **Akun untuk:** User yang di-sync dari tabel pegawai ke tabel admin
+- **Login dengan:** Username (biasanya NIP) + Password
+- **Redirect ke:** `/absensi` (Halaman absensi - SAMA dengan Pegawai)
+- **Role Symfony:** `ROLE_USER`, `ROLE_ADMIN`
+- **Field role:** `'pegawai'`
+- **Fungsi:** Melakukan absensi (seperti pegawai biasa)
+- **Catatan:** Ini terjadi saat ada sinkronisasi data pegawai ke admin table
 
 ## ✨ Kesimpulan
 
 Dengan fix ini, sistem sekarang:
-- ✅ **Pegawai** SELALU diarahkan ke `/absensi` setelah login
-- ✅ **Admin/Operator** SELALU diarahkan ke `/admin/dashboard` setelah login
+- ✅ **Pegawai** (entity Pegawai) SELALU diarahkan ke `/absensi` setelah login
+- ✅ **Admin dengan role='pegawai'** JUGA diarahkan ke `/absensi` (user yang di-sync dari pegawai)
+- ✅ **Admin/Operator** (role='admin' atau 'super_admin') SELALU diarahkan ke `/admin/dashboard`
 - ✅ Tidak terpengaruh oleh `target_path` yang tersimpan di session
 - ✅ Flow ganti password bekerja dengan benar untuk semua tipe user
-- ✅ Redirect berdasarkan **entity type**, bukan role
+- ✅ Redirect berdasarkan **role field > entity type**
 
 ---
 

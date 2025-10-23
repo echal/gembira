@@ -3,30 +3,14 @@
 {% block title %}Profil Saya - Gembira{% endblock %}
 
 {% block body %}
-<!-- Header -->
-<div class="bg-gradient-to-r from-sky-400 to-sky-500 text-white sticky top-0 z-40 shadow-lg">
-    <div class="container mx-auto px-4 py-4">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <a href="{{ path('app_dashboard') }}" class="text-white hover:text-sky-100 transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                    </svg>
-                </a>
-                <div>
-                    <h1 class="text-lg font-bold">👤 Profil Saya</h1>
-                    <p class="text-sky-100 text-xs">Kelola informasi pribadi Anda</p>
-                </div>
-            </div>
-
-            <!-- User Info -->
-            <div class="text-right">
-                <div class="font-medium text-sm">{{ pegawai.nama }}</div>
-                <div class="text-xs text-sky-100">{{ pegawai.nip }}</div>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- User Header Component -->
+{% include 'components/user_header.html.twig' with {
+    'show_back_button': true,
+    'back_url': path('app_dashboard'),
+    'title': 'Profil Saya',
+    'subtitle': 'Kelola informasi pribadi Anda',
+    'show_welcome': false
+} %}
 
 <!-- Main Content -->
 <div class="bg-gradient-to-b from-sky-50 to-sky-100 min-h-screen pb-20">
@@ -54,6 +38,117 @@
 
             <!-- Content Card -->
             <div class="p-6">
+                <!-- XP Progression Section (New System) -->
+                <div class="mb-8 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <span class="mr-2">⚡</span>
+                        Level & XP Progression
+                    </h3>
+
+                    <!-- Current XP & Level Badge -->
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="text-center flex-1">
+                            <div class="text-sm text-gray-600 mb-2">Total XP</div>
+                            <div class="text-4xl font-bold text-indigo-600">
+                                {{ pegawai.totalXp|format_xp }}
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">Experience Points</div>
+                        </div>
+
+                        <div class="text-center flex-1">
+                            <div class="text-6xl mb-2">{{ pegawai.currentBadge }}</div>
+                            <div class="text-sm font-bold text-gray-800">Level {{ pegawai.currentLevel }}</div>
+                            <div class="text-xs text-gray-600">{{ pegawai.levelTitle }}</div>
+                        </div>
+
+                        <div class="text-center flex-1">
+                            <div class="text-sm text-gray-600 mb-2">Bulan Ini</div>
+                            <div class="text-4xl font-bold text-purple-600">
+                                {% if userXpRank %}
+                                    {{ userXpRank.xp }}
+                                {% else %}
+                                    0
+                                {% endif %}
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">
+                                {% if userXpRank %}
+                                    Peringkat #{{ userXpRank.rank }}
+                                {% else %}
+                                    Belum ada XP
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- XP Progress Bar to Next Level -->
+                    {% set xpProgress = pegawai.xpProgress %}
+                    <div class="mb-4">
+                        <div class="flex justify-between text-sm text-gray-600 mb-2">
+                            <span>Progress ke Level {{ xpProgress.next_level }}</span>
+                            <span>{{ xpProgress.current_xp_in_level }} / {{ xpProgress.xp_needed_for_next_level }} XP</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                            <div
+                                class="bg-gradient-to-r from-indigo-500 to-purple-500 h-4 rounded-full transition-all duration-500 ease-out relative overflow-hidden"
+                                style="width: {{ xpProgress.percentage_progress }}%"
+                            >
+                                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-shimmer"></div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between text-xs text-gray-500 mt-2">
+                            <span>{{ xpProgress.percentage_progress|number_format(1) }}%</span>
+                            <span>
+                                {% if xpProgress.is_max_level %}
+                                    🏆 Level Maksimal!
+                                {% else %}
+                                    {{ xpProgress.xp_to_next_level }} XP lagi
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Level System Reference -->
+                    <div class="border-t border-indigo-200 pt-4">
+                        <div class="text-xs font-medium text-gray-700 mb-3">Sistem Level:</div>
+                        <div class="grid grid-cols-5 gap-2 text-center">
+                            <div class="bg-white rounded-lg px-2 py-3 border {{ pegawai.currentLevel == 1 ? 'border-indigo-400 ring-2 ring-indigo-300' : 'border-gray-200' }}">
+                                <div class="text-2xl mb-1">🌱</div>
+                                <div class="text-[10px] font-medium text-gray-800">Pemula Ikhlas</div>
+                                <div class="text-[9px] text-gray-500">0-3.7K</div>
+                            </div>
+                            <div class="bg-white rounded-lg px-2 py-3 border {{ pegawai.currentLevel == 2 ? 'border-indigo-400 ring-2 ring-indigo-300' : 'border-gray-200' }}">
+                                <div class="text-2xl mb-1">🌿</div>
+                                <div class="text-[10px] font-medium text-gray-800">Aktor Kebaikan</div>
+                                <div class="text-[9px] text-gray-500">3.7K-9.4K</div>
+                            </div>
+                            <div class="bg-white rounded-lg px-2 py-3 border {{ pegawai.currentLevel == 3 ? 'border-indigo-400 ring-2 ring-indigo-300' : 'border-gray-200' }}">
+                                <div class="text-2xl mb-1">🌺</div>
+                                <div class="text-[10px] font-medium text-gray-800">Penggerak Semangat</div>
+                                <div class="text-[9px] text-gray-500">9.4K-17.8K</div>
+                            </div>
+                            <div class="bg-white rounded-lg px-2 py-3 border {{ pegawai.currentLevel == 4 ? 'border-indigo-400 ring-2 ring-indigo-300' : 'border-gray-200' }}">
+                                <div class="text-2xl mb-1">🌞</div>
+                                <div class="text-[10px] font-medium text-gray-800">Inspirator Ikhlas</div>
+                                <div class="text-[9px] text-gray-500">17.8K-30K</div>
+                            </div>
+                            <div class="bg-white rounded-lg px-2 py-3 border {{ pegawai.currentLevel == 5 ? 'border-indigo-400 ring-2 ring-indigo-300' : 'border-gray-200' }}">
+                                <div class="text-2xl mb-1">🏆</div>
+                                <div class="text-[10px] font-medium text-gray-800">Teladan Kinerja</div>
+                                <div class="text-[9px] text-gray-500">30K+</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Link to Leaderboard -->
+                    <div class="mt-4 text-center">
+                        <a href="{{ path('app_ikhlas_leaderboard') }}" class="inline-flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-700 font-medium transition-colors">
+                            <span>🏆</span>
+                            <span>Lihat Leaderboard Bulanan</span>
+                            <span>→</span>
+                        </a>
+                    </div>
+                </div>
+
                 <!-- Data Profil (Read-only) -->
                 <div class="mb-8">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
@@ -166,39 +261,7 @@
 </div>
 
 <!-- Bottom Navigation -->
-<div class="fixed bottom-0 left-0 right-0 bg-sky-400 shadow-2xl border-t border-sky-500 z-50">
-    <div class="grid grid-cols-5 text-center">
-        <!-- Home -->
-        <a href="{{ path('app_dashboard') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
-            <div class="text-lg mb-1">🏠</div>
-            <div class="text-xs">Home</div>
-        </a>
-
-        <!-- Laporan -->
-        <a href="{{ path('app_user_laporan') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
-            <div class="text-lg mb-1">📊</div>
-            <div class="text-xs">Laporan</div>
-        </a>
-
-        <!-- Kalender -->
-        <a href="{{ path('app_user_kalender') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
-            <div class="text-lg mb-1">📅</div>
-            <div class="text-xs">Kalender</div>
-        </a>
-
-        <!-- Notifikasi -->
-        <a href="#" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
-            <div class="text-lg mb-1">🔔</div>
-            <div class="text-xs">Notifikasi</div>
-        </a>
-
-        <!-- Profil - Active -->
-        <a href="{{ path('app_profile_view') }}" class="flex flex-col items-center py-3 px-2 text-white bg-sky-600 rounded-lg mx-1">
-            <div class="text-lg mb-1">👤</div>
-            <div class="text-xs font-medium">Profil</div>
-        </a>
-    </div>
-</div>
+{% include 'components/bottom_nav.html.twig' with {'active_menu': 'profil'} %}
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

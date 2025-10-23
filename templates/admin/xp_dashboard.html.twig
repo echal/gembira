@@ -1,0 +1,426 @@
+{% extends 'admin/_layout.html.twig' %}
+
+{% block title %}Dashboard XP & Badge - Admin{% endblock %}
+
+{% block page_icon %}⚡{% endblock %}
+{% block page_title %}Dashboard XP & Badge{% endblock %}
+{% block page_description %}Monitoring sistem XP, Level, dan Leaderboard Bulanan - {{ monthName }} {{ currentYear }}{% endblock %}
+
+{% block admin_stylesheets %}
+<style>
+    /* Mobile-first responsive fixes */
+    @media (max-width: 576px) {
+        .stat-card h3 { font-size: 1.5rem !important; }
+        .stat-card .fs-3 { font-size: 1.75rem !important; }
+        .card-body { padding: 0.75rem !important; }
+    }
+
+    /* Level badge colors */
+    .level-badge-1 { background-color: #d4edda; color: #155724; }
+    .level-badge-2 { background-color: #d1ecf1; color: #0c5460; }
+    .level-badge-3 { background-color: #f8d7da; color: #721c24; }
+    .level-badge-4 { background-color: #fff3cd; color: #856404; }
+    .level-badge-5 { background-color: #f5c6cb; color: #8b0000; }
+
+    /* Smooth scrolling for activity log */
+    .activity-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: #6c757d #f8f9fa;
+    }
+    .activity-scroll::-webkit-scrollbar {
+        width: 6px;
+    }
+    .activity-scroll::-webkit-scrollbar-track {
+        background: #f8f9fa;
+    }
+    .activity-scroll::-webkit-scrollbar-thumb {
+        background-color: #6c757d;
+        border-radius: 3px;
+    }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid px-2 px-md-3">
+    <!-- Export Button -->
+    <div class="d-flex justify-content-end mb-3 mb-md-4">
+        <a href="{{ path('admin_xp_dashboard_export') }}"
+           class="btn btn-outline-primary btn-sm"
+           title="Export data ke Excel/PDF">
+            <i class="bi bi-download"></i>
+            <span class="d-none d-sm-inline">Export Data</span>
+        </a>
+    </div>
+
+    <!-- Section A: Statistik Umum (4 Cards) -->
+    <div class="row g-2 g-md-3 mb-3 mb-md-4">
+        <!-- Card 1: Total Pegawai Aktif -->
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm h-100 stat-card">
+                <div class="card-body p-2 p-md-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <p class="text-muted mb-1 small">Total Pegawai</p>
+                            <h3 class="mb-0 fw-bold fs-4 fs-md-3">{{ totalUsers }}</h3>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 rounded p-1 p-md-2">
+                            <span class="fs-4 fs-md-3">👥</span>
+                        </div>
+                    </div>
+                    <div class="mt-2 mt-md-3">
+                        <small class="text-success d-block text-truncate" style="font-size: 0.7rem;">
+                            <i class="bi bi-graph-up-arrow"></i> {{ activeUsersThisMonth }} aktif
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2: Total XP Global -->
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm h-100 stat-card">
+                <div class="card-body p-2 p-md-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <p class="text-muted mb-1 small">Total XP</p>
+                            <h3 class="mb-0 fw-bold fs-4 fs-md-3">{{ (totalXpGlobal / 1000)|number_format(1) }}K</h3>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 rounded p-1 p-md-2">
+                            <span class="fs-4 fs-md-3">⚡</span>
+                        </div>
+                    </div>
+                    <div class="mt-2 mt-md-3">
+                        <small class="text-info d-block text-truncate" style="font-size: 0.7rem;">
+                            <i class="bi bi-calendar3"></i> {{ (monthlyXpTotal / 1000)|number_format(1) }}K bulan ini
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 3: Top User Bulan Ini -->
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm h-100 stat-card">
+                <div class="card-body p-2 p-md-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1 me-1">
+                            <p class="text-muted mb-1 small">Top User</p>
+                            {% if topUserThisMonth %}
+                                <h6 class="mb-0 fw-bold text-truncate fs-6">{{ topUserThisMonth.user.nama }}</h6>
+                                <small class="text-muted d-block text-truncate" style="font-size: 0.7rem;">
+                                    {{ topUserThisMonth.user.currentBadge }} Lvl {{ topUserThisMonth.user.currentLevel }}
+                                </small>
+                            {% else %}
+                                <p class="mb-0 text-muted small">Tidak ada</p>
+                            {% endif %}
+                        </div>
+                        <div class="bg-success bg-opacity-10 rounded p-1 p-md-2">
+                            <span class="fs-4 fs-md-3">🏆</span>
+                        </div>
+                    </div>
+                    {% if topUserThisMonth %}
+                    <div class="mt-2 mt-md-3">
+                        <small class="text-success fw-bold d-block text-truncate" style="font-size: 0.7rem;">
+                            {{ topUserThisMonth.xpMonthly }} XP
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 4: Bulan Aktif -->
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm h-100 stat-card">
+                <div class="card-body p-2 p-md-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <p class="text-muted mb-1 small">Periode</p>
+                            <h5 class="mb-0 fw-bold fs-6 fs-md-5">{{ monthName }}</h5>
+                            <small class="text-muted" style="font-size: 0.7rem;">{{ currentYear }}</small>
+                        </div>
+                        <div class="bg-info bg-opacity-10 rounded p-1 p-md-2">
+                            <span class="fs-4 fs-md-3">📅</span>
+                        </div>
+                    </div>
+                    <div class="mt-2 mt-md-3">
+                        <small class="text-muted d-block text-truncate" style="font-size: 0.65rem;">
+                            Reset tiap bulan
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-2 g-md-4">
+        <!-- Section B: Leaderboard (Left Column - 12 cols mobile, 8 cols desktop) -->
+        <div class="col-12 col-lg-8 mb-3 mb-lg-0">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-2 py-md-3">
+                    <h5 class="mb-0 fw-bold fs-6 fs-md-5">🏆 Top 10 Leaderboard Bulanan</h5>
+                    <small class="text-muted d-none d-sm-block">{{ monthName }} {{ currentYear }}</small>
+                </div>
+                <div class="card-body p-0">
+                    {% if topUsers|length > 0 %}
+                    <!-- Table Responsive Wrapper -->
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center" style="width: 50px;">Rank</th>
+                                    <th class="d-none d-md-table-cell" style="width: 50px;"></th>
+                                    <th class="text-start">Pegawai</th>
+                                    <th class="text-center d-none d-lg-table-cell">Unit</th>
+                                    <th class="text-center">XP</th>
+                                    <th class="text-center d-none d-sm-table-cell">Level</th>
+                                    <th class="text-center">Badge</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for entry in topUsers %}
+                                {% set user = entry.user %}
+                                {% set rank = entry.rankMonthly %}
+
+                                {# Rank badge styling #}
+                                {% set rankBadgeClass = '' %}
+                                {% set rankEmoji = '' %}
+                                {% if rank == 1 %}
+                                    {% set rankBadgeClass = 'bg-warning text-dark' %}
+                                    {% set rankEmoji = '🥇' %}
+                                {% elseif rank == 2 %}
+                                    {% set rankBadgeClass = 'bg-secondary text-white' %}
+                                    {% set rankEmoji = '🥈' %}
+                                {% elseif rank == 3 %}
+                                    {% set rankBadgeClass = 'bg-danger bg-opacity-75 text-white' %}
+                                    {% set rankEmoji = '🥉' %}
+                                {% else %}
+                                    {% set rankBadgeClass = 'bg-light text-dark' %}
+                                    {% set rankEmoji = '🏅' %}
+                                {% endif %}
+
+                                <tr>
+                                    <!-- Rank -->
+                                    <td class="text-center align-middle">
+                                        <span class="badge {{ rankBadgeClass }} px-2 py-1 rounded-pill"
+                                              style="font-size: 0.75rem;">
+                                            <span class="d-none d-sm-inline">{{ rankEmoji }}</span> #{{ rank }}
+                                        </span>
+                                    </td>
+
+                                    <!-- Photo (hidden on mobile) -->
+                                    <td class="align-middle d-none d-md-table-cell">
+                                        {% if user.photo %}
+                                            <img src="{{ asset('uploads/photos/' ~ user.photo) }}"
+                                                 class="rounded-circle"
+                                                 width="32"
+                                                 height="32"
+                                                 alt="{{ user.nama }}">
+                                        {% else %}
+                                            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                                                 style="width: 32px; height: 32px;">
+                                                <span class="fw-bold text-primary small">{{ user.nama|slice(0, 1)|upper }}</span>
+                                            </div>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Nama -->
+                                    <td class="align-middle text-start">
+                                        <div class="fw-semibold text-truncate" style="max-width: 150px; font-size: 0.85rem;">
+                                            {{ user.nama }}
+                                        </div>
+                                        <small class="text-muted d-block d-md-none text-truncate" style="max-width: 150px; font-size: 0.7rem;">
+                                            {{ user.jabatan }}
+                                        </small>
+                                    </td>
+
+                                    <!-- Unit Kerja (hidden on mobile & tablet) -->
+                                    <td class="align-middle text-center d-none d-lg-table-cell">
+                                        <small class="text-truncate d-block" style="max-width: 120px; font-size: 0.75rem;">
+                                            {{ user.namaUnitKerja ?? '-' }}
+                                        </small>
+                                    </td>
+
+                                    <!-- XP Bulanan -->
+                                    <td class="text-center align-middle">
+                                        <span class="badge bg-primary px-2 py-1" style="font-size: 0.7rem;">
+                                            {{ entry.xpMonthly }}
+                                        </span>
+                                    </td>
+
+                                    <!-- Level (hidden on very small screens) -->
+                                    <td class="text-center align-middle d-none d-sm-table-cell">
+                                        <span class="badge level-badge-{{ user.currentLevel }} px-2 py-1"
+                                              style="font-size: 0.7rem;"
+                                              title="{{ user.levelTitle }}">
+                                            Lvl {{ user.currentLevel }}
+                                        </span>
+                                    </td>
+
+                                    <!-- Badge -->
+                                    <td class="text-center align-middle">
+                                        <span class="fs-5" title="{{ user.levelTitle }}">{{ user.currentBadge }}</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4 py-md-5">
+                        <p class="text-muted mb-0 small">Belum ada data leaderboard untuk bulan ini</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column (12 cols mobile, 4 cols desktop) -->
+        <div class="col-12 col-lg-4">
+            <!-- Section C: Log Aktivitas XP Terbaru -->
+            <div class="card border-0 shadow-sm mb-3 mb-md-4">
+                <div class="card-header bg-white border-0 py-2 py-md-3">
+                    <h6 class="mb-0 fw-bold fs-6">📈 Aktivitas Terbaru</h6>
+                </div>
+                <div class="card-body p-0">
+                    {% if recentActivities|length > 0 %}
+                    <div class="list-group list-group-flush activity-scroll" style="max-height: 300px; overflow-y: auto;">
+                        {% for activity in recentActivities %}
+                        <div class="list-group-item border-0 py-2 px-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1 me-2">
+                                    <p class="mb-0 fw-semibold text-truncate" style="font-size: 0.8rem;">
+                                        {{ activity.user.nama }}
+                                    </p>
+                                    <p class="mb-0 text-muted text-truncate" style="font-size: 0.7rem;">
+                                        {{ activity.description ?? activity.activityType }}
+                                    </p>
+                                </div>
+                                <div class="text-end flex-shrink-0">
+                                    <span class="badge bg-success mb-1" style="font-size: 0.65rem;">
+                                        +{{ activity.xpEarned }}
+                                    </span>
+                                    <div class="text-muted" style="font-size: 0.6rem;">
+                                        {{ activity.createdAt|date('d/m H:i') }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3 py-md-4">
+                        <p class="text-muted mb-0 small">Belum ada aktivitas</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Section D: Distribusi Level -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-2 py-md-3">
+                    <h6 class="mb-0 fw-bold fs-6">📊 Distribusi Level</h6>
+                </div>
+                <div class="card-body p-3">
+                    {% if levelDistribution|length > 0 %}
+                    {% set levelNames = {1: 'Pemula', 2: 'Bersemangat', 3: 'Berdedikasi', 4: 'Ahli', 5: 'Master'} %}
+                    {% set levelBadges = {1: '🌱', 2: '🌿', 3: '🌺', 4: '🌞', 5: '🏆'} %}
+                    {% set levelColors = {1: 'success', 2: 'info', 3: 'danger', 4: 'warning', 5: 'dark'} %}
+
+                    {% for dist in levelDistribution %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="fw-semibold text-truncate" style="font-size: 0.75rem; max-width: 65%;">
+                                {{ levelBadges[dist.level] }} <span class="d-none d-sm-inline">Level {{ dist.level }} -</span> {{ levelNames[dist.level] }}
+                            </small>
+                            <span class="badge level-badge-{{ dist.level }}" style="font-size: 0.7rem;">{{ dist.count }}</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            {% set percentage = (dist.count / totalUsers * 100)|round %}
+                            <div class="progress-bar bg-{{ levelColors[dist.level] }}"
+                                 role="progressbar"
+                                 style="width: {{ percentage }}%"
+                                 aria-valuenow="{{ percentage }}"
+                                 aria-valuemin="0"
+                                 aria-valuemax="100"
+                                 title="{{ percentage }}%">
+                            </div>
+                        </div>
+                        <small class="text-muted" style="font-size: 0.65rem;">{{ percentage }}%</small>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p class="text-muted text-center mb-0 small">Belum ada data</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section E: XP by Unit Kerja (Full Width) -->
+    {% if unitStats|length > 0 %}
+    <div class="row mt-3 mt-md-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-2 py-md-3">
+                    <h6 class="mb-0 fw-bold fs-6">🏢 Statistik per Unit Kerja (Bulan Ini)</h6>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Table Responsive Wrapper -->
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-start">Unit Kerja</th>
+                                    <th class="text-center">Pegawai</th>
+                                    <th class="text-center">Total XP</th>
+                                    <th class="text-center d-none d-md-table-cell">Rata-rata</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in unitStats %}
+                                <tr>
+                                    <td class="fw-semibold text-truncate" style="max-width: 200px; font-size: 0.85rem;">
+                                        {{ stat.unitKerja ?? 'Tidak Terdaftar' }}
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-secondary" style="font-size: 0.7rem;">{{ stat.userCount }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary" style="font-size: 0.7rem;">
+                                            {{ stat.totalXp|number_format }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center text-muted d-none d-md-table-cell" style="font-size: 0.75rem;">
+                                        {{ (stat.totalXp / stat.userCount)|round }} XP/user
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block admin_javascripts %}
+<script>
+    // Auto refresh every 5 minutes to keep data fresh
+    setTimeout(function() {
+        location.reload();
+    }, 300000); // 5 minutes
+
+    // Initialize Bootstrap tooltips for better UX
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,1501 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Ikhlas - Inspirasi Kehidupan{% endblock %}
+
+{% block body %}
+<!-- Custom Facebook-Style Header for IKHLAS -->
+<div class="bg-white sticky top-0 z-40 shadow-md border-b border-gray-200">
+    <div class="container mx-auto px-4 py-3">
+        <div class="flex items-center justify-between">
+            <!-- Left: IKHLAS Title (Large like Facebook logo) -->
+            <div class="flex-1">
+                <h1 class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    ikhlas
+                </h1>
+            </div>
+
+            <!-- Right: Action Icons -->
+            <div class="flex items-center gap-3 md:gap-4">
+                <!-- Leaderboard Icon -->
+                <a href="{{ path('app_ikhlas_leaderboard') }}"
+                   class="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 bg-gray-100 hover:bg-gray-200 rounded-full transition-all duration-200 hover:scale-110 active:scale-95"
+                   title="Leaderboard">
+                    <span class="text-xl md:text-2xl">🏆</span>
+                </a>
+
+                <!-- Favorites Icon -->
+                <a href="{{ path('app_ikhlas_favorites') }}"
+                   class="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 bg-gray-100 hover:bg-gray-200 rounded-full transition-all duration-200 hover:scale-110 active:scale-95"
+                   title="Favorit Saya">
+                    <span class="text-xl md:text-2xl">📚</span>
+                </a>
+
+                <!-- Notification Icon -->
+                <a href="{{ path('app_notifikasi_index') }}"
+                   class="relative flex items-center justify-center w-10 h-10 md:w-11 md:h-11 bg-gray-100 hover:bg-gray-200 rounded-full transition-all duration-200 hover:scale-110 active:scale-95"
+                   title="Notifikasi">
+                    <span class="text-xl md:text-2xl">🔔</span>
+                    {% if app.user.unreadNotifications|default(0) > 0 %}
+                    <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs flex items-center justify-center rounded-full border-2 border-white font-bold">
+                        {{ app.user.unreadNotifications > 9 ? '9+' : app.user.unreadNotifications }}
+                    </span>
+                    {% endif %}
+                </a>
+
+                <!-- User Avatar/Menu -->
+                <div class="relative">
+                    <button id="userMenuButton"
+                            onclick="toggleUserDropdown()"
+                            class="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 bg-gradient-to-br from-purple-400 to-pink-400 hover:from-purple-500 hover:to-pink-500 rounded-full transition-all duration-200 hover:scale-110 active:scale-95">
+                        {% if app.user.photo %}
+                            <img src="{{ app.user.photo }}" alt="{{ app.user.nama }}" class="w-full h-full object-cover rounded-full">
+                        {% else %}
+                            <span class="text-white font-bold text-lg">{{ app.user.nama|first|upper }}</span>
+                        {% endif %}
+                    </button>
+
+                    <!-- Dropdown Menu -->
+                    <div id="userDropdown"
+                         class="hidden absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-xl min-w-[220px] z-50 transform opacity-0 scale-95 transition-all duration-200">
+                        <!-- User Info Section -->
+                        <div class="p-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+                            <div class="text-sm font-medium text-gray-900 truncate">{{ app.user.nama|default('User') }}</div>
+                            <div class="text-xs text-gray-500 truncate">{{ app.user.jabatan|default('Pegawai') }}</div>
+                            {% if app.user.unitKerja %}
+                            <div class="text-xs text-gray-400 truncate">{{ app.user.unitKerja }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Menu Items -->
+                        <div class="py-1">
+                            <a href="{{ path('app_profile_view') }}"
+                               class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                                <span class="mr-3">👤</span>
+                                <span>Profil</span>
+                            </a>
+                            <a href="{{ path('app_dashboard') }}"
+                               class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors">
+                                <span class="mr-3">🏠</span>
+                                <span>Dashboard</span>
+                            </a>
+                            <hr class="my-1">
+                            {% include 'components/logout_button.html.twig' with {
+                                'style': 'w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 border-0 bg-transparent transition-colors',
+                                'text': 'Logout',
+                                'icon': '🚪'
+                            } %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Dropdown Toggle Script
+function toggleUserDropdown() {
+    const dropdown = document.getElementById('userDropdown');
+    if (!dropdown) return;
+
+    const isHidden = dropdown.classList.contains('hidden');
+
+    if (isHidden) {
+        dropdown.classList.remove('hidden');
+        dropdown.offsetHeight;
+        dropdown.classList.remove('opacity-0', 'scale-95');
+        dropdown.classList.add('opacity-100', 'scale-100');
+    } else {
+        dropdown.classList.remove('opacity-100', 'scale-100');
+        dropdown.classList.add('opacity-0', 'scale-95');
+        setTimeout(() => {
+            dropdown.classList.add('hidden');
+        }, 200);
+    }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('userDropdown');
+    const button = event.target.closest('#userMenuButton');
+
+    if (!button && dropdown && !dropdown.contains(event.target)) {
+        if (!dropdown.classList.contains('hidden')) {
+            dropdown.classList.remove('opacity-100', 'scale-100');
+            dropdown.classList.add('opacity-0', 'scale-95');
+            setTimeout(() => {
+                dropdown.classList.add('hidden');
+            }, 200);
+        }
+    }
+});
+</script>
+
+<div class="min-h-screen bg-gradient-to-b from-purple-50 via-pink-50 to-sky-50 pb-20">
+    <div class="container mx-auto px-4 py-6">
+
+        <!-- Quotes Feed - Facebook Style -->
+        <div class="max-w-2xl mx-auto space-y-4">
+
+            <!-- Create Quote Card -->
+            <div class="bg-white rounded-xl shadow-md p-4">
+                <div class="flex gap-3 items-start">
+                    <!-- User Avatar -->
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold">
+                            {% if app.user.photo %}
+                                <img src="{{ app.user.photo }}" alt="{{ app.user.nama }}" class="w-full h-full object-cover">
+                            {% else %}
+                                {{ app.user.nama|first|upper }}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Create Quote Form -->
+                    <div class="flex-1">
+                        <textarea
+                            id="createQuoteInput"
+                            rows="3"
+                            placeholder="Apa kata semangatmu hari ini?"
+                            maxlength="500"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none text-sm placeholder-gray-400 hover:border-purple-300 transition-colors"
+                        ></textarea>
+
+                        <!-- Character Counter -->
+                        <div class="text-right mt-1">
+                            <span id="charCounter" class="text-xs text-gray-500">0 / 500 karakter</span>
+                        </div>
+
+                        <!-- Category and Submit -->
+                        <div class="flex items-center justify-between mt-2">
+                            <div class="flex items-center gap-2">
+                                <label class="text-xs text-gray-600 font-medium">Kategori:</label>
+                                <select id="createQuoteCategory" class="text-xs border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                                    <option value="Motivasi">💪 Motivasi</option>
+                                    <option value="Inspirasi">✨ Inspirasi</option>
+                                    <option value="Kehidupan">🌱 Kehidupan</option>
+                                    <option value="Pantun">📖 Pantun</option>
+                                    <option value="Kebahagiaan">😊 Kebahagiaan</option>
+                                    <option value="Kesuksesan">🏆 Kesuksesan</option>
+                                </select>
+                            </div>
+                            <button
+                                id="submitQuoteBtn"
+                                class="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-2 rounded-lg transition-all font-medium text-sm shadow-md hover:shadow-lg transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                            >
+                                Bagikan Semangat 🚀
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if quotes|length > 0 %}
+
+            <!-- Quote Cards Loop -->
+            {% for item in quotes %}
+            {% set quote = item.quote %}
+            {% set hasLiked = item.hasLiked %}
+            {% set hasSaved = item.hasSaved %}
+
+            <div class="quote-card bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300" data-quote-id="{{ quote.id }}">
+                <!-- Card Header with Category & Timestamp -->
+                <div class="p-4 pb-3 border-b border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-2xl">💭</span>
+                            <div class="flex items-center gap-1.5">
+                                <span class="inline-block bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-medium">
+                                    {{ quote.category ?? 'Inspirasi' }}
+                                </span>
+                                <span class="text-gray-400 text-xs">•</span>
+                                <span class="text-gray-500 text-xs font-medium"
+                                      title="{{ quote.createdAt|time_tooltip }}">
+                                    {{ quote.createdAt|time_ago }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons: Save & Three-Dots Menu -->
+                        <div class="flex items-center gap-2">
+                            <!-- Save Button -->
+                            <button class="save-btn transition-transform hover:scale-110 {{ hasSaved ? 'text-yellow-500' : 'text-gray-400 hover:text-yellow-500' }}"
+                                    data-quote-id="{{ quote.id }}"
+                                    data-saved="{{ hasSaved ? 'true' : 'false' }}"
+                                    title="{{ hasSaved ? 'Hapus dari favorit' : 'Simpan ke favorit' }}">
+                                <span class="text-2xl">{{ hasSaved ? '📌' : '🔖' }}</span>
+                            </button>
+
+                            <!-- Three-Dots Menu -->
+                            <div class="relative quote-menu-container">
+                                <button class="quote-menu-btn p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+                                        data-quote-id="{{ quote.id }}"
+                                        data-quote-author="{{ quote.author }}"
+                                        title="Opsi lainnya">
+                                    <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+                                    </svg>
+                                </button>
+
+                                <!-- Dropdown Menu (Hidden by default) -->
+                                <div class="quote-menu-dropdown hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-10">
+                                    <!-- Save/Unsave Option -->
+                                    <button class="menu-save-quote w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors flex items-center gap-3 text-gray-700"
+                                            data-quote-id="{{ quote.id }}"
+                                            data-saved="{{ hasSaved ? 'true' : 'false' }}">
+                                        <span class="text-lg">{{ hasSaved ? '📌' : '🔖' }}</span>
+                                        <span class="text-sm font-medium">{{ hasSaved ? 'Hapus dari Favorit' : 'Simpan ke Favorit' }}</span>
+                                    </button>
+
+                                    <!-- Edit Option (Only for author) -->
+                                    {% if quote.author == app.user.nama %}
+                                    <button class="menu-edit-quote w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors flex items-center gap-3 text-gray-700"
+                                            data-quote-id="{{ quote.id }}">
+                                        <span class="text-lg">✏️</span>
+                                        <span class="text-sm font-medium">Edit Quote</span>
+                                    </button>
+
+                                    <!-- Delete Option (Only for author) -->
+                                    <button class="menu-delete-quote w-full text-left px-4 py-2.5 hover:bg-red-50 transition-colors flex items-center gap-3 text-red-600"
+                                            data-quote-id="{{ quote.id }}">
+                                        <span class="text-lg">🗑️</span>
+                                        <span class="text-sm font-medium">Hapus Quote</span>
+                                    </button>
+                                    {% endif %}
+
+                                    <!-- Share Option -->
+                                    <button class="menu-share-quote w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors flex items-center gap-3 text-gray-700 border-t border-gray-100"
+                                            data-quote-id="{{ quote.id }}">
+                                        <span class="text-lg">📤</span>
+                                        <span class="text-sm font-medium">Bagikan Quote</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quote Content -->
+                <div class="p-6">
+                    {% set contentLength = quote.content|length %}
+                    {% set shouldTruncate = contentLength > 150 %}
+
+                    <blockquote class="quote-content text-gray-800 text-base md:text-lg leading-relaxed italic font-light mb-4" data-full-content="{{ quote.content }}" data-truncated="{{ shouldTruncate ? 'true' : 'false' }}">
+                        {% if shouldTruncate %}
+                            <span class="quote-text">"{{ quote.content[:150] }}..."</span>
+                            <span class="quote-full hidden">"{{ quote.content }}"</span>
+                        {% else %}
+                            <span class="quote-text">"{{ quote.content }}"</span>
+                        {% endif %}
+                    </blockquote>
+
+                    {% if shouldTruncate %}
+                    <div class="text-center -mt-2 mb-2">
+                        <button class="read-more-btn text-purple-600 hover:text-purple-800 text-sm font-medium transition-colors inline-flex items-center gap-1"
+                                data-expanded="false">
+                            <span class="read-more-text">Lihat Selengkapnya</span>
+                            <svg class="w-4 h-4 transition-transform read-more-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Stats Bar with Author - Inline Layout -->
+                <div class="px-6 pb-3">
+                    <div class="bg-gray-50 rounded-lg p-3">
+                        <div class="flex justify-between items-center">
+                            <!-- Left: Stats -->
+                            <div class="flex items-center gap-3 text-sm">
+                                <div class="flex items-center gap-1 text-gray-600">
+                                    <span>👁️</span>
+                                    <span class="views-count font-semibold">{{ quote.totalViews }}</span>
+                                </div>
+                                <div class="flex items-center gap-1 text-gray-600">
+                                    <span>❤️</span>
+                                    <span class="likes-count font-semibold">{{ quote.totalLikes }}</span>
+                                </div>
+                                <div class="flex items-center gap-1 text-gray-600 cursor-pointer hover:text-purple-600 transition-colors comments-toggle"
+                                     data-showing="false">
+                                    <span>💬</span>
+                                    <span class="comments-count font-semibold">{{ quote.totalComments }}</span>
+                                </div>
+                                <button class="share-btn flex items-center gap-1 text-gray-600 hover:text-purple-600 transition-colors"
+                                        data-quote-id="{{ quote.id }}"
+                                        data-content="{{ quote.content }}"
+                                        data-author="{{ quote.author ?? 'Anonim' }}">
+                                    <span>🔗</span>
+                                </button>
+                            </div>
+
+                            <!-- Right: Author -->
+                            <div class="text-right">
+                                <p class="text-xs md:text-sm font-medium text-gray-700">- {{ quote.author ?? 'Anonim' }} -</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="px-6 pb-4">
+                    <div class="flex items-center justify-around border-t border-gray-100 pt-3">
+                        <!-- Like Button -->
+                        <button class="like-btn flex items-center gap-2 px-4 py-2 rounded-lg transition-all hover:bg-red-50 {{ hasLiked ? 'text-red-500' : 'text-gray-600' }}"
+                                data-quote-id="{{ quote.id }}"
+                                data-liked="{{ hasLiked ? 'true' : 'false' }}">
+                            <span class="text-xl">{{ hasLiked ? '❤️' : '🤍' }}</span>
+                            <span class="text-sm font-medium">{{ hasLiked ? 'Disukai' : 'Suka' }}</span>
+                        </button>
+
+                        <!-- Comment Button -->
+                        <button class="comments-toggle flex items-center gap-2 px-4 py-2 rounded-lg transition-all hover:bg-purple-50 text-gray-600"
+                                data-showing="false">
+                            <span class="text-xl">💬</span>
+                            <span class="text-sm font-medium comment-toggle-text">Lihat Komentar</span>
+                        </button>
+
+                        <!-- Share Button -->
+                        <button class="share-btn flex items-center gap-2 px-4 py-2 rounded-lg transition-all hover:bg-blue-50 text-gray-600"
+                                data-quote-id="{{ quote.id }}"
+                                data-content="{{ quote.content }}"
+                                data-author="{{ quote.author ?? 'Anonim' }}">
+                            <span class="text-xl">🔗</span>
+                            <span class="text-sm font-medium">Bagikan</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Comments Section (Hidden by default) - Compact Mobile Version -->
+                <div class="comments-section hidden border-t border-gray-100">
+                    <div class="p-3">
+                        <!-- Comment Form - Compact -->
+                        <div class="mb-3">
+                            <div class="flex gap-2 items-start">
+                                <!-- User Photo - Smaller -->
+                                <div class="flex-shrink-0">
+                                    <div class="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold text-xs">
+                                        {% if app.user.photo %}
+                                            <img src="{{ app.user.photo }}" alt="{{ app.user.nama }}" class="w-full h-full object-cover">
+                                        {% else %}
+                                            {{ app.user.nama|first|upper }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <!-- Comment Input - Compact -->
+                                <div class="flex-1">
+                                    <textarea
+                                        class="comment-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none text-xs"
+                                        rows="2"
+                                        placeholder="Tulis komentar..."
+                                    ></textarea>
+                                    <input type="hidden" class="comment-parent-id" value="">
+                                    <div class="replying-to hidden mt-1.5 text-[10px] text-gray-600 bg-gray-50 px-2 py-1.5 rounded flex items-center justify-between">
+                                        <span>Membalas: <span class="replying-to-name font-semibold"></span></span>
+                                        <button class="cancel-reply text-red-500 hover:text-red-700 text-sm">✕</button>
+                                    </div>
+                                    <div class="flex justify-end mt-1.5">
+                                        <button class="submit-comment-btn bg-purple-500 hover:bg-purple-600 text-white px-4 py-1.5 rounded-lg transition-colors font-medium text-xs"
+                                                data-quote-id="{{ quote.id }}">
+                                            Kirim
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Comments List - Compact -->
+                        <div class="comments-list space-y-2">
+                            <!-- Comments will be loaded here dynamically -->
+                            <div class="text-center text-gray-500 text-xs py-3 empty-comments-msg">
+                                Belum ada komentar. Jadilah yang pertama!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            {% endfor %}
+
+            <!-- Load More Button (Optional for future pagination) -->
+            <div class="text-center py-6">
+                <p class="text-gray-500 text-sm">Anda sudah melihat semua quotes 🎉</p>
+            </div>
+
+            {% else %}
+            <!-- Empty State (when no quotes yet) -->
+            <div class="text-center py-12">
+                <div class="text-6xl mb-4">📭</div>
+                <h2 class="text-2xl font-bold text-gray-700 mb-2">Belum Ada Quotes</h2>
+                <p class="text-gray-500">Jadilah yang pertama membagikan kata semangat!</p>
+            </div>
+            {% endif %}
+
+        </div>
+
+    </div>
+</div>
+
+<!-- Bottom Navigation - Original Style with 5 Menus -->
+<div class="fixed bottom-0 left-0 right-0 bg-sky-400 shadow-2xl border-t border-sky-500 z-50">
+    <div class="grid grid-cols-5 text-center">
+        <!-- Home -->
+        <a href="{{ path('app_dashboard') }}"
+           class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
+            <div class="text-lg mb-1">🏠</div>
+            <div class="text-xs">Home</div>
+        </a>
+
+        <!-- Laporan -->
+        <a href="{{ path('app_user_laporan') }}"
+           class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
+            <div class="text-lg mb-1">📊</div>
+            <div class="text-xs">Laporan</div>
+        </a>
+
+        <!-- Kalender -->
+        <a href="{{ path('app_user_kalender') }}"
+           class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
+            <div class="text-lg mb-1">📅</div>
+            <div class="text-xs">Kalender</div>
+        </a>
+
+        <!-- Ikhlas (Active) -->
+        <a href="{{ path('app_ikhlas') }}"
+           class="flex flex-col items-center py-3 px-2 text-white bg-sky-600 transition-colors rounded-lg mx-1">
+            <div class="text-lg mb-1">💭</div>
+            <div class="text-xs font-medium">Ikhlas</div>
+        </a>
+
+        <!-- Profil -->
+        <a href="{{ path('app_profile_view') }}"
+           class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
+            <div class="text-lg mb-1">👤</div>
+            <div class="text-xs">Profil</div>
+        </a>
+    </div>
+</div>
+
+<!-- Toast Notification Container -->
+<div id="toastContainer" class="fixed bottom-24 right-4 z-50 space-y-2"></div>
+
+{% endblock %}
+
+{% block javascripts %}
+<!-- Level Up Flash Message Handler -->
+{% for message in app.flashes('level_up') %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+        Swal.fire({
+            title: '🎉 Selamat! Level Up!',
+            html: `
+                <div class="text-center py-4">
+                    <div class="text-7xl mb-4 animate-bounce">{{ message.badge.icon }}</div>
+                    <div class="text-2xl font-bold text-purple-600 mb-2">Level {{ message.level }}</div>
+                    <div class="text-lg text-gray-700 mb-3">{{ message.badge.name }}</div>
+                    <div class="mt-4 text-sm text-gray-500">Bonus login harian! Terus tingkatkan interaksi Anda!</div>
+                </div>
+            `,
+            icon: 'success',
+            confirmButtonText: 'Luar Biasa!',
+            confirmButtonColor: '#8B5CF6',
+            background: '#ffffff',
+            backdrop: `
+                rgba(139, 92, 246, 0.2)
+                left top
+                no-repeat
+            `,
+            customClass: {
+                popup: 'rounded-2xl shadow-2xl',
+                confirmButton: 'rounded-lg px-8 py-3 font-bold'
+            }
+        });
+    }, 1000);
+});
+</script>
+{% endfor %}
+
+<script>
+// IKHLAS - Feed Style Quote System
+(function() {
+    'use strict';
+
+    // Initialize all cards
+    function init() {
+        setupCreateQuote();
+        setupReadMore();
+        setupLikeButtons();
+        setupSaveButtons();
+        setupCommentsToggle();
+        setupCommentSubmit();
+        setupShareButtons();
+        setupThreeDotsMenu();
+    }
+
+    // Setup Read More Toggle
+    function setupReadMore() {
+        document.querySelectorAll('.read-more-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const card = this.closest('.quote-card');
+                const quoteText = card.querySelector('.quote-text');
+                const quoteFull = card.querySelector('.quote-full');
+                const isExpanded = this.dataset.expanded === 'true';
+                const readMoreText = this.querySelector('.read-more-text');
+                const readMoreIcon = this.querySelector('.read-more-icon');
+
+                if (!isExpanded) {
+                    // Expand - show full content
+                    quoteText.classList.add('hidden');
+                    quoteFull.classList.remove('hidden');
+                    readMoreText.textContent = 'Lihat Lebih Sedikit';
+                    readMoreIcon.style.transform = 'rotate(180deg)';
+                    this.dataset.expanded = 'true';
+                } else {
+                    // Collapse - show truncated content
+                    quoteText.classList.remove('hidden');
+                    quoteFull.classList.add('hidden');
+                    readMoreText.textContent = 'Lihat Selengkapnya';
+                    readMoreIcon.style.transform = 'rotate(0deg)';
+                    this.dataset.expanded = 'false';
+
+                    // Scroll back to card top smoothly
+                    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            });
+        });
+    }
+
+    // Setup Create Quote
+    function setupCreateQuote() {
+        const submitBtn = document.getElementById('submitQuoteBtn');
+        const quoteInput = document.getElementById('createQuoteInput');
+        const categorySelect = document.getElementById('createQuoteCategory');
+        const charCounter = document.getElementById('charCounter');
+
+        if (!submitBtn || !quoteInput || !categorySelect) return;
+
+        // Character counter
+        quoteInput.addEventListener('input', function() {
+            const length = this.value.length;
+            if (charCounter) {
+                charCounter.textContent = `${length} / 500 karakter`;
+
+                // Change color based on length
+                if (length < 10) {
+                    charCounter.className = 'text-xs text-gray-500';
+                } else if (length >= 10 && length < 450) {
+                    charCounter.className = 'text-xs text-green-600';
+                } else if (length >= 450 && length < 500) {
+                    charCounter.className = 'text-xs text-yellow-600';
+                } else {
+                    charCounter.className = 'text-xs text-red-600';
+                }
+            }
+        });
+
+        submitBtn.addEventListener('click', async function() {
+            const content = quoteInput.value.trim();
+            const category = categorySelect.value;
+
+            if (!content) {
+                showToast('❌ Kata semangat tidak boleh kosong', 'error');
+                quoteInput.focus();
+                return;
+            }
+
+            if (content.length < 10) {
+                showToast('❌ Kata semangat minimal 10 karakter', 'error');
+                quoteInput.focus();
+                return;
+            }
+
+            if (content.length > 500) {
+                showToast('❌ Kata semangat maksimal 500 karakter', 'error');
+                quoteInput.focus();
+                return;
+            }
+
+            // Disable button
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Membagikan... ⏳';
+
+            try {
+                const response = await fetch('/ikhlas/api/create-quote', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        content: content,
+                        category: category
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast(data.message, 'success');
+
+                    // Clear input
+                    quoteInput.value = '';
+                    categorySelect.value = 'Motivasi';
+
+                    // Check for level up (new XP system)
+                    if (data.level_up && data.level_info) {
+                        setTimeout(() => showLevelUpNotification(data.level_info), 800);
+                    }
+                    // Fallback to old gamification system
+                    else if (data.level_up && data.level_up.level_up) {
+                        setTimeout(() => showLevelUpNotification(data.level_up), 800);
+                    }
+
+                    // Reload page to show new quote
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    showToast('❌ ' + data.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error creating quote:', error);
+                showToast('❌ Terjadi kesalahan', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Bagikan Semangat 🚀';
+            }
+        });
+
+        // Allow Enter + Ctrl/Cmd to submit
+        quoteInput.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                submitBtn.click();
+            }
+        });
+    }
+
+    // Setup Like Buttons
+    function setupLikeButtons() {
+        document.querySelectorAll('.like-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const quoteId = parseInt(this.dataset.quoteId);
+                const card = this.closest('.quote-card');
+
+                try {
+                    const response = await fetch('/ikhlas/api/interact', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            quoteId: quoteId,
+                            action: 'like'
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        // Update button state
+                        const isLiked = data.status;
+                        this.dataset.liked = isLiked ? 'true' : 'false';
+
+                        if (isLiked) {
+                            this.classList.add('text-red-500');
+                            this.classList.remove('text-gray-600');
+                            this.querySelector('span:first-child').textContent = '❤️';
+                            this.querySelector('span:last-child').textContent = 'Disukai';
+                        } else {
+                            this.classList.remove('text-red-500');
+                            this.classList.add('text-gray-600');
+                            this.querySelector('span:first-child').textContent = '🤍';
+                            this.querySelector('span:last-child').textContent = 'Suka';
+                        }
+
+                        // Update like count
+                        const likesCount = card.querySelector('.likes-count');
+                        if (likesCount && data.totalLikes !== undefined) {
+                            likesCount.textContent = data.totalLikes;
+                        }
+
+                        showToast(data.message, 'success');
+
+                        // Check for level up (new XP system)
+                        if (data.level_up && data.level_up.level_up) {
+                            setTimeout(() => showLevelUpNotification(data.level_up), 800);
+                        }
+                    } else {
+                        showToast('❌ ' + data.message, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error liking quote:', error);
+                    showToast('❌ Terjadi kesalahan', 'error');
+                }
+            });
+        });
+    }
+
+    // Setup Save Buttons
+    function setupSaveButtons() {
+        document.querySelectorAll('.save-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const quoteId = parseInt(this.dataset.quoteId);
+
+                try {
+                    const response = await fetch('/ikhlas/api/interact', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            quoteId: quoteId,
+                            action: 'save'
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        // Update button state
+                        const isSaved = data.status;
+                        this.dataset.saved = isSaved ? 'true' : 'false';
+
+                        if (isSaved) {
+                            this.classList.add('text-yellow-500');
+                            this.classList.remove('text-gray-400');
+                            this.querySelector('span').textContent = '📌';
+                        } else {
+                            this.classList.remove('text-yellow-500');
+                            this.classList.add('text-gray-400');
+                            this.querySelector('span').textContent = '🔖';
+                        }
+
+                        showToast(data.message, 'success');
+
+                        // Check for level up
+                        if (data.level_up && data.level_up.level_up) {
+                            setTimeout(() => showLevelUpNotification(data.level_up), 800);
+                        }
+                    } else {
+                        showToast('❌ ' + data.message, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error saving quote:', error);
+                    showToast('❌ Terjadi kesalahan', 'error');
+                }
+            });
+        });
+    }
+
+    // Setup Comments Toggle
+    function setupCommentsToggle() {
+        document.querySelectorAll('.comments-toggle').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const card = this.closest('.quote-card');
+                const commentsSection = card.querySelector('.comments-section');
+                const quoteId = card.dataset.quoteId;
+                const isShowing = this.dataset.showing === 'true';
+
+                // Update all toggle buttons in the same card
+                const allToggleBtns = card.querySelectorAll('.comments-toggle');
+                const toggleText = card.querySelector('.comment-toggle-text');
+
+                if (!isShowing) {
+                    // Show comments
+                    commentsSection.classList.remove('hidden');
+                    commentsSection.style.animation = 'slideDown 0.3s ease-out';
+
+                    // Update button states
+                    allToggleBtns.forEach(btn => btn.dataset.showing = 'true');
+                    if (toggleText) {
+                        toggleText.textContent = 'Sembunyikan';
+                    }
+
+                    // Load comments
+                    loadComments(card, quoteId);
+                } else {
+                    // Hide comments
+                    commentsSection.style.animation = 'slideUp 0.3s ease-out';
+                    setTimeout(() => {
+                        commentsSection.classList.add('hidden');
+                    }, 300);
+
+                    // Update button states
+                    allToggleBtns.forEach(btn => btn.dataset.showing = 'false');
+                    if (toggleText) {
+                        toggleText.textContent = 'Lihat Komentar';
+                    }
+                }
+            });
+        });
+    }
+
+    // Load Comments
+    async function loadComments(card, quoteId) {
+        const commentsList = card.querySelector('.comments-list');
+        const emptyMsg = card.querySelector('.empty-comments-msg');
+
+        try {
+            const response = await fetch(`/ikhlas/api/quotes/${quoteId}/comments`);
+            const data = await response.json();
+
+            if (data.success) {
+                if (data.comments.length === 0) {
+                    if (emptyMsg) emptyMsg.classList.remove('hidden');
+                    if (commentsList) commentsList.innerHTML = '';
+                } else {
+                    if (emptyMsg) emptyMsg.classList.add('hidden');
+                    if (commentsList) {
+                        commentsList.innerHTML = data.comments.map(comment => renderComment(comment, card, false)).join('');
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error loading comments:', error);
+            if (commentsList) {
+                commentsList.innerHTML = '<div class="text-center text-red-500 text-xs py-2">❌ Gagal memuat komentar</div>';
+            }
+        }
+    }
+
+    // Render Comment - Compact & Mobile Optimized
+    function renderComment(comment, card, isReply = false) {
+        if (!comment || !comment.user) {
+            console.error('Invalid comment data:', comment);
+            return '';
+        }
+
+        const photo = comment.user.photo || '';
+        const initial = (comment.user.name || 'U').charAt(0).toUpperCase();
+        const userName = comment.user.name || 'User';
+        const commentText = comment.comment || '';
+        const timeAgo = comment.time_ago || '';
+
+        // Build replies HTML first
+        let repliesHtml = '';
+        if (comment.replies && comment.replies.length > 0) {
+            const validReplies = comment.replies.filter(r => r && r.user);
+            if (validReplies.length > 0) {
+                repliesHtml = `
+                    <div class="replies-container ml-4 md:ml-6 mt-2 space-y-2 border-l-2 border-purple-200 pl-2 md:pl-3">
+                        ${validReplies.map(reply => renderComment(reply, card, true)).join('')}
+                    </div>
+                `;
+            }
+        }
+
+        const bgClass = isReply ? 'bg-white' : 'bg-gray-50';
+        const shadowClass = isReply ? 'shadow-sm' : '';
+
+        return `
+            <div class="comment-item ${isReply ? 'mb-2' : 'mb-3'}">
+                <div class="${bgClass} rounded-lg p-2.5 md:p-3 border border-gray-200 ${shadowClass}">
+                    <div class="flex items-start gap-2">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold text-xs">
+                                ${photo && photo !== '/images/default-user.png'
+                                    ? `<img src="${photo}" alt="${escapeHtml(userName)}" class="w-full h-full object-cover">`
+                                    : initial}
+                            </div>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-semibold text-gray-800 text-sm mb-1">${escapeHtml(userName)}</div>
+                            <p class="text-gray-700 text-[14px] mb-1.5 break-words leading-relaxed">${escapeHtml(commentText)}</p>
+                            <div class="flex items-center gap-2 text-[10px] text-gray-400">
+                                <span class="font-normal">${escapeHtml(timeAgo)}</span>
+                                <span class="text-gray-300">•</span>
+                                <button onclick="replyToComment(this, ${comment.id}, '${escapeHtml(userName).replace(/'/g, "\\'")}'); return false;"
+                                        class="hover:text-purple-600 font-medium transition-colors flex items-center gap-1">
+                                    <span class="text-[10px]">↩️</span>
+                                    <span>Balas</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                ${repliesHtml}
+            </div>
+        `;
+    }
+
+    // Reply to Comment
+    window.replyToComment = function(btn, commentId, userName) {
+        const card = btn.closest('.quote-card');
+        const parentIdInput = card.querySelector('.comment-parent-id');
+        const replyingTo = card.querySelector('.replying-to');
+        const replyingToName = card.querySelector('.replying-to-name');
+        const commentInput = card.querySelector('.comment-input');
+
+        parentIdInput.value = commentId;
+        replyingToName.textContent = userName;
+        replyingTo.classList.remove('hidden');
+
+        commentInput.focus();
+        commentInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    // Cancel Reply
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('cancel-reply')) {
+            const card = e.target.closest('.quote-card');
+            const parentIdInput = card.querySelector('.comment-parent-id');
+            const replyingTo = card.querySelector('.replying-to');
+
+            parentIdInput.value = '';
+            replyingTo.classList.add('hidden');
+        }
+    });
+
+    // Setup Comment Submit
+    function setupCommentSubmit() {
+        document.querySelectorAll('.submit-comment-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const card = this.closest('.quote-card');
+                const quoteId = parseInt(this.dataset.quoteId);
+                const commentInput = card.querySelector('.comment-input');
+                const parentIdInput = card.querySelector('.comment-parent-id');
+                const comment = commentInput.value.trim();
+
+                if (!comment) {
+                    showToast('❌ Komentar tidak boleh kosong', 'error');
+                    return;
+                }
+
+                this.disabled = true;
+                this.textContent = 'Mengirim...';
+
+                try {
+                    const requestBody = { comment: comment };
+                    if (parentIdInput.value) {
+                        requestBody.parent_id = parseInt(parentIdInput.value);
+                    }
+
+                    const response = await fetch(`/ikhlas/api/quotes/${quoteId}/comment`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestBody)
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                        commentInput.value = '';
+
+                        // Clear reply state
+                        parentIdInput.value = '';
+                        card.querySelector('.replying-to').classList.add('hidden');
+
+                        // Update comment count
+                        const commentsCount = card.querySelector('.comments-count');
+                        if (commentsCount && data.totalComments !== undefined) {
+                            commentsCount.textContent = data.totalComments;
+                        }
+
+                        // Reload comments
+                        loadComments(card, quoteId);
+                    } else {
+                        showToast('❌ ' + data.message, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error submitting comment:', error);
+                    showToast('❌ Terjadi kesalahan', 'error');
+                } finally {
+                    this.disabled = false;
+                    this.textContent = 'Kirim';
+                }
+            });
+        });
+    }
+
+    // Setup Share Buttons
+    function setupShareButtons() {
+        document.querySelectorAll('.share-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const content = this.dataset.content;
+                const author = this.dataset.author;
+
+                const shareText = `${content}\n\n- ${author}\n\n✨ Dibagikan dari GEMBIRA - Ikhlas\n(Inspirasi Kehidupan Lahirkan Semangat)`;
+                const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+
+                window.open(whatsappUrl, '_blank');
+                showToast('🔗 Membuka WhatsApp...', 'success');
+            });
+        });
+    }
+
+    // Show Level Up Notification
+    function showLevelUpNotification(levelUpInfo) {
+        // Support both old gamification system and new XP system
+        const isNewXpSystem = levelUpInfo.badge && levelUpInfo.title;
+        const badge = isNewXpSystem ? levelUpInfo.badge : (levelUpInfo.badge_info ? levelUpInfo.badge_info.icon : '🌟');
+        const level = levelUpInfo.new_level;
+        const title = isNewXpSystem ? levelUpInfo.title : (levelUpInfo.badge_info ? levelUpInfo.badge_info.name : 'Level Up!');
+        const totalDisplay = isNewXpSystem ?
+            `Total XP: <span class="font-bold text-purple-600">${levelUpInfo.total_xp || 0}</span>` :
+            `Total Poin: <span class="font-bold text-purple-600">${levelUpInfo.new_total || 0}</span>`;
+
+        Swal.fire({
+            title: '🎉 Selamat! Level Up!',
+            html: `
+                <div class="text-center py-6">
+                    <div class="text-8xl mb-6 animate-bounce">${badge}</div>
+                    <div class="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3">
+                        Level ${level}
+                    </div>
+                    <div class="text-xl text-gray-700 font-medium mb-4">${title}</div>
+                    <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg px-6 py-3 mb-4">
+                        <div class="text-gray-600">${totalDisplay}</div>
+                    </div>
+                    <div class="text-sm text-gray-500">
+                        ${isNewXpSystem ? 'Terus tingkatkan XP Anda untuk naik level!' : 'Terus tingkatkan interaksi Anda!'}
+                    </div>
+                </div>
+            `,
+            icon: 'success',
+            confirmButtonText: 'Luar Biasa! 🎊',
+            confirmButtonColor: '#8B5CF6',
+            background: '#ffffff',
+            backdrop: `
+                rgba(139, 92, 246, 0.3)
+                left top
+                no-repeat
+            `,
+            customClass: {
+                popup: 'rounded-2xl shadow-2xl border-4 border-purple-200',
+                confirmButton: 'rounded-lg px-8 py-3 font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all'
+            },
+            showClass: {
+                popup: 'animate__animated animate__zoomIn animate__faster'
+            }
+        });
+    }
+
+    // Setup Three-Dots Menu
+    function setupThreeDotsMenu() {
+        // Toggle dropdown menu
+        document.querySelectorAll('.quote-menu-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const dropdown = this.nextElementSibling;
+                const allDropdowns = document.querySelectorAll('.quote-menu-dropdown');
+
+                // Close other dropdowns
+                allDropdowns.forEach(d => {
+                    if (d !== dropdown) d.classList.add('hidden');
+                });
+
+                // Toggle current dropdown
+                dropdown.classList.toggle('hidden');
+            });
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.quote-menu-container')) {
+                document.querySelectorAll('.quote-menu-dropdown').forEach(dropdown => {
+                    dropdown.classList.add('hidden');
+                });
+            }
+        });
+
+        // Handle Save/Unsave from menu
+        document.querySelectorAll('.menu-save-quote').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const quoteId = this.dataset.quoteId;
+                const saveBtn = document.querySelector(`.save-btn[data-quote-id="${quoteId}"]`);
+                if (saveBtn) {
+                    saveBtn.click(); // Trigger existing save button
+                }
+                // Close dropdown
+                this.closest('.quote-menu-dropdown').classList.add('hidden');
+            });
+        });
+
+        // Handle Edit Quote
+        document.querySelectorAll('.menu-edit-quote').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const quoteId = this.dataset.quoteId;
+                const card = document.querySelector(`.quote-card[data-quote-id="${quoteId}"]`);
+                const quoteContent = card.querySelector('.quote-content').dataset.fullContent;
+
+                // Close dropdown first
+                this.closest('.quote-menu-dropdown').classList.add('hidden');
+
+                // Show edit modal
+                showEditQuoteModal(quoteId, quoteContent);
+            });
+        });
+
+        // Handle Delete Quote
+        document.querySelectorAll('.menu-delete-quote').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const quoteId = this.dataset.quoteId;
+
+                // Close dropdown first
+                this.closest('.quote-menu-dropdown').classList.add('hidden');
+
+                // Show confirmation
+                Swal.fire({
+                    title: 'Hapus Quote?',
+                    text: 'Quote yang dihapus tidak bisa dikembalikan!',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#EF4444',
+                    cancelButtonColor: '#6B7280',
+                    confirmButtonText: 'Ya, Hapus!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        deleteQuote(quoteId);
+                    }
+                });
+            });
+        });
+
+        // Handle Share from menu
+        document.querySelectorAll('.menu-share-quote').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const quoteId = this.dataset.quoteId;
+                const shareBtn = document.querySelector(`.share-btn[data-quote-id="${quoteId}"]`);
+                if (shareBtn) {
+                    shareBtn.click(); // Trigger existing share button
+                }
+                // Close dropdown
+                this.closest('.quote-menu-dropdown').classList.add('hidden');
+            });
+        });
+    }
+
+    // Show Edit Quote Modal
+    function showEditQuoteModal(quoteId, currentContent) {
+        Swal.fire({
+            title: '✏️ Edit Quote',
+            html: `
+                <div class="text-left">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Isi Quote:</label>
+                    <textarea id="editQuoteContent" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none" rows="5" maxlength="500">${currentContent}</textarea>
+                    <div class="text-right text-xs text-gray-500 mt-1">
+                        <span id="editCharCount">${currentContent.length}</span>/500 karakter
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Simpan',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#8B5CF6',
+            cancelButtonColor: '#6B7280',
+            didOpen: () => {
+                const textarea = document.getElementById('editQuoteContent');
+                const charCount = document.getElementById('editCharCount');
+                textarea.addEventListener('input', () => {
+                    charCount.textContent = textarea.value.length;
+                });
+                textarea.focus();
+            },
+            preConfirm: () => {
+                const content = document.getElementById('editQuoteContent').value.trim();
+                if (!content) {
+                    Swal.showValidationMessage('Quote tidak boleh kosong!');
+                    return false;
+                }
+                if (content === currentContent) {
+                    Swal.showValidationMessage('Tidak ada perubahan!');
+                    return false;
+                }
+                return content;
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                updateQuote(quoteId, result.value);
+            }
+        });
+    }
+
+    // Update Quote via AJAX
+    function updateQuote(quoteId, newContent) {
+        // Show loading
+        Swal.fire({
+            title: 'Mengupdate...',
+            text: 'Mohon tunggu sebentar',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        fetch(`/ikhlas/api/quotes/${quoteId}/update`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ content: newContent })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update UI
+                const card = document.querySelector(`.quote-card[data-quote-id="${quoteId}"]`);
+                const quoteText = card.querySelector('.quote-text');
+                const quoteFull = card.querySelector('.quote-full');
+                const quoteContent = card.querySelector('.quote-content');
+
+                quoteContent.dataset.fullContent = newContent;
+                if (quoteFull) quoteFull.textContent = `"${newContent}"`;
+                if (quoteText) quoteText.textContent = `"${newContent}"`;
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: 'Quote berhasil diupdate',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else {
+                throw new Error(data.message || 'Gagal mengupdate quote');
+            }
+        })
+        .catch(error => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: error.message
+            });
+        });
+    }
+
+    // Delete Quote via AJAX
+    function deleteQuote(quoteId) {
+        // Show loading
+        Swal.fire({
+            title: 'Menghapus...',
+            text: 'Mohon tunggu sebentar',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        fetch(`/ikhlas/api/quotes/${quoteId}/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove card from UI with animation
+                const card = document.querySelector(`.quote-card[data-quote-id="${quoteId}"]`);
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.95)';
+
+                setTimeout(() => {
+                    card.remove();
+                }, 300);
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Terhapus!',
+                    text: 'Quote berhasil dihapus',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else {
+                throw new Error(data.message || 'Gagal menghapus quote');
+            }
+        })
+        .catch(error => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: error.message
+            });
+        });
+    }
+
+    // Toast Notification
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `transform transition-all duration-300 ease-in-out ${
+            type === 'success' ? 'bg-green-500' : 'bg-red-500'
+        } text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 max-w-sm`;
+        toast.innerHTML = `
+            <span>${message}</span>
+            <button onclick="this.parentElement.remove()" class="ml-2 text-white hover:text-gray-200">✕</button>
+        `;
+
+        const container = document.getElementById('toastContainer');
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(100%)';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    // HTML Escape Helper
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Initialize on DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+})();
+</script>
+
+<style>
+/* Quote Card Animations */
+.quote-card {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+/* Quote Content Transitions */
+.quote-text, .quote-full {
+    transition: opacity 0.3s ease-in-out;
+}
+
+.read-more-btn {
+    transition: all 0.2s ease-in-out;
+}
+
+.read-more-btn:hover {
+    transform: translateY(-1px);
+}
+
+.read-more-icon {
+    transition: transform 0.3s ease-in-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Button hover effects */
+button {
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Toast container */
+#toastContainer > * {
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Comments Section Animations */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        max-height: 1000px;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 1;
+        max-height: 1000px;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        max-height: 0;
+        transform: translateY(-10px);
+    }
+}
+
+/* Comments section default state */
+.comments-section {
+    overflow: hidden;
+    transition: all 0.3s ease-out;
+}
+
+/* Nested Comments Styling */
+.comment-item {
+    position: relative;
+}
+
+.replies-container {
+    position: relative;
+}
+
+.replies-container::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, #c084fc, #e879f9);
+    opacity: 0.5;
+}
+
+.replies-container .comment-item {
+    animation: fadeInLeft 0.3s ease-out;
+}
+
+@keyframes fadeInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .quote-card blockquote {
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    /* Make stats bar responsive */
+    .bg-gray-50.rounded-lg .flex.justify-between {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+
+    .bg-gray-50.rounded-lg .text-right {
+        text-align: left;
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}

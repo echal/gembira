@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\Entity\Pegawai;
 use App\Form\TandaTanganType;
+use App\Service\GamificationService;
+use App\Service\UserXpService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -109,7 +111,7 @@ class ProfileController extends AbstractController
     }
 
     #[Route('/profil', name: 'app_profile_view')]
-    public function viewProfile(): Response
+    public function viewProfile(UserXpService $userXpService): Response
     {
         /** @var Pegawai $pegawai */
         $pegawai = $this->getUser();
@@ -118,8 +120,17 @@ class ProfileController extends AbstractController
             return $this->redirectToRoute('app_login');
         }
 
+        // Get current month/year for XP ranking
+        $currentDate = new \DateTime();
+        $currentMonth = (int) $currentDate->format('n');
+        $currentYear = (int) $currentDate->format('Y');
+
+        // Get user's XP ranking
+        $userXpRank = $userXpService->getUserRanking($pegawai, $currentMonth, $currentYear);
+
         return $this->render('profile/profil.html.twig', [
             'pegawai' => $pegawai,
+            'userXpRank' => $userXpRank,
         ]);
     }
 

@@ -3,30 +3,14 @@
 {% block title %}Jadwal Absensi - User Gembira{% endblock %}
 
 {% block body %}
-<!-- Header -->
-<div class="bg-blue-600 text-white sticky top-0 z-40">
-    <div class="container mx-auto px-4 py-4">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center">
-                <a href="{{ path('app_dashboard') }}" class="text-white mr-3 p-2 hover:bg-blue-700 rounded-lg">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                    </svg>
-                </a>
-                <div>
-                    <h1 class="text-xl font-bold">📋 Jadwal Absensi</h1>
-                    <p class="text-blue-200 text-sm">Lihat dan kelola jadwal absensi</p>
-                </div>
-            </div>
-            
-            <!-- User Info -->
-            <div class="text-right">
-                <div class="text-sm font-medium">{{ user.nama ?? user.namaLengkap ?? user.userIdentifier }}</div>
-                <div class="text-xs text-blue-200">{{ user instanceof admin ? 'Admin' : 'User' }}</div>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- User Header Component -->
+{% include 'components/user_header.html.twig' with {
+    'show_back_button': true,
+    'back_url': path('app_dashboard'),
+    'title': 'Jadwal Absensi',
+    'subtitle': 'Lihat dan kelola jadwal absensi',
+    'show_welcome': false
+} %}
 
 <div class="container mx-auto px-4 py-6">
     <!-- RBAC Info Banner -->

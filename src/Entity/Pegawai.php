@@ -31,6 +31,10 @@ class Pegawai implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 100, unique: true, nullable: true)]
     private ?string $email = null;
 
+    // Foto profil pegawai
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $photo = null;
+
     // Password untuk login aplikasi
     #[ORM\Column(length: 255)]
     private ?string $password = null;
@@ -93,6 +97,20 @@ class Pegawai implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 45, nullable: true)]
     private ?string $lastLoginIp = null;
 
+    // ===== XP PROGRESSION SYSTEM FIELDS =====
+
+    // Total XP yang dikumpulkan sepanjang waktu
+    #[ORM\Column(type: Types::INTEGER)]
+    private int $total_xp = 0;
+
+    // Level saat ini (1-5)
+    #[ORM\Column(type: Types::INTEGER)]
+    private int $current_level = 1;
+
+    // Badge saat ini berdasarkan level
+    #[ORM\Column(length: 10, nullable: true)]
+    private ?string $current_badge = '🌱';
+
     public function __construct()
     {
         $this->absensi = new ArrayCollection();
@@ -134,6 +152,17 @@ class Pegawai implements UserInterface, PasswordAuthenticatedUserInterface
     public function setEmail(?string $email): static
     {
         $this->email = $email;
+        return $this;
+    }
+
+    public function getPhoto(): ?string
+    {
+        return $this->photo;
+    }
+
+    public function setPhoto(?string $photo): static
+    {
+        $this->photo = $photo;
         return $this;
     }
 
@@ -402,25 +431,103 @@ class Pegawai implements UserInterface, PasswordAuthenticatedUserInterface
         if (!$this->lastLoginAt) {
             return 'Belum pernah';
         }
-        
+
         // Format: "Hari, dd Bulan yyyy - HH:mm WITA"
         $namaBulan = [
             1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
             5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
             9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
         ];
-        
+
         $namaHari = [
             'Sunday' => 'Minggu', 'Monday' => 'Senin', 'Tuesday' => 'Selasa',
             'Wednesday' => 'Rabu', 'Thursday' => 'Kamis', 'Friday' => 'Jumat', 'Saturday' => 'Sabtu'
         ];
-        
+
         $hari = $namaHari[$this->lastLoginAt->format('l')];
         $tanggal = $this->lastLoginAt->format('d');
         $bulan = $namaBulan[(int)$this->lastLoginAt->format('n')];
         $tahun = $this->lastLoginAt->format('Y');
         $waktu = $this->lastLoginAt->format('H:i');
-        
+
         return "{$hari}, {$tanggal} {$bulan} {$tahun} - {$waktu} WITA";
+    }
+
+    // ===== XP PROGRESSION SYSTEM METHODS =====
+
+    public function getTotalXp(): int
+    {
+        return $this->total_xp;
+    }
+
+    public function setTotalXp(int $total_xp): static
+    {
+        $this->total_xp = $total_xp;
+        return $this;
+    }
+
+    public function getCurrentLevel(): int
+    {
+        return $this->current_level;
+    }
+
+    public function setCurrentLevel(int $current_level): static
+    {
+        $this->current_level = $current_level;
+        return $this;
+    }
+
+    public function getCurrentBadge(): ?string
+    {
+        return $this->current_badge;
+    }
+
+    public function setCurrentBadge(?string $current_badge): static
+    {
+        $this->current_badge = $current_badge;
+        return $this;
+    }
+
+    // Helper method: get XP progress for next level
+    public function getXpProgress(): array
+    {
+        $levelRanges = [
+            1 => ['min' => 0, 'max' => 200, 'title' => 'Pemula'],
+            2 => ['min' => 201, 'max' => 400, 'title' => 'Bersemangat'],
+            3 => ['min' => 401, 'max' => 700, 'title' => 'Berdedikasi'],
+            4 => ['min' => 701, 'max' => 1100, 'title' => 'Ahli'],
+            5 => ['min' => 1101, 'max' => 9999, 'title' => 'Master'],
+        ];
+
+        $currentLevelRange = $levelRanges[$this->current_level];
+        $currentXpInLevel = $this->total_xp - $currentLevelRange['min'];
+        $xpNeededForLevel = $currentLevelRange['max'] - $currentLevelRange['min'];
+        $percentageProgress = ($currentXpInLevel / $xpNeededForLevel) * 100;
+
+        return [
+            'current_xp' => $this->total_xp,
+            'current_level' => $this->current_level,
+            'level_title' => $currentLevelRange['title'],
+            'current_xp_in_level' => $currentXpInLevel,
+            'xp_needed_for_next_level' => $xpNeededForLevel,
+            'xp_to_next_level' => $currentLevelRange['max'] - $this->total_xp,
+            'percentage_progress' => min(100, max(0, $percentageProgress)),
+            'next_level' => $this->current_level < 5 ? $this->current_level + 1 : 5,
+            'is_max_level' => $this->current_level >= 5
+        ];
+    }
+
+    // Helper method: get level title
+    public function getLevelTitle(): string
+    {
+        $titles = [
+            1 => 'Pemula',
+            2 => 'Bersemangat',
+            3 => 'Berdedikasi',
+            4 => 'Ahli',
+            5 => 'Master',
+        ];
+
+        return $titles[$this->current_level] ?? 'Pemula';
     }
 }

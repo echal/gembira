@@ -3,30 +3,14 @@
 {% block title %}Kalender - Gembira{% endblock %}
 
 {% block body %}
-<!-- Header -->
-<div class="bg-gradient-to-r from-sky-400 to-sky-500 text-white sticky top-0 z-40 shadow-lg">
-    <div class="container mx-auto px-4 py-4">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center">
-                <a href="{{ path('app_dashboard') }}" class="text-white mr-3 p-2 hover:bg-sky-600 rounded-lg">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                    </svg>
-                </a>
-                <div>
-                    <h1 class="text-lg font-bold">📅 Kalender</h1>
-                    <p class="text-sky-200 text-sm">Event & Kegiatan</p>
-                </div>
-            </div>
-            
-            <!-- User Info -->
-            <div class="text-right">
-                <div class="text-sm font-medium">{{ pegawai.nama }}</div>
-                <div class="text-xs text-sky-200">{{ pegawai.nip }}</div>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- User Header Component -->
+{% include 'components/user_header.html.twig' with {
+    'show_back_button': true,
+    'back_url': path('app_dashboard'),
+    'title': 'Kalender',
+    'subtitle': 'Event & Kegiatan',
+    'show_welcome': false
+} %}
 
 <div class="min-h-screen bg-gradient-to-b from-sky-50 to-sky-100 pb-20">
     <div class="container mx-auto px-4 py-6">
@@ -299,41 +283,8 @@
     </div>
 </div>
 
-<!-- Bottom Navigation Bar -->
-<div class="fixed bottom-0 left-0 right-0 bg-sky-400 shadow-2xl border-t border-sky-500 z-50">
-    <div class="grid grid-cols-5 text-center">
-        <!-- Home -->
-        <a href="{{ path('app_dashboard') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
-            <div class="text-lg mb-1">🏠</div>
-            <div class="text-xs">Home</div>
-        </a>
-        
-        <!-- Laporan -->
-        <a href="{{ path('app_user_laporan') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
-            <div class="text-lg mb-1">📊</div>
-            <div class="text-xs">Laporan</div>
-        </a>
-        
-        <!-- Kalender - Active -->
-        <a href="{{ path('app_user_kalender') }}" class="flex flex-col items-center py-3 px-2 text-white bg-sky-600 rounded-lg mx-1">
-            <div class="text-lg mb-1">📅</div>
-            <div class="text-xs font-medium">Kalender</div>
-        </a>
-        
-        <!-- Notifikasi -->
-        <a href="{{ path('app_notifikasi_index') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1 relative">
-            <div class="text-lg mb-1">🔔</div>
-            <div class="text-xs">Notifikasi</div>
-            <span id="notif-badge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"></span>
-        </a>
-        
-        <!-- Akun Saya -->
-        <a href="{{ path('app_profile_change_password') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
-            <div class="text-lg mb-1">👤</div>
-            <div class="text-xs">Akun Saya</div>
-        </a>
-    </div>
-</div>
+<!-- Bottom Navigation -->
+{% include 'components/bottom_nav.html.twig' with {'active_menu': 'kalender'} %}
 
 <!-- Event Detail Modal -->
 <div id="event-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 modal-backdrop z-50 flex items-center justify-center px-4">

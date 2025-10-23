@@ -1,0 +1,49 @@
+{#
+    Component: Bottom Navigation
+    Deskripsi: Navigasi bawah untuk halaman user dengan 5 menu utama
+
+    Parameter:
+    - active_menu: string (optional) - Menu yang sedang aktif ('home', 'laporan', 'kalender', 'ikhlas', 'profil')
+#}
+
+{% set active_menu = active_menu|default('home') %}
+
+<!-- Navigasi Bawah -->
+<div class="fixed bottom-0 left-0 right-0 bg-sky-400 shadow-2xl border-t border-sky-500 z-50">
+    <div class="grid grid-cols-5 text-center">
+        <!-- Home -->
+        <a href="{{ path('app_dashboard') }}"
+           class="flex flex-col items-center py-3 px-2 {% if active_menu == 'home' %}text-white bg-sky-600{% else %}text-gray-200 hover:text-white hover:bg-sky-500{% endif %} transition-colors rounded-lg mx-1">
+            <div class="text-lg mb-1">🏠</div>
+            <div class="text-xs {% if active_menu == 'home' %}font-medium{% endif %}">Home</div>
+        </a>
+
+        <!-- Laporan -->
+        <a href="{{ path('app_user_laporan') }}"
+           class="flex flex-col items-center py-3 px-2 {% if active_menu == 'laporan' %}text-white bg-sky-600{% else %}text-gray-200 hover:text-white hover:bg-sky-500{% endif %} transition-colors rounded-lg mx-1">
+            <div class="text-lg mb-1">📊</div>
+            <div class="text-xs {% if active_menu == 'laporan' %}font-medium{% endif %}">Laporan</div>
+        </a>
+
+        <!-- Kalender -->
+        <a href="{{ path('app_user_kalender') }}"
+           class="flex flex-col items-center py-3 px-2 {% if active_menu == 'kalender' %}text-white bg-sky-600{% else %}text-gray-200 hover:text-white hover:bg-sky-500{% endif %} transition-colors rounded-lg mx-1">
+            <div class="text-lg mb-1">📅</div>
+            <div class="text-xs {% if active_menu == 'kalender' %}font-medium{% endif %}">Kalender</div>
+        </a>
+
+        <!-- Ikhlas -->
+        <a href="{{ path('app_ikhlas') }}"
+           class="flex flex-col items-center py-3 px-2 {% if active_menu == 'ikhlas' %}text-white bg-sky-600{% else %}text-gray-200 hover:text-white hover:bg-sky-500{% endif %} transition-colors rounded-lg mx-1">
+            <div class="text-lg mb-1">💭</div>
+            <div class="text-xs {% if active_menu == 'ikhlas' %}font-medium{% endif %}">Ikhlas</div>
+        </a>
+
+        <!-- Profil -->
+        <a href="{{ path('app_profile_view') }}"
+           class="flex flex-col items-center py-3 px-2 {% if active_menu == 'profil' %}text-white bg-sky-600{% else %}text-gray-200 hover:text-white hover:bg-sky-500{% endif %} transition-colors rounded-lg mx-1">
+            <div class="text-lg mb-1">👤</div>
+            <div class="text-xs {% if active_menu == 'profil' %}font-medium{% endif %}">Profil</div>
+        </a>
+    </div>
+</div>

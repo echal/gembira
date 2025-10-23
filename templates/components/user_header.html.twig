@@ -1,0 +1,285 @@
+{#
+    Component: User Header
+    Deskripsi: Header responsif untuk halaman user dengan logo, nama user, NIP, dan ikon notifikasi
+    Fitur: Dropdown menu, responsif mobile-first, Tailwind CSS
+
+    Props yang dapat digunakan:
+    - show_back_button: boolean (default: false) - Tampilkan tombol kembali
+    - back_url: string - URL untuk tombol kembali
+    - title: string - Judul halaman (opsional)
+    - subtitle: string - Subjudul halaman (opsional)
+    - show_welcome: boolean (default: false) - Tampilkan info selamat datang dengan jam
+#}
+
+{% set show_back_button = show_back_button|default(false) %}
+{% set back_url = back_url|default(path('app_dashboard')) %}
+{% set title = title|default('GEMBIRA') %}
+{% set subtitle = subtitle|default('Gerakan Munajat Bersama Untuk Kinerja') %}
+{% set show_welcome = show_welcome|default(false) %}
+
+<!-- User Header Component -->
+<div class="bg-gradient-to-r from-sky-400 to-sky-500 text-white sticky top-0 z-40 shadow-lg">
+    <div class="container mx-auto px-2 py-2 md:px-4 md:py-3">
+        <!-- Top Bar: Logo, Title, User Info, Notifikasi -->
+        <div class="flex items-center justify-between gap-2">
+            <!-- Left: Back Button (if enabled) + Logo & Title -->
+            <div class="flex items-center gap-1.5 md:gap-2 min-w-0 flex-1">
+                {% if show_back_button %}
+                <a href="{{ back_url }}"
+                   class="flex-shrink-0 text-white p-1.5 hover:bg-sky-600 rounded-lg transition-all duration-150 ease-in-out hover:scale-105">
+                    <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </a>
+                {% endif %}
+
+                <!-- Title with emoji (no logo for compact design) -->
+                <div class="min-w-0 flex-1">
+                    <h1 class="text-xs md:text-sm font-bold truncate leading-tight">🤲 {{ title }}</h1>
+                    <p class="text-sky-100 text-[10px] md:text-xs truncate leading-tight">{{ subtitle }}</p>
+                </div>
+            </div>
+
+            <!-- Right: Notifikasi & User Info -->
+            <div class="flex items-center gap-1 md:gap-1.5 flex-shrink-0">
+                <!-- Ikon Notifikasi -->
+                <div class="relative flex-shrink-0">
+                    <a href="{{ path('app_notifikasi_index') }}"
+                       class="flex items-center justify-center w-8 h-8 md:w-9 md:h-9 bg-white bg-opacity-10 hover:bg-opacity-20 rounded-full transition-all duration-150 ease-in-out hover:scale-110 active:scale-95"
+                       title="Notifikasi">
+                        <span class="text-lg md:text-xl">🔔</span>
+                        <!-- Badge notifikasi (opsional - bisa dikustomisasi dengan data dinamis) -->
+                        {% if app.user.unreadNotifications|default(0) > 0 %}
+                        <span class="absolute -top-0.5 -right-0.5 w-4 h-4 md:w-5 md:h-5 bg-red-500 text-white text-[9px] md:text-xs flex items-center justify-center rounded-full border-2 border-sky-400 font-bold shadow-md">
+                            {{ app.user.unreadNotifications > 9 ? '9+' : app.user.unreadNotifications }}
+                        </span>
+                        {% endif %}
+                    </a>
+                </div>
+
+                <!-- User Info dengan Dropdown -->
+                <div class="relative z-50">
+                    <button id="userMenuButton"
+                            onclick="toggleUserDropdown()"
+                            class="flex items-center gap-0.5 md:gap-1 bg-white bg-opacity-20 hover:bg-opacity-30 px-1.5 py-1 md:px-2 md:py-1.5 rounded-lg backdrop-blur-sm transition-all duration-150 ease-in-out">
+                        <!-- Nama & NIP (flex-col for vertical stacking) -->
+                        <div class="text-right flex flex-col items-end min-w-0 max-w-[75px] sm:max-w-[95px] md:max-w-[115px]">
+                            <span class="font-semibold text-[10px] md:text-xs text-white truncate w-full leading-tight">
+                                {{ app.user.nama|default('User') }}
+                            </span>
+                            <span class="text-[9px] md:text-[10px] text-sky-100 truncate w-full leading-tight">
+                                {{ app.user.nip|default('---') }}
+                            </span>
+                        </div>
+
+                        <!-- Avatar Icon -->
+                        <div class="flex-shrink-0 text-sm md:text-base">👤</div>
+
+                        <!-- Dropdown Arrow -->
+                        <svg id="dropdownArrow"
+                             class="flex-shrink-0 w-3 h-3 transition-transform duration-200"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+
+                    <!-- Dropdown Menu -->
+                    <div id="userDropdown"
+                         class="hidden absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-xl min-w-[200px] md:min-w-[220px] z-[60] transform opacity-0 scale-95 transition-all duration-200">
+                        <!-- User Info Section -->
+                        <div class="p-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+                            <div class="text-sm font-medium text-gray-900 truncate">{{ app.user.nama|default('User') }}</div>
+                            <div class="text-xs text-gray-500 truncate">{{ app.user.jabatan|default('Pegawai') }}</div>
+                            {% if app.user.unitKerja %}
+                            <div class="text-xs text-gray-400 truncate">{{ app.user.unitKerja }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Menu Items -->
+                        <div class="py-1">
+                            <a href="{{ path('app_profile_view') }}"
+                               class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                                <span class="mr-3">👤</span>
+                                <span>Profil</span>
+                            </a>
+                            <a href="{{ path('app_dashboard') }}"
+                               class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600 transition-colors">
+                                <span class="mr-3">🏠</span>
+                                <span>Dashboard</span>
+                            </a>
+                            <a href="{{ path('app_profile_change_password') }}"
+                               class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-colors">
+                                <span class="mr-3">🔐</span>
+                                <span>Ganti Password</span>
+                            </a>
+                            <a href="{{ path('app_profile_tanda_tangan') }}"
+                               class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-yellow-50 hover:text-yellow-600 transition-colors">
+                                <span class="mr-3">📝</span>
+                                <span>Tanda Tangan</span>
+                            </a>
+                            <hr class="my-1">
+                            {% include 'components/logout_button.html.twig' with {
+                                'style': 'w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 border-0 bg-transparent transition-colors',
+                                'text': 'Logout',
+                                'icon': '🚪'
+                            } %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Welcome Info (Optional) -->
+        {% if show_welcome %}
+        <div class="mt-2 bg-white bg-opacity-20 rounded-lg p-2 md:p-2.5 backdrop-blur-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-[10px] md:text-xs font-medium leading-tight">Selamat datang!</p>
+                    <p class="text-[9px] md:text-[10px] text-sky-100 leading-tight">{{ 'now'|date('d F Y') }}</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm md:text-base font-bold leading-tight" id="jam-sekarang-header">--:--</div>
+                    <div class="text-[9px] md:text-[10px] text-sky-100 leading-tight">WITA</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Dropdown Toggle Script -->
+<script>
+// Enhanced dropdown user menu dengan animasi dan better UX
+function toggleUserDropdown() {
+    try {
+        const dropdown = document.getElementById('userDropdown');
+        const arrow = document.getElementById('dropdownArrow');
+
+        if (!dropdown) {
+            console.warn('User dropdown element not found');
+            return;
+        }
+
+        const isHidden = dropdown.classList.contains('hidden');
+
+        if (isHidden) {
+            // Show dropdown with animation
+            dropdown.classList.remove('hidden');
+            // Force reflow
+            dropdown.offsetHeight;
+            dropdown.classList.remove('opacity-0', 'scale-95');
+            dropdown.classList.add('opacity-100', 'scale-100');
+
+            // Rotate arrow
+            if (arrow) {
+                arrow.classList.add('rotate-180');
+            }
+        } else {
+            // Hide dropdown with animation
+            dropdown.classList.remove('opacity-100', 'scale-100');
+            dropdown.classList.add('opacity-0', 'scale-95');
+
+            // Rotate arrow back
+            if (arrow) {
+                arrow.classList.remove('rotate-180');
+            }
+
+            // Hide after animation
+            setTimeout(() => {
+                dropdown.classList.add('hidden');
+            }, 200);
+        }
+    } catch (error) {
+        console.error('Error in toggleUserDropdown:', error);
+    }
+}
+
+// Helper function to close dropdown
+function closeUserDropdown() {
+    try {
+        const dropdown = document.getElementById('userDropdown');
+        const arrow = document.getElementById('dropdownArrow');
+
+        if (dropdown && !dropdown.classList.contains('hidden')) {
+            dropdown.classList.remove('opacity-100', 'scale-100');
+            dropdown.classList.add('opacity-0', 'scale-95');
+
+            if (arrow) {
+                arrow.classList.remove('rotate-180');
+            }
+
+            setTimeout(() => {
+                dropdown.classList.add('hidden');
+            }, 200);
+        }
+    } catch (error) {
+        console.error('Error in closeUserDropdown:', error);
+    }
+}
+
+// Tutup dropdown ketika klik di luar
+document.addEventListener('click', function(event) {
+    try {
+        const dropdown = document.getElementById('userDropdown');
+        const button = event.target.closest('#userMenuButton, [onclick*="toggleUserDropdown"]');
+
+        if (!button && dropdown && !dropdown.contains(event.target)) {
+            closeUserDropdown();
+        }
+    } catch (error) {
+        console.error('Error in dropdown click handler:', error);
+    }
+});
+
+// Update jam real-time (jika show_welcome diaktifkan)
+{% if show_welcome %}
+function updateHeaderJam() {
+    const sekarang = new Date();
+    const jam = sekarang.getHours().toString().padStart(2, '0');
+    const menit = sekarang.getMinutes().toString().padStart(2, '0');
+
+    const jamHeaderElement = document.getElementById('jam-sekarang-header');
+    if (jamHeaderElement) {
+        jamHeaderElement.textContent = `${jam}:${menit}`;
+    }
+}
+
+// Update setiap 1 menit untuk efisiensi
+setInterval(updateHeaderJam, 60000);
+updateHeaderJam(); // Jalankan segera
+{% endif %}
+</script>
+
+<style>
+/* Enhanced dropdown animations */
+#userDropdown {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    backdrop-filter: blur(8px);
+}
+
+/* Ensure arrow rotation works */
+#dropdownArrow {
+    transition: transform 0.2s ease-in-out;
+}
+
+#dropdownArrow.rotate-180 {
+    transform: rotate(180deg);
+}
+
+/* Mobile optimization */
+@media (max-width: 640px) {
+    #userDropdown {
+        right: 0;
+        max-width: calc(100vw - 2rem);
+    }
+}
+
+/* Truncate text properly */
+.truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+</style>

@@ -156,80 +156,8 @@
     </div>
 </div>
 
-<!-- Bottom Navigation Bar -->
-<div class="fixed bottom-0 left-0 right-0 bg-sky-400 shadow-2xl border-t border-sky-500 z-50">
-    <div class="grid grid-cols-5 text-center">
-        <!-- Home -->
-        <a href="{{ path('app_dashboard') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
-            <div class="text-lg mb-1">🏠</div>
-            <div class="text-xs">Home</div>
-        </a>
-        
-        <!-- Laporan -->
-        <a href="{{ path('app_user_laporan') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
-            <div class="text-lg mb-1">📊</div>
-            <div class="text-xs">Laporan</div>
-        </a>
-        
-        <!-- Kalender -->
-        <a href="{{ path('app_user_kalender') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
-            <div class="text-lg mb-1">📅</div>
-            <div class="text-xs">Kalender</div>
-        </a>
-        
-        <!-- Notifikasi - Active -->
-        <a href="{{ path('app_notifikasi_index') }}" class="flex flex-col items-center py-3 px-2 text-white bg-sky-600 rounded-lg mx-1 relative">
-            <div class="text-lg mb-1">🔔</div>
-            <div class="text-xs font-medium">Notifikasi</div>
-            {% if jumlah_belum_dibaca > 0 %}
-                <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {{ jumlah_belum_dibaca > 9 ? '9+' : jumlah_belum_dibaca }}
-                </span>
-            {% endif %}
-        </a>
-        
-        <!-- Akun Saya -->
-        <a href="{{ path('app_profile_change_password') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
-            <div class="text-lg mb-1">👤</div>
-            <div class="text-xs">Akun Saya</div>
-        </a>
-    </div>
-</div>
-
-<!-- Navigasi Bawah - TETAP PERTAHANKAN -->
-<div class="fixed bottom-0 left-0 right-0 bg-sky-400 shadow-2xl border-t border-sky-500 z-50">
-    <div class="grid grid-cols-5 text-center">
-        <!-- Home -->
-        <a href="{{ path('app_dashboard') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
-            <div class="text-lg mb-1">🏠</div>
-            <div class="text-xs">Home</div>
-        </a>
-        
-        <!-- Laporan -->
-        <a href="{{ path('app_user_laporan') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
-            <div class="text-lg mb-1">📊</div>
-            <div class="text-xs">Laporan</div>
-        </a>
-        
-        <!-- Kalender -->
-        <a href="{{ path('app_user_kalender') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
-            <div class="text-lg mb-1">📅</div>
-            <div class="text-xs">Kalender</div>
-        </a>
-        
-        <!-- Notifikasi - Active -->
-        <a href="{{ path('app_notifikasi_index') }}" class="flex flex-col items-center py-3 px-2 text-white bg-sky-600 rounded-lg mx-1">
-            <div class="text-lg mb-1">🔔</div>
-            <div class="text-xs font-medium">Notifikasi</div>
-        </a>
-        
-        <!-- Akun Saya -->
-        <a href="{{ path('app_profile_change_password') }}" class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
-            <div class="text-lg mb-1">👤</div>
-            <div class="text-xs">Akun Saya</div>
-        </a>
-    </div>
-</div>
+<!-- Bottom Navigation - Standard 5 Menus -->
+{% include 'components/bottom_nav.html.twig' with {'active_menu': 'home'} %}
 
 <script>
 class NotifikasiApp {

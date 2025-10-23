@@ -1,0 +1,310 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Leaderboard - Ikhlas{% endblock %}
+
+{% block body %}
+<!-- User Header Component -->
+{% include 'components/user_header.html.twig' with {
+    'show_back_button': true,
+    'back_url': path('app_ikhlas'),
+    'title': 'LEADERBOARD',
+    'subtitle': 'Pengguna Paling Inspiratif'
+} %}
+
+<div class="min-h-screen bg-gradient-to-b from-purple-50 via-pink-50 to-sky-50 pb-20">
+    <div class="container mx-auto px-4 py-6">
+
+        <!-- Global Stats Banner -->
+        <div class="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl shadow-xl p-6 mb-6 text-white">
+            <div class="text-center mb-4">
+                <h2 class="text-2xl font-bold">📊 Statistik Global</h2>
+                <p class="text-purple-100 text-sm">Data aktivitas menu Ikhlas</p>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white bg-opacity-20 rounded-lg p-4 text-center backdrop-blur-sm">
+                    <div class="text-3xl font-bold">{{ globalStats.totalQuotes }}</div>
+                    <div class="text-sm text-purple-100">Total Quotes</div>
+                </div>
+
+                <div class="bg-white bg-opacity-20 rounded-lg p-4 text-center backdrop-blur-sm">
+                    <div class="text-3xl font-bold">{{ globalStats.totalInteractions }}</div>
+                    <div class="text-sm text-purple-100">Total Interaksi</div>
+                </div>
+
+                <div class="bg-white bg-opacity-20 rounded-lg p-4 text-center backdrop-blur-sm">
+                    <div class="text-3xl font-bold">{{ globalStats.totalLikes }}</div>
+                    <div class="text-sm text-purple-100">Total Likes ❤️</div>
+                </div>
+
+                <div class="bg-white bg-opacity-20 rounded-lg p-4 text-center backdrop-blur-sm">
+                    <div class="text-3xl font-bold">{{ globalStats.totalSaves }}</div>
+                    <div class="text-sm text-purple-100">Total Saves 📌</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly XP Rank Card (New System) -->
+        <div class="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 rounded-xl shadow-lg p-6 mb-6 text-white">
+            <div class="text-center mb-4">
+                <h3 class="text-lg font-bold text-purple-100">Leaderboard Bulanan - {{ ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][currentMonth] }} {{ currentYear }}</h3>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- User's Rank -->
+                <div class="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
+                    <div class="text-sm text-purple-100 mb-1">Peringkat Anda</div>
+                    <div class="text-3xl font-bold">
+                        {% if userXpRank %}
+                            #{{ userXpRank.rank }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </div>
+                    <div class="text-xs text-purple-100 mt-1">
+                        {% if userXpRank %}
+                            dari {{ userXpRank.total_users }} peserta
+                        {% else %}
+                            Belum ada XP bulan ini
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Monthly XP -->
+                <div class="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
+                    <div class="text-sm text-purple-100 mb-1">XP Bulan Ini</div>
+                    <div class="text-3xl font-bold">
+                        {% if userXpRank %}
+                            {{ userXpRank.xp }}
+                        {% else %}
+                            0
+                        {% endif %}
+                    </div>
+                    <div class="text-xs text-purple-100 mt-1">Experience Points</div>
+                </div>
+
+                <!-- Level & Badge -->
+                <div class="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
+                    <div class="text-sm text-purple-100 mb-1">Level Saat Ini</div>
+                    <div class="text-3xl font-bold flex items-center justify-center gap-2">
+                        <span>{{ app.user.currentBadge }}</span>
+                        <span>Lvl {{ app.user.currentLevel }}</span>
+                    </div>
+                    <div class="text-xs text-purple-100 mt-1">{{ app.user.levelTitle }}</div>
+                </div>
+            </div>
+
+            <!-- XP Progress Bar -->
+            <div class="mt-4">
+                <div class="flex justify-between text-sm text-purple-100 mb-2">
+                    <span>Progress ke Level {{ xpProgress.next_level }}</span>
+                    <span>{{ xpProgress.current_xp_in_level }} / {{ xpProgress.xp_needed_for_next_level }} XP</span>
+                </div>
+                <div class="w-full bg-white bg-opacity-20 rounded-full h-3 overflow-hidden">
+                    <div class="bg-gradient-to-r from-yellow-300 to-yellow-500 h-3 rounded-full transition-all duration-300"
+                         style="width: {{ xpProgress.percentage_progress }}%"></div>
+                </div>
+                <div class="text-xs text-purple-100 mt-1 text-center">
+                    {% if xpProgress.is_max_level %}
+                        🏆 Anda sudah mencapai level maksimal!
+                    {% else %}
+                        Butuh {{ xpProgress.xp_to_next_level }} XP lagi untuk naik level!
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly XP Leaderboard -->
+        <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">🏆 Leaderboard XP Bulanan</h2>
+                    <p class="text-sm text-gray-500 mt-1">Top peserta dengan XP tertinggi bulan ini</p>
+                </div>
+            </div>
+
+            {% if monthlyLeaderboard|length > 0 %}
+            <div class="space-y-3">
+                {% for entry in monthlyLeaderboard %}
+                {% set rank = entry.rankMonthly %}
+                {% set user = entry.user %}
+                {% set badge = rank == 1 ? '🥇' : (rank == 2 ? '🥈' : (rank == 3 ? '🥉' : '🏅')) %}
+
+                {% set bgClass = '' %}
+                {% set iconBg = 'bg-gray-100' %}
+                {% set iconColor = 'text-gray-600' %}
+                {% set levelBg = 'bg-purple-100' %}
+                {% set levelText = 'text-purple-800' %}
+
+                {% if rank == 1 %}
+                    {% set bgClass = 'bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-200' %}
+                    {% set iconBg = 'bg-yellow-100' %}
+                    {% set iconColor = 'text-yellow-600' %}
+                    {% set levelBg = 'bg-yellow-100' %}
+                    {% set levelText = 'text-yellow-700' %}
+                {% elseif rank == 2 %}
+                    {% set bgClass = 'bg-gradient-to-r from-gray-50 to-slate-50 border-2 border-gray-200' %}
+                    {% set iconBg = 'bg-gray-100' %}
+                    {% set iconColor = 'text-gray-600' %}
+                    {% set levelBg = 'bg-gray-100' %}
+                    {% set levelText = 'text-gray-700' %}
+                {% elseif rank == 3 %}
+                    {% set bgClass = 'bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-200' %}
+                    {% set iconBg = 'bg-orange-100' %}
+                    {% set iconColor = 'text-orange-600' %}
+                    {% set levelBg = 'bg-orange-100' %}
+                    {% set levelText = 'text-orange-700' %}
+                {% else %}
+                    {% set bgClass = 'bg-white border border-gray-200 hover:bg-gray-50' %}
+                    {% set iconBg = 'bg-purple-50' %}
+                    {% set iconColor = 'text-purple-600' %}
+                {% endif %}
+
+                <div class="{{ bgClass }} rounded-xl p-4 shadow-sm transition-all duration-300 hover:shadow-md">
+                    <div class="flex items-center justify-between">
+                        <!-- Rank & User Info -->
+                        <div class="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
+                            <!-- Rank Badge -->
+                            <div class="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full {{ iconBg }}">
+                                <span class="text-xl md:text-2xl {{ iconColor }}">{{ badge }}</span>
+                            </div>
+
+                            <!-- User Details -->
+                            <div class="flex-1 min-w-0">
+                                <!-- Name and Level Badge -->
+                                <div class="flex items-center gap-2 mb-1">
+                                    <div class="font-bold text-base md:text-lg text-gray-800 truncate">
+                                        {{ user.nama }}
+                                    </div>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ levelBg }} {{ levelText }} flex-shrink-0">
+                                        {{ user.currentBadge }} Lvl {{ user.currentLevel }}
+                                    </span>
+                                </div>
+
+                                <!-- Jabatan -->
+                                <div class="text-xs md:text-sm text-gray-600 truncate">
+                                    {{ user.jabatan }}
+                                    {% if user.namaUnitKerja %}
+                                        - {{ user.namaUnitKerja }}
+                                    {% endif %}
+                                </div>
+
+                                <!-- Level Title & Total XP -->
+                                <div class="text-[10px] md:text-xs text-gray-500 mt-1 flex items-center gap-1 flex-wrap">
+                                    <span class="inline-flex items-center gap-0.5">
+                                        <span>{{ user.levelTitle }}</span>
+                                    </span>
+                                    <span>•</span>
+                                    <span class="inline-flex items-center gap-0.5">
+                                        <span>Total: {{ user.totalXp }} XP</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Monthly XP -->
+                        <div class="text-right flex-shrink-0 ml-3 md:ml-4">
+                            <div class="text-2xl md:text-3xl font-bold text-gray-800">
+                                {{ entry.xpMonthly }}
+                            </div>
+                            <div class="text-[10px] md:text-xs font-medium text-gray-500">
+                                XP bulan ini
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-12">
+                <div class="text-6xl mb-4">🏆</div>
+                <p class="text-gray-500">Belum ada data leaderboard.</p>
+                <p class="text-gray-400 text-sm mt-2">Mulai berinteraksi dengan quotes untuk masuk leaderboard!</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Top Quotes Section -->
+        {% if topQuotes|length > 0 %}
+        <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">✨ Quotes Terpopuler</h2>
+                <p class="text-gray-500 text-sm">Quote yang paling banyak disukai pengguna</p>
+            </div>
+
+            <div class="space-y-4">
+                {% for quote in topQuotes %}
+                <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-5 border-l-4 border-purple-500">
+                    <blockquote class="text-gray-700 italic mb-3">
+                        "{{ quote.content }}"
+                    </blockquote>
+                    <div class="flex items-center justify-between">
+                        <p class="text-sm text-gray-600 font-medium">- {{ quote.author ?? 'Anonim' }}</p>
+                        <div class="flex items-center gap-3 text-sm">
+                            <span class="text-red-500">❤️ {{ quote.totalLikes }}</span>
+                            <span class="text-yellow-500">📌 {{ quote.totalSaves }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Back to Main -->
+        <div class="text-center">
+            <a href="{{ path('app_ikhlas') }}" class="inline-block bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg shadow-lg transition-all transform hover:scale-105">
+                ← Kembali ke Menu Ikhlas
+            </a>
+        </div>
+
+    </div>
+</div>
+
+<!-- Bottom Navigation -->
+{% include 'components/bottom_nav.html.twig' with {'active_menu': 'ikhlas'} %}
+
+{% endblock %}
+
+{% block javascripts %}
+<style>
+/* Shine animation for rank 1 */
+@keyframes shine {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+}
+
+.animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Text shadow for better readability on gradient backgrounds */
+.text-shadow-strong {
+    text-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.4),
+        0 2px 4px rgba(0, 0, 0, 0.3),
+        0 3px 6px rgba(0, 0, 0, 0.2);
+}
+
+.text-shadow-medium {
+    text-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.3),
+        0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.text-shadow-light {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .text-3xl {
+        font-size: 1.5rem;
+    }
+
+    .text-2xl {
+        font-size: 1.25rem;
+    }
+}
+</style>
+{% endblock %}

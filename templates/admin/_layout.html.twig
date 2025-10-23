@@ -2,36 +2,131 @@
 
 {% block stylesheets %}
     {{ parent() }}
+    <style>
+        /* Sidebar Toggle Transitions */
+        .sidebar {
+            transition: transform 0.3s ease-in-out, margin 0.3s ease-in-out;
+        }
+
+        /* Mobile: Sidebar overlay mode */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                height: 100vh;
+                z-index: 50;
+                transform: translateX(-100%);
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            /* Overlay backdrop */
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 40;
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
+
+            /* Content adjusts when sidebar hidden */
+            .main-content {
+                margin-left: 0 !important;
+            }
+        }
+
+        /* Desktop: Sidebar push mode */
+        @media (min-width: 769px) {
+            .sidebar {
+                margin-left: 0;
+            }
+
+            .sidebar.hide {
+                margin-left: -16rem; /* -w-64 */
+            }
+
+            .main-content {
+                margin-left: 0;
+                transition: margin-left 0.3s ease-in-out;
+            }
+
+            .main-content.expanded {
+                margin-left: 0;
+            }
+        }
+
+        /* Hamburger icon animation */
+        .hamburger-line {
+            transition: all 0.3s ease-in-out;
+        }
+
+        .hamburger.active .hamburger-line:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .hamburger.active .hamburger-line:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger.active .hamburger-line:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -6px);
+        }
+    </style>
     {% block admin_stylesheets %}{% endblock %}
 {% endblock %}
 
 {% block body %}
 <!-- Admin Layout dengan Sidebar -->
-<div class="flex h-screen bg-gray-100">
+<div class="flex h-screen bg-gray-100 overflow-hidden">
+    <!-- Sidebar Overlay (Mobile only) -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
     <!-- Include Sidebar -->
-    {{ include('admin/_sidebar.html.twig') }}
+    <div class="sidebar w-64" id="adminSidebar">
+        {{ include('admin/_sidebar.html.twig') }}
+    </div>
 
     <!-- Main Content Area -->
-    <div class="flex-1 overflow-y-auto">
+    <div class="flex-1 overflow-y-auto main-content" id="mainContent">
         <!-- Header -->
-        <div class="bg-white shadow-sm px-6 py-4 border-b">
+        <div class="bg-white shadow-sm px-4 md:px-6 py-4 border-b">
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
-                    <span class="text-2xl mr-3">{% block page_icon %}📋{% endblock %}</span>
+                    <!-- Hamburger Menu Button -->
+                    <button onclick="toggleSidebar()"
+                            class="hamburger mr-3 md:mr-4 p-2 rounded-lg bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-400 transition-colors shadow-md"
+                            id="hamburgerBtn"
+                            aria-label="Toggle sidebar"
+                            title="Buka/Tutup Menu">
+                        <div class="w-7 h-6 flex flex-col justify-between">
+                            <span class="hamburger-line block h-1 w-full bg-white rounded"></span>
+                            <span class="hamburger-line block h-1 w-full bg-white rounded"></span>
+                            <span class="hamburger-line block h-1 w-full bg-white rounded"></span>
+                        </div>
+                    </button>
+
+                    <span class="text-2xl mr-2 md:mr-3">{% block page_icon %}📋{% endblock %}</span>
                     <div>
-                        <h2 class="text-xl font-bold text-gray-800">{% block page_title %}Admin Panel{% endblock %}</h2>
-                        <p class="text-sm text-gray-600">{% block page_description %}Kelola sistem aplikasi Gembira{% endblock %}</p>
+                        <h2 class="text-lg md:text-xl font-bold text-gray-800">{% block page_title %}Admin Panel{% endblock %}</h2>
+                        <p class="text-xs md:text-sm text-gray-600 hidden sm:block">{% block page_description %}Kelola sistem aplikasi Gembira{% endblock %}</p>
                     </div>
                 </div>
-                <div class="flex items-center space-x-3">
-                    <div class="text-sm text-gray-600">{{ "now"|date('d/m/Y H:i') }}</div>
+                <div class="flex items-center space-x-2 md:space-x-3">
+                    <div class="text-xs md:text-sm text-gray-600">{{ "now"|date('d/m H:i') }}</div>
                     {% block header_actions %}{% endblock %}
                 </div>
             </div>
         </div>
 
         <!-- Content -->
-        <div class="p-6">
+        <div class="p-4 md:p-6">
             {% block admin_content %}{% endblock %}
         </div>
     </div>
@@ -40,5 +135,81 @@
 
 {% block javascripts %}
     {{ parent() }}
+    <script>
+        // Sidebar Toggle Functionality
+        function toggleSidebar() {
+            const sidebar = document.getElementById('adminSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const mainContent = document.getElementById('mainContent');
+            const hamburger = document.getElementById('hamburgerBtn');
+            const isMobile = window.innerWidth < 769;
+
+            if (isMobile) {
+                // Mobile: Toggle overlay mode
+                sidebar.classList.toggle('show');
+                overlay.classList.toggle('show');
+                hamburger.classList.toggle('active');
+            } else {
+                // Desktop: Toggle push mode
+                sidebar.classList.toggle('hide');
+                mainContent.classList.toggle('expanded');
+                hamburger.classList.toggle('active');
+
+                // Save state to localStorage
+                const isHidden = sidebar.classList.contains('hide');
+                localStorage.setItem('sidebarHidden', isHidden);
+            }
+        }
+
+        // Initialize sidebar state on page load (Desktop only)
+        document.addEventListener('DOMContentLoaded', function() {
+            const isMobile = window.innerWidth < 769;
+
+            if (!isMobile) {
+                // Restore saved sidebar state on desktop
+                const sidebarHidden = localStorage.getItem('sidebarHidden') === 'true';
+                if (sidebarHidden) {
+                    document.getElementById('adminSidebar').classList.add('hide');
+                    document.getElementById('mainContent').classList.add('expanded');
+                    document.getElementById('hamburgerBtn').classList.add('active');
+                }
+            } else {
+                // Mobile: Sidebar hidden by default
+                // No need to do anything, already hidden via CSS
+            }
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            const sidebar = document.getElementById('adminSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const mainContent = document.getElementById('mainContent');
+            const hamburger = document.getElementById('hamburgerBtn');
+            const isMobile = window.innerWidth < 769;
+
+            if (isMobile) {
+                // Switching to mobile: Close sidebar and overlay
+                sidebar.classList.remove('hide', 'show');
+                overlay.classList.remove('show');
+                mainContent.classList.remove('expanded');
+                hamburger.classList.remove('active');
+            } else {
+                // Switching to desktop: Remove mobile classes, restore saved state
+                sidebar.classList.remove('show');
+                overlay.classList.remove('show');
+
+                const sidebarHidden = localStorage.getItem('sidebarHidden') === 'true';
+                if (sidebarHidden) {
+                    sidebar.classList.add('hide');
+                    mainContent.classList.add('expanded');
+                    hamburger.classList.add('active');
+                } else {
+                    sidebar.classList.remove('hide');
+                    mainContent.classList.remove('expanded');
+                    hamburger.classList.remove('active');
+                }
+            }
+        });
+    </script>
     {% block admin_javascripts %}{% endblock %}
 {% endblock %}

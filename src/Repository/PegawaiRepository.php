@@ -108,4 +108,55 @@ class PegawaiRepository extends ServiceEntityRepository implements PasswordUpgra
 
         return $qb->getQuery()->getResult();
     }
+
+    /**
+     * Get total XP global dari semua pegawai
+     */
+    public function getTotalXpGlobal(): int
+    {
+        $result = $this->createQueryBuilder('p')
+            ->select('SUM(p.total_xp) as totalXp')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return (int) ($result ?? 0);
+    }
+
+    /**
+     * Get count pegawai by level (untuk grafik distribusi level)
+     */
+    public function getCountByLevel(): array
+    {
+        return $this->createQueryBuilder('p')
+            ->select('p.current_level as level, COUNT(p.id) as count')
+            ->groupBy('p.current_level')
+            ->orderBy('p.current_level', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Get pegawai dengan XP tertinggi (all time)
+     */
+    public function getTopXpUsers(int $limit = 10): array
+    {
+        return $this->createQueryBuilder('p')
+            ->orderBy('p.total_xp', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Get pegawai by level
+     */
+    public function findByLevel(int $level): array
+    {
+        return $this->createQueryBuilder('p')
+            ->where('p.current_level = :level')
+            ->setParameter('level', $level)
+            ->orderBy('p.total_xp', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
 }

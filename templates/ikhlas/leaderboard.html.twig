@@ -1,14 +1,14 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Leaderboard - Ikhlas{% endblock %}
+{% block title %}Leaderboard - Inspirasi{% endblock %}
 
 {% block body %}
 <!-- User Header Component -->
 {% include 'components/user_header.html.twig' with {
     'show_back_button': true,
     'back_url': path('app_ikhlas'),
-    'title': 'LEADERBOARD',
-    'subtitle': 'Pengguna Paling Inspiratif'
+    'title': '🏆 LEADERBOARD INSPIRASI',
+    'subtitle': 'Inspirator Terbaik Bulan Ini'
 } %}
 
 <div class="min-h-screen bg-gradient-to-b from-purple-50 via-pink-50 to-sky-50 pb-20">
@@ -17,8 +17,8 @@
         <!-- Global Stats Banner -->
         <div class="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl shadow-xl p-6 mb-6 text-white">
             <div class="text-center mb-4">
-                <h2 class="text-2xl font-bold">📊 Statistik Global</h2>
-                <p class="text-purple-100 text-sm">Data aktivitas menu Ikhlas</p>
+                <h2 class="text-2xl font-bold">📊 Statistik Global Inspirasi</h2>
+                <p class="text-purple-100 text-sm">Total aktivitas berbagi inspirasi</p>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">

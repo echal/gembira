@@ -17,7 +17,7 @@ class UserQuoteInteraction
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Pegawai::class)]
-    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    #[ORM\JoinColumn(name: 'user_id', nullable: false, onDelete: 'CASCADE')]
     private ?Pegawai $user = null;
 
     #[ORM\ManyToOne(targetEntity: Quote::class, inversedBy: 'interactions')]

@@ -35,7 +35,7 @@ class QuoteComment
     #[ORM\OneToMany(targetEntity: self::class, mappedBy: 'parent')]
     private Collection $replies;
 
-    #[ORM\Column(type: Types::TEXT)]
+    #[ORM\Column(name: 'content', type: Types::TEXT)]
     private ?string $comment = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]

@@ -18,14 +18,15 @@ if (!file_exists($envFile)) {
 }
 
 $envContent = file_get_contents($envFile);
-preg_match('/DATABASE_URL="mysql:\/\/(.+?):(.+?)@(.+?):(\d+)\/(.+?)\?/', $envContent, $matches);
+// Support untuk password kosong: root:@ atau root:password@
+preg_match('/DATABASE_URL="mysql:\/\/(.+?):(.*)@(.+?):(\d+)\/(.+?)\?/', $envContent, $matches);
 
 if (empty($matches)) {
     die("❌ Error: DATABASE_URL tidak ditemukan dalam .env.local!\n");
 }
 
 $dbUser = $matches[1];
-$dbPass = $matches[2];
+$dbPass = $matches[2]; // Bisa kosong
 $dbHost = $matches[3];
 $dbPort = $matches[4];
 $dbName = $matches[5];
@@ -85,8 +86,9 @@ if ($returnCode === 0) {
     echo "✅ Menggunakan MySQL command line client\n\n";
 
     // Buat command untuk import
-    $password = $dbPass ? "-p$dbPass" : "";
-    $command = "$mysqlCmd -u $dbUser $password -h $dbHost -P $dbPort $dbName < \"$sqlFile\" 2>&1";
+    // Jika password kosong, jangan tambahkan -p sama sekali
+    $password = ($dbPass !== '') ? "-p\"$dbPass\"" : "";
+    $command = "$mysqlCmd -u \"$dbUser\" $password -h $dbHost -P $dbPort $dbName < \"$sqlFile\" 2>&1";
 
     echo "Executing import... (ini mungkin memakan waktu beberapa menit)\n";
 

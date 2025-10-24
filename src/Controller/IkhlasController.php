@@ -12,6 +12,7 @@ use App\Service\IkhlasLeaderboardService;
 use App\Service\GamificationService;
 use App\Service\UserXpService;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -30,7 +31,8 @@ class IkhlasController extends AbstractController
         private EntityManagerInterface $em,
         private IkhlasLeaderboardService $leaderboardService,
         private GamificationService $gamificationService,
-        private UserXpService $userXpService
+        private UserXpService $userXpService,
+        private LoggerInterface $logger
     ) {}
 
     #[Route('', name: 'app_ikhlas')]
@@ -157,10 +159,10 @@ class IkhlasController extends AbstractController
         }
 
         try {
-            error_log('=== CREATE QUOTE START ===');
-            error_log('User: ' . $user->getNama() . ' (ID: ' . $user->getId() . ')');
-            error_log('Content: ' . trim($data['content']));
-            error_log('Category: ' . ($data['category'] ?? 'Motivasi'));
+            $this->logger->info('=== CREATE QUOTE START ===');
+            $this->logger->info('User: ' . $user->getNama() . ' (ID: ' . $user->getId() . ')');
+            $this->logger->info('Content: ' . trim($data['content']));
+            $this->logger->info('Category: ' . ($data['category'] ?? 'Motivasi'));
 
             // Create new quote
             $quote = new Quote();
@@ -171,13 +173,13 @@ class IkhlasController extends AbstractController
             $quote->setTotalLikes(0);
             $quote->setTotalComments(0);
 
-            error_log('Quote object created, persisting...');
+            $this->logger->info('Quote object created, persisting...');
             $this->em->persist($quote);
 
-            error_log('Flushing to database...');
+            $this->logger->info('Flushing to database...');
             $this->em->flush();
 
-            error_log('Quote saved! ID: ' . $quote->getId());
+            $this->logger->info('Quote saved! ID: ' . $quote->getId());
 
             // Award XP for creating a quote
             try {
@@ -188,8 +190,8 @@ class IkhlasController extends AbstractController
                 );
             } catch (\Exception $xpError) {
                 // Log the XP error but don't fail the quote creation
-                error_log('XP Service Error: ' . $xpError->getMessage());
-                error_log('XP Service Trace: ' . $xpError->getTraceAsString());
+                $this->logger->error('XP Service Error: ' . $xpError->getMessage());
+                $this->logger->error('XP Service Trace: ' . $xpError->getTraceAsString());
 
                 // Set default xpResult if XP service fails
                 $xpResult = [
@@ -210,7 +212,7 @@ class IkhlasController extends AbstractController
                     'Create quote #' . $quote->getId()
                 );
             } catch (\Exception $gamificationError) {
-                error_log('Gamification Service Error: ' . $gamificationError->getMessage());
+                $this->logger->error('Gamification Service Error: ' . $gamificationError->getMessage());
             }
 
             return new JsonResponse([

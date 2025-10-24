@@ -497,6 +497,24 @@ document.addEventListener('DOMContentLoaded', function() {
         setupCommentSubmit();
         setupShareButtons();
         setupThreeDotsMenu();
+        trackQuoteViews();
+    }
+
+    // Track views for all visible quotes
+    function trackQuoteViews() {
+        document.querySelectorAll('.quote-card').forEach(card => {
+            const quoteId = card.dataset.quoteId;
+            if (quoteId) {
+                // Track view via API
+                fetch(`/ikhlas/api/quotes/${quoteId}/view`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                }).catch(err => console.log('View tracking error:', err));
+            }
+        });
     }
 
     // Setup Read More Toggle

@@ -391,6 +391,35 @@ class IkhlasController extends AbstractController
         }
     }
 
+    #[Route('/api/quotes/{id}/view', name: 'app_ikhlas_track_view', methods: ['POST'])]
+    public function trackView(int $id): JsonResponse
+    {
+        try {
+            $quote = $this->quoteRepository->find($id);
+            if (!$quote) {
+                return new JsonResponse([
+                    'success' => false,
+                    'message' => 'Quote tidak ditemukan'
+                ], 404);
+            }
+
+            // Increment view counter
+            $quote->incrementViews();
+            $this->em->persist($quote);
+            $this->em->flush();
+
+            return new JsonResponse([
+                'success' => true,
+                'totalViews' => $quote->getTotalViews()
+            ]);
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     #[Route('/my-favorites', name: 'app_ikhlas_favorites')]
     public function myFavorites(): Response
     {

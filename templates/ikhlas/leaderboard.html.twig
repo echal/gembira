@@ -45,23 +45,23 @@
         </div>
 
         <!-- Monthly XP Rank Card (New System) -->
-        <div class="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 rounded-xl shadow-lg p-6 mb-6 text-white">
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6 border-2 border-sky-200">
             <div class="text-center mb-4">
-                <h3 class="text-lg font-bold text-purple-100">Leaderboard Bulanan - {{ ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][currentMonth] }} {{ currentYear }}</h3>
+                <h3 class="text-lg font-bold text-gray-800">🏆 Leaderboard Bulanan - {{ ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][currentMonth] }} {{ currentYear }}</h3>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <!-- User's Rank -->
-                <div class="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
-                    <div class="text-sm text-purple-100 mb-1">Peringkat Anda</div>
-                    <div class="text-3xl font-bold">
+                <div class="bg-sky-50 rounded-lg p-4 border border-sky-200">
+                    <div class="text-sm text-sky-700 font-medium mb-1">Peringkat Anda</div>
+                    <div class="text-3xl font-bold text-sky-600">
                         {% if userXpRank %}
                             #{{ userXpRank.rank }}
                         {% else %}
                             -
                         {% endif %}
                     </div>
-                    <div class="text-xs text-purple-100 mt-1">
+                    <div class="text-xs text-gray-600 mt-1">
                         {% if userXpRank %}
                             dari {{ userXpRank.total_users }} peserta
                         {% else %}
@@ -71,40 +71,40 @@
                 </div>
 
                 <!-- Monthly XP -->
-                <div class="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
-                    <div class="text-sm text-purple-100 mb-1">XP Bulan Ini</div>
-                    <div class="text-3xl font-bold">
+                <div class="bg-sky-50 rounded-lg p-4 border border-sky-200">
+                    <div class="text-sm text-sky-700 font-medium mb-1">XP Bulan Ini</div>
+                    <div class="text-3xl font-bold text-sky-600">
                         {% if userXpRank %}
                             {{ userXpRank.xp }}
                         {% else %}
                             0
                         {% endif %}
                     </div>
-                    <div class="text-xs text-purple-100 mt-1">Experience Points</div>
+                    <div class="text-xs text-gray-600 mt-1">Experience Points</div>
                 </div>
 
                 <!-- Level & Badge -->
-                <div class="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur-sm">
-                    <div class="text-sm text-purple-100 mb-1">Level Saat Ini</div>
-                    <div class="text-3xl font-bold flex items-center justify-center gap-2">
+                <div class="bg-sky-50 rounded-lg p-4 border border-sky-200">
+                    <div class="text-sm text-sky-700 font-medium mb-1">Level Saat Ini</div>
+                    <div class="text-3xl font-bold text-sky-600 flex items-center justify-center gap-2">
                         <span>{{ app.user.currentBadge }}</span>
                         <span>Lvl {{ app.user.currentLevel }}</span>
                     </div>
-                    <div class="text-xs text-purple-100 mt-1">{{ app.user.levelTitle }}</div>
+                    <div class="text-xs text-gray-600 mt-1">{{ app.user.levelTitle }}</div>
                 </div>
             </div>
 
             <!-- XP Progress Bar -->
-            <div class="mt-4">
-                <div class="flex justify-between text-sm text-purple-100 mb-2">
+            <div class="mt-4 bg-sky-50 rounded-lg p-4 border border-sky-200">
+                <div class="flex justify-between text-sm text-gray-700 font-medium mb-2">
                     <span>Progress ke Level {{ xpProgress.next_level }}</span>
                     <span>{{ xpProgress.current_xp_in_level }} / {{ xpProgress.xp_needed_for_next_level }} XP</span>
                 </div>
-                <div class="w-full bg-white bg-opacity-20 rounded-full h-3 overflow-hidden">
-                    <div class="bg-gradient-to-r from-yellow-300 to-yellow-500 h-3 rounded-full transition-all duration-300"
+                <div class="w-full bg-sky-200 rounded-full h-3 overflow-hidden">
+                    <div class="bg-gradient-to-r from-sky-400 to-sky-600 h-3 rounded-full transition-all duration-300 shadow-sm"
                          style="width: {{ xpProgress.percentage_progress }}%"></div>
                 </div>
-                <div class="text-xs text-purple-100 mt-1 text-center">
+                <div class="text-xs text-gray-600 mt-2 text-center">
                     {% if xpProgress.is_max_level %}
                         🏆 Anda sudah mencapai level maksimal!
                     {% else %}

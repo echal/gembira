@@ -38,3 +38,5 @@ composer.phar
 *.swp
 public/uploads/
 /public/images/temp/
+*.sql.gz
+gaspulco_gembira.sql

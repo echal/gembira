@@ -5,10 +5,12 @@
 -- Safe to run multiple times (idempotent)
 --
 -- Menambahkan:
--- 1. Tabel quote & user_quote_interaction (IKHLAS)
--- 2. Tabel ranking_harian & ranking_bulanan (Leaderboard)
--- 3. Tabel user_points (Points & Level System)
--- 4. Kolom photo, total_xp, current_level, current_badge (Pegawai)
+-- 1. Tabel quotes & user_quotes_interaction (IKHLAS)
+-- 2. Tabel ranking_harian & ranking_bulanan (Leaderboard Absensi)
+-- 3. Tabel monthly_leaderboard (Leaderboard XP IKHLAS)
+-- 4. Tabel user_points (Points & Level System)
+-- 5. Tabel user_xp_log (Log History XP)
+-- 6. Kolom photo, total_xp, current_level, current_badge (Pegawai)
 -- ============================================================
 
 SET @database_name = 'gembira_db';
@@ -40,17 +42,19 @@ CREATE TABLE IF NOT EXISTS `quotes` (
 -- Tabel user_quotes_interaction (untuk like/save quotes) - PLURAL sesuai Entity
 CREATE TABLE IF NOT EXISTS `user_quotes_interaction` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `pegawai_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL COMMENT 'Foreign key ke pegawai',
   `quote_id` int(11) NOT NULL,
   `liked` tinyint(1) NOT NULL DEFAULT 0,
   `saved` tinyint(1) NOT NULL DEFAULT 0,
+  `comment` text DEFAULT NULL COMMENT 'Komentar user pada quote',
   `created_at` datetime NOT NULL,
   `updated_at` datetime NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `UNIQ_interaction` (`pegawai_id`, `quote_id`),
-  KEY `IDX_pegawai` (`pegawai_id`),
+  UNIQUE KEY `UNIQ_interaction` (`user_id`, `quote_id`),
+  KEY `IDX_user` (`user_id`),
   KEY `IDX_quote` (`quote_id`),
-  CONSTRAINT `FK_user_quotes_pegawai` FOREIGN KEY (`pegawai_id`) REFERENCES `pegawai` (`id`) ON DELETE CASCADE,
+  KEY `idx_user_quote` (`user_id`, `quote_id`),
+  CONSTRAINT `FK_user_quotes_pegawai` FOREIGN KEY (`user_id`) REFERENCES `pegawai` (`id`) ON DELETE CASCADE,
   CONSTRAINT `FK_user_quotes_quote` FOREIGN KEY (`quote_id`) REFERENCES `quotes` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -103,6 +107,41 @@ CREATE TABLE IF NOT EXISTS `user_points` (
   KEY `idx_level` (`level`),
   KEY `idx_points` (`points_total`),
   CONSTRAINT `FK_user_points_pegawai` FOREIGN KEY (`user_id`) REFERENCES `pegawai` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabel monthly_leaderboard (untuk IKHLAS XP leaderboard bulanan)
+CREATE TABLE IF NOT EXISTS `monthly_leaderboard` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `month` int(11) NOT NULL COMMENT 'Bulan (1-12)',
+  `year` int(11) NOT NULL COMMENT 'Tahun',
+  `xp_monthly` int(11) NOT NULL DEFAULT 0 COMMENT 'Total XP bulan ini',
+  `rank_monthly` int(11) DEFAULT NULL COMMENT 'Peringkat bulan ini',
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_user_month_year` (`user_id`, `month`, `year`),
+  KEY `idx_month_year` (`month`, `year`),
+  KEY `idx_xp_monthly` (`xp_monthly`),
+  KEY `idx_rank_monthly` (`rank_monthly`),
+  KEY `IDX_user` (`user_id`),
+  CONSTRAINT `FK_monthly_leaderboard_pegawai` FOREIGN KEY (`user_id`) REFERENCES `pegawai` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabel user_xp_log (log history perolehan XP)
+CREATE TABLE IF NOT EXISTS `user_xp_log` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL COMMENT 'Foreign key ke pegawai',
+  `xp_earned` int(11) NOT NULL DEFAULT 0 COMMENT 'XP yang didapat',
+  `activity_type` varchar(100) NOT NULL COMMENT 'Jenis aktivitas (like_quote, comment_quote, view_quote, etc)',
+  `description` text DEFAULT NULL COMMENT 'Deskripsi aktivitas',
+  `related_id` int(11) DEFAULT NULL COMMENT 'ID terkait (quote_id, comment_id, etc)',
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_user_xp_log_user` (`user_id`),
+  KEY `idx_user_xp_log_created` (`created_at`),
+  KEY `idx_activity_type` (`activity_type`),
+  CONSTRAINT `FK_user_xp_log_pegawai` FOREIGN KEY (`user_id`) REFERENCES `pegawai` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
@@ -188,11 +227,12 @@ WHERE TABLE_SCHEMA = @database_name
   AND TABLE_NAME IN ('ranking_harian', 'ranking_bulanan');
 
 SELECT '';
-SELECT 'Tabel Points System:' AS kategori;
+SELECT 'Tabel Points & XP System:' AS kategori;
 SELECT TABLE_NAME, TABLE_ROWS
 FROM information_schema.TABLES
 WHERE TABLE_SCHEMA = @database_name
-  AND TABLE_NAME = 'user_points';
+  AND TABLE_NAME IN ('user_points', 'monthly_leaderboard', 'user_xp_log')
+ORDER BY TABLE_NAME;
 
 SELECT '';
 SELECT 'Kolom Pegawai (XP System):' AS kategori;

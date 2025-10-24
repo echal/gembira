@@ -7,7 +7,8 @@
 -- Menambahkan:
 -- 1. Tabel quote & user_quote_interaction (IKHLAS)
 -- 2. Tabel ranking_harian & ranking_bulanan (Leaderboard)
--- 3. Kolom photo, total_xp, current_level, current_badge (Pegawai)
+-- 3. Tabel user_points (Points & Level System)
+-- 4. Kolom photo, total_xp, current_level, current_badge (Pegawai)
 -- ============================================================
 
 SET @database_name = 'gembira_db';
@@ -78,6 +79,22 @@ CREATE TABLE IF NOT EXISTS `ranking_bulanan` (
   KEY `idx_periode_peringkat` (`periode`, `peringkat`),
   KEY `IDX_pegawai` (`pegawai_id`),
   CONSTRAINT `FK_ranking_bulanan_pegawai` FOREIGN KEY (`pegawai_id`) REFERENCES `pegawai` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabel user_points (untuk points & level system)
+CREATE TABLE IF NOT EXISTS `user_points` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `points_total` int(11) NOT NULL DEFAULT 0,
+  `level` int(11) NOT NULL DEFAULT 1,
+  `last_updated` datetime NOT NULL,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UNIQ_user` (`user_id`),
+  KEY `IDX_user` (`user_id`),
+  KEY `idx_level` (`level`),
+  KEY `idx_points` (`points_total`),
+  CONSTRAINT `FK_user_points_pegawai` FOREIGN KEY (`user_id`) REFERENCES `pegawai` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
@@ -161,6 +178,13 @@ SELECT TABLE_NAME, TABLE_ROWS
 FROM information_schema.TABLES
 WHERE TABLE_SCHEMA = @database_name
   AND TABLE_NAME IN ('ranking_harian', 'ranking_bulanan');
+
+SELECT '';
+SELECT 'Tabel Points System:' AS kategori;
+SELECT TABLE_NAME, TABLE_ROWS
+FROM information_schema.TABLES
+WHERE TABLE_SCHEMA = @database_name
+  AND TABLE_NAME = 'user_points';
 
 SELECT '';
 SELECT 'Kolom Pegawai (XP System):' AS kategori;

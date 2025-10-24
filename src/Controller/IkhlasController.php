@@ -170,18 +170,38 @@ class IkhlasController extends AbstractController
             $this->em->flush();
 
             // Award XP for creating a quote
-            $xpResult = $this->userXpService->awardXpForActivity(
-                $user,
-                'create_quote',
-                $quote->getId()
-            );
+            try {
+                $xpResult = $this->userXpService->awardXpForActivity(
+                    $user,
+                    'create_quote',
+                    $quote->getId()
+                );
+            } catch (\Exception $xpError) {
+                // Log the XP error but don't fail the quote creation
+                error_log('XP Service Error: ' . $xpError->getMessage());
+                error_log('XP Service Trace: ' . $xpError->getTraceAsString());
+
+                // Set default xpResult if XP service fails
+                $xpResult = [
+                    'xp_earned' => UserXpService::XP_CREATE_QUOTE,
+                    'total_xp' => $user->getTotalXp(),
+                    'level_up' => false,
+                    'current_level' => $user->getCurrentLevel(),
+                    'current_badge' => $user->getCurrentBadge(),
+                    'level_title' => 'Pemula'
+                ];
+            }
 
             // Also award old gamification points for backward compatibility
-            $this->gamificationService->addPoints(
-                $user,
-                GamificationService::POINTS_LIKE_QUOTE * 2,
-                'Create quote #' . $quote->getId()
-            );
+            try {
+                $this->gamificationService->addPoints(
+                    $user,
+                    GamificationService::POINTS_LIKE_QUOTE * 2,
+                    'Create quote #' . $quote->getId()
+                );
+            } catch (\Exception $gamificationError) {
+                error_log('Gamification Service Error: ' . $gamificationError->getMessage());
+            }
 
             return new JsonResponse([
                 'success' => true,

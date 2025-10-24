@@ -439,45 +439,8 @@ document.addEventListener('click', function(event) {
     </div>
 </div>
 
-<!-- Bottom Navigation - Original Style with 5 Menus -->
-<div class="fixed bottom-0 left-0 right-0 bg-sky-400 shadow-2xl border-t border-sky-500 z-50">
-    <div class="grid grid-cols-5 text-center">
-        <!-- Home -->
-        <a href="{{ path('app_dashboard') }}"
-           class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
-            <div class="text-lg mb-1">🏠</div>
-            <div class="text-xs">Home</div>
-        </a>
-
-        <!-- Laporan -->
-        <a href="{{ path('app_user_laporan') }}"
-           class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
-            <div class="text-lg mb-1">📊</div>
-            <div class="text-xs">Laporan</div>
-        </a>
-
-        <!-- Kalender -->
-        <a href="{{ path('app_user_kalender') }}"
-           class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
-            <div class="text-lg mb-1">📅</div>
-            <div class="text-xs">Kalender</div>
-        </a>
-
-        <!-- Ikhlas (Active) -->
-        <a href="{{ path('app_ikhlas') }}"
-           class="flex flex-col items-center py-3 px-2 text-white bg-sky-600 transition-colors rounded-lg mx-1">
-            <div class="text-lg mb-1">💭</div>
-            <div class="text-xs font-medium">Ikhlas</div>
-        </a>
-
-        <!-- Profil -->
-        <a href="{{ path('app_profile_view') }}"
-           class="flex flex-col items-center py-3 px-2 text-gray-200 hover:text-white hover:bg-sky-500 transition-colors rounded-lg mx-1">
-            <div class="text-lg mb-1">👤</div>
-            <div class="text-xs">Profil</div>
-        </a>
-    </div>
-</div>
+<!-- Bottom Navigation -->
+{% include 'components/bottom_nav.html.twig' with {'active_menu': 'ikhlas'} %}
 
 <!-- Toast Notification Container -->
 <div id="toastContainer" class="fixed bottom-24 right-4 z-50 space-y-2"></div>

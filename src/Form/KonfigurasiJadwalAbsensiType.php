@@ -148,9 +148,9 @@ class KonfigurasiJadwalAbsensiType extends AbstractType
                 ]
             ])
 
-            // === PENGATURAN QR CODE DAN KAMERA ===
+            // === PENGATURAN JENIS ABSENSI ===
             ->add('perluQrCode', CheckboxType::class, [
-                'label' => 'Perlu Scan QR Code?',
+                'label' => 'Perlu Scan QR Code',
                 'help' => 'Centang jika absensi memerlukan scan QR code',
                 'required' => false,
                 'attr' => [
@@ -159,8 +159,17 @@ class KonfigurasiJadwalAbsensiType extends AbstractType
             ])
 
             ->add('perluKamera', CheckboxType::class, [
-                'label' => 'Perlu Foto Kamera?',
+                'label' => 'Perlu Foto Selfie',
                 'help' => 'Centang jika absensi memerlukan foto/selfie',
+                'required' => false,
+                'attr' => [
+                    'class' => 'form-check-input'
+                ]
+            ])
+
+            ->add('perluValidasiAdmin', CheckboxType::class, [
+                'label' => 'Perlu Validasi Admin',
+                'help' => 'Centang jika absensi memerlukan validasi/approval dari admin',
                 'required' => false,
                 'attr' => [
                     'class' => 'form-check-input'

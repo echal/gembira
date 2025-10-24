@@ -524,6 +524,7 @@ class AdminController extends AbstractController
                     'warna_kartu' => $jadwal->getWarnaKartu(),
                     'perlu_qr_code' => $jadwal->isPerluQrCode(),
                     'perlu_kamera' => $jadwal->isPerluKamera(),
+                    'perlu_validasi_admin' => $jadwal->isPerluValidasiAdmin(),
                     'hari_mulai' => $jadwal->getHariMulai(),
                     'hari_selesai' => $jadwal->getHariSelesai()
                 ]
@@ -564,10 +565,21 @@ class AdminController extends AbstractController
                 ]);
             }
 
-            // Update data jadwal
-            $jamMulai = $request->request->get('jam_mulai');
-            $jamSelesai = $request->request->get('jam_selesai');
-            $keterangan = $request->request->get('keterangan');
+            // Update data jadwal (form menggunakan prefix 'edit_')
+            $jamMulai = $request->request->get('edit_jam_mulai');
+            $jamSelesai = $request->request->get('edit_jam_selesai');
+            $keterangan = $request->request->get('edit_keterangan');
+
+            // Update checkbox fitur absensi
+            $perluQrCode = $request->request->get('perlu_qr_code');
+            $perluKamera = $request->request->get('perlu_kamera');
+            $perluValidasiAdmin = $request->request->get('perlu_validasi_admin');
+
+            // Debug log untuk checkbox
+            error_log("DEBUG updateJadwal - Checkbox values received:");
+            error_log("  perlu_qr_code: " . ($perluQrCode ?? 'null'));
+            error_log("  perlu_kamera: " . ($perluKamera ?? 'null'));
+            error_log("  perlu_validasi_admin: " . ($perluValidasiAdmin ?? 'null'));
 
             if ($jamMulai) {
                 $jadwal->setJamMulai(\DateTime::createFromFormat('H:i', $jamMulai));
@@ -579,8 +591,21 @@ class AdminController extends AbstractController
                 $jadwal->setKeterangan($keterangan);
             }
 
+            // Set checkbox values (checkbox yang unchecked tidak dikirim, jadi default false)
+            $jadwal->setPerluQrCode($perluQrCode === 'on' || $perluQrCode === '1' || $perluQrCode === true);
+            $jadwal->setPerluKamera($perluKamera === 'on' || $perluKamera === '1' || $perluKamera === true);
+            $jadwal->setPerluValidasiAdmin($perluValidasiAdmin === 'on' || $perluValidasiAdmin === '1' || $perluValidasiAdmin === true);
+
+            // Debug log setelah set
+            error_log("DEBUG updateJadwal - After setting:");
+            error_log("  QR Code: " . ($jadwal->isPerluQrCode() ? 'true' : 'false'));
+            error_log("  Kamera: " . ($jadwal->isPerluKamera() ? 'true' : 'false'));
+            error_log("  Validasi Admin: " . ($jadwal->isPerluValidasiAdmin() ? 'true' : 'false'));
+
             $jadwal->setDiubah(new \DateTime());
             $this->entityManager->flush();
+
+            error_log("DEBUG updateJadwal - SAVED to database successfully");
 
             return new JsonResponse([
                 'success' => true,

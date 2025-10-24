@@ -28,7 +28,26 @@
                                     <div class="font-medium text-lg">{{ jadwal.namaJadwal }}</div>
                                     <div class="text-sm text-gray-600">{{ jadwal.namaHariTersedia }}</div>
                                     <div class="text-sm text-gray-500">{{ jadwal.jamMulai|date('H:i') }} - {{ jadwal.jamSelesai|date('H:i') }}</div>
-                                    {% if jadwal.qrCode %}
+
+                                    {# Badge jenis absensi #}
+                                    <div class="flex flex-wrap gap-1 mt-2">
+                                        {% if not jadwal.isPerluQrCode and not jadwal.isPerluKamera and not jadwal.isPerluValidasiAdmin %}
+                                            <span class="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded">🆓 Absen Saja</span>
+                                        {% else %}
+                                            {% if jadwal.isPerluQrCode %}
+                                                <span class="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">📱 QR Code</span>
+                                            {% endif %}
+                                            {% if jadwal.isPerluKamera %}
+                                                <span class="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded">📸 Foto</span>
+                                            {% endif %}
+                                            {% if jadwal.isPerluValidasiAdmin %}
+                                                <span class="text-xs px-2 py-0.5 bg-orange-100 text-orange-700 rounded">👨‍💼 Validasi</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+
+                                    {# QR Code (hanya tampil jika perlu QR dan ada QR Code) #}
+                                    {% if jadwal.isPerluQrCode and jadwal.qrCode %}
                                         <div class="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded mt-1 inline-block">QR: {{ jadwal.qrCode }}</div>
                                     {% endif %}
                                 </div>
@@ -116,6 +135,53 @@
                         <span id="time-readonly-indicator-end" class="hidden text-xs text-orange-600">(Hanya Admin yang dapat mengubah)</span>
                     </label>
                     <input type="time" name="edit_jam_selesai" id="editJamSelesai" class="w-full px-3 py-2 border border-gray-300 rounded-lg" required autocomplete="off">
+                </div>
+            </div>
+
+            <!-- Pengaturan Jenis Absensi -->
+            <div class="border-t border-gray-200 pt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-3">Pengaturan Jenis Absensi</label>
+                <div class="space-y-3">
+                    <div class="flex items-start">
+                        <div class="flex items-center h-5">
+                            <input type="checkbox" name="perlu_qr_code" id="editPerluQrCode" class="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500">
+                        </div>
+                        <div class="ml-3">
+                            <label for="editPerluQrCode" class="text-sm font-medium text-gray-700">Perlu Scan QR Code</label>
+                            <p class="text-xs text-gray-500">Pegawai harus scan QR code saat absen</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start">
+                        <div class="flex items-center h-5">
+                            <input type="checkbox" name="perlu_kamera" id="editPerluKamera" class="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500">
+                        </div>
+                        <div class="ml-3">
+                            <label for="editPerluKamera" class="text-sm font-medium text-gray-700">Perlu Foto Selfie</label>
+                            <p class="text-xs text-gray-500">Pegawai harus upload foto selfie saat absen</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start">
+                        <div class="flex items-center h-5">
+                            <input type="checkbox" name="perlu_validasi_admin" id="editPerluValidasiAdmin" class="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500">
+                        </div>
+                        <div class="ml-3">
+                            <label for="editPerluValidasiAdmin" class="text-sm font-medium text-gray-700">Perlu Validasi Admin</label>
+                            <p class="text-xs text-gray-500">Absensi harus divalidasi oleh admin</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
+                        <div class="flex items-start">
+                            <svg class="w-5 h-5 text-blue-500 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                            </svg>
+                            <p class="text-xs text-blue-700">
+                                <strong>Absen Saja:</strong> Jika semua checkbox dinonaktifkan, pegawai cukup klik tombol absen tanpa scan QR, foto, atau validasi admin.
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -347,7 +413,12 @@ async function editJadwal(id) {
         document.getElementById('editJamMulai').value = jadwal.jam_mulai;
         document.getElementById('editJamSelesai').value = jadwal.jam_selesai;
         document.getElementById('editKeterangan').value = jadwal.keterangan || '';
-        
+
+        // Populate checkbox fitur absensi
+        document.getElementById('editPerluQrCode').checked = jadwal.perlu_qr_code === 1 || jadwal.perlu_qr_code === true;
+        document.getElementById('editPerluKamera').checked = jadwal.perlu_kamera === 1 || jadwal.perlu_kamera === true;
+        document.getElementById('editPerluValidasiAdmin').checked = jadwal.perlu_validasi_admin === 1 || jadwal.perlu_validasi_admin === true;
+
         openEditJadwalModal();
         
     } catch (error) {
@@ -501,11 +572,21 @@ function initializeJadwalAbsensi() {
             formEditJadwal.addEventListener('submit', function(e) {
                 try {
                     e.preventDefault();
-                    if (validateTimeInput('edit_jam_mulai', 'edit_jam_selesai')) {
-                        updateJadwalAbsensi();
+
+                    // Validasi sederhana: pastikan jam mulai < jam selesai
+                    const jamMulai = document.getElementById('editJamMulai').value;
+                    const jamSelesai = document.getElementById('editJamSelesai').value;
+
+                    if (jamMulai && jamSelesai && jamMulai >= jamSelesai) {
+                        showAlert('⚠️ Jam selesai harus lebih besar dari jam mulai', 'error');
+                        return;
                     }
+
+                    // Submit form
+                    updateJadwalAbsensi();
                 } catch (error) {
                     console.error('Error in form edit submission:', error);
+                    showAlert('Terjadi kesalahan: ' + error.message, 'error');
                 }
             });
         }

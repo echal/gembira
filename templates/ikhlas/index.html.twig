@@ -539,7 +539,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const categorySelect = document.getElementById('createQuoteCategory');
         const charCounter = document.getElementById('charCounter');
 
-        if (!submitBtn || !quoteInput || !categorySelect) return;
+        console.log('Setup Create Quote - Elements:', {
+            submitBtn: !!submitBtn,
+            quoteInput: !!quoteInput,
+            categorySelect: !!categorySelect,
+            charCounter: !!charCounter
+        });
+
+        if (!submitBtn || !quoteInput || !categorySelect) {
+            console.error('Missing elements for Create Quote form!');
+            return;
+        }
 
         // Character counter
         quoteInput.addEventListener('input', function() {
@@ -561,10 +571,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         submitBtn.addEventListener('click', async function() {
+            console.log('Submit button clicked!');
             const content = quoteInput.value.trim();
             const category = categorySelect.value;
 
+            console.log('Quote data:', { content, category, contentLength: content.length });
+
             if (!content) {
+                console.log('Validation failed: empty content');
                 showToast('❌ Kata semangat tidak boleh kosong', 'error');
                 quoteInput.focus();
                 return;

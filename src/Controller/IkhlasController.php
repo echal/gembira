@@ -157,6 +157,11 @@ class IkhlasController extends AbstractController
         }
 
         try {
+            error_log('=== CREATE QUOTE START ===');
+            error_log('User: ' . $user->getNama() . ' (ID: ' . $user->getId() . ')');
+            error_log('Content: ' . trim($data['content']));
+            error_log('Category: ' . ($data['category'] ?? 'Motivasi'));
+
             // Create new quote
             $quote = new Quote();
             $quote->setContent(trim($data['content']));
@@ -166,8 +171,13 @@ class IkhlasController extends AbstractController
             $quote->setTotalLikes(0);
             $quote->setTotalComments(0);
 
+            error_log('Quote object created, persisting...');
             $this->em->persist($quote);
+
+            error_log('Flushing to database...');
             $this->em->flush();
+
+            error_log('Quote saved! ID: ' . $quote->getId());
 
             // Award XP for creating a quote
             try {

@@ -24,10 +24,10 @@ class GamificationService
 
     // Badge definitions per level
     private array $badges = [
-        1 => ['name' => 'Pemula Ikhlas', 'icon' => '🌱'],
+        1 => ['name' => 'Pemula', 'icon' => '🌱'],
         2 => ['name' => 'Penyemangat', 'icon' => '💡'],
         3 => ['name' => 'Inspirator', 'icon' => '🔥'],
-        4 => ['name' => 'Teladan Ikhlas', 'icon' => '🌟'],
+        4 => ['name' => 'Teladan Inspirasi', 'icon' => '🌟'],
         5 => ['name' => 'Duta Inspirasi', 'icon' => '👑'],
     ];
 

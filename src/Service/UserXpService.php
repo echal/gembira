@@ -22,11 +22,11 @@ class UserXpService
     // Target: Level 1→2 = 20 hari, Level 2→3 = 30 hari, Level 3→4 = 45 hari, Level 4→5 = 60 hari
     // Asumsi aktivitas normal: 187 XP/hari
     private const LEVEL_RANGES = [
-        1 => ['min' => 0, 'max' => 3740, 'badge' => '🌱', 'title' => 'Pemula Ikhlas', 'julukan' => 'Penanam Niat Baik'],
+        1 => ['min' => 0, 'max' => 3740, 'badge' => '🌱', 'title' => 'Pemula', 'julukan' => 'Penanam Niat Baik'],
         2 => ['min' => 3741, 'max' => 9350, 'badge' => '🌿', 'title' => 'Aktor Kebaikan', 'julukan' => 'Penyemai Semangat'],
         3 => ['min' => 9351, 'max' => 17765, 'badge' => '🌺', 'title' => 'Penggerak Semangat', 'julukan' => 'Inspirator Harian'],
-        4 => ['min' => 17766, 'max' => 29985, 'badge' => '🌞', 'title' => 'Inspirator Ikhlas', 'julukan' => 'Teladan Komunitas'],
-        5 => ['min' => 29986, 'max' => 999999, 'badge' => '🏆', 'title' => 'Teladan Kinerja', 'julukan' => 'Legenda Ikhlas'],
+        4 => ['min' => 17766, 'max' => 29985, 'badge' => '🌞', 'title' => 'Inspirator Gembira', 'julukan' => 'Teladan Komunitas'],
+        5 => ['min' => 29986, 'max' => 999999, 'badge' => '🏆', 'title' => 'Teladan Kinerja', 'julukan' => 'Legenda Inspirasi'],
     ];
 
     public function __construct(
@@ -157,7 +157,7 @@ class UserXpService
      */
     public function getTitleForLevel(int $level): string
     {
-        return self::LEVEL_RANGES[$level]['title'] ?? 'Pemula Ikhlas';
+        return self::LEVEL_RANGES[$level]['title'] ?? 'Pemula';
     }
 
     /**

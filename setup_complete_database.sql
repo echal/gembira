@@ -21,12 +21,20 @@ SET @database_name = 'gembira_db';
 CREATE TABLE IF NOT EXISTS `quotes` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `author` varchar(255) NOT NULL,
+  `category` varchar(100) DEFAULT NULL COMMENT 'Kategori quote',
+  `is_active` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Status aktif',
   `content` text NOT NULL,
   `created_at` datetime NOT NULL,
   `updated_at` datetime NOT NULL,
+  `total_likes` int(11) NOT NULL DEFAULT 0 COMMENT 'Total likes',
+  `total_comments` int(11) NOT NULL DEFAULT 0 COMMENT 'Total comments',
+  `total_views` int(11) NOT NULL DEFAULT 0 COMMENT 'Total views',
   PRIMARY KEY (`id`),
   KEY `idx_author` (`author`),
-  KEY `idx_created_at` (`created_at`)
+  KEY `idx_created_at` (`created_at`),
+  KEY `idx_category` (`category`),
+  KEY `idx_is_active` (`is_active`),
+  KEY `idx_total_likes` (`total_likes`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Tabel user_quotes_interaction (untuk like/save quotes) - PLURAL sesuai Entity

@@ -502,17 +502,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Track views for all visible quotes
     function trackQuoteViews() {
-        document.querySelectorAll('.quote-card').forEach(card => {
+        document.querySelectorAll('.quote-card').forEach(async card => {
             const quoteId = card.dataset.quoteId;
             if (quoteId) {
-                // Track view via API
-                fetch(`/ikhlas/api/quotes/${quoteId}/view`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
+                try {
+                    // Track view via API
+                    const response = await fetch(`/ikhlas/api/quotes/${quoteId}/view`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    // Update view counter in UI if incremented
+                    if (data.success && data.totalViews !== undefined) {
+                        const viewsCount = card.querySelector('.views-count');
+                        if (viewsCount) {
+                            viewsCount.textContent = data.totalViews;
+                        }
                     }
-                }).catch(err => console.log('View tracking error:', err));
+                } catch (err) {
+                    console.log('View tracking error:', err);
+                }
             }
         });
     }

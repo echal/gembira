@@ -30,6 +30,9 @@ class UserQuoteInteraction
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
     private bool $saved = false;
 
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $viewed = false;
+
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $comment = null;
 
@@ -91,6 +94,18 @@ class UserQuoteInteraction
     public function setSaved(bool $saved): static
     {
         $this->saved = $saved;
+        $this->updatedAt = new \DateTime();
+        return $this;
+    }
+
+    public function isViewed(): bool
+    {
+        return $this->viewed;
+    }
+
+    public function setViewed(bool $viewed): static
+    {
+        $this->viewed = $viewed;
         $this->updatedAt = new \DateTime();
         return $this;
     }

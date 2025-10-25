@@ -394,6 +394,9 @@ class IkhlasController extends AbstractController
     #[Route('/api/quotes/{id}/view', name: 'app_ikhlas_track_view', methods: ['POST'])]
     public function trackView(int $id): JsonResponse
     {
+        /** @var Pegawai $user */
+        $user = $this->getUser();
+
         try {
             $quote = $this->quoteRepository->find($id);
             if (!$quote) {
@@ -403,14 +406,36 @@ class IkhlasController extends AbstractController
                 ], 404);
             }
 
-            // Increment view counter
-            $quote->incrementViews();
-            $this->em->persist($quote);
-            $this->em->flush();
+            // Check if user has already viewed this quote
+            $interaction = $this->interactionRepository->findOneBy([
+                'user' => $user,
+                'quote' => $quote
+            ]);
+
+            // Only increment if user hasn't viewed before
+            if (!$interaction || !$interaction->isViewed()) {
+                // Create or update interaction
+                if (!$interaction) {
+                    $interaction = new UserQuoteInteraction();
+                    $interaction->setUser($user);
+                    $interaction->setQuote($quote);
+                }
+
+                // Mark as viewed
+                $interaction->setViewed(true);
+                $this->em->persist($interaction);
+
+                // Increment view counter
+                $quote->incrementViews();
+                $this->em->persist($quote);
+
+                $this->em->flush();
+            }
 
             return new JsonResponse([
                 'success' => true,
-                'totalViews' => $quote->getTotalViews()
+                'totalViews' => $quote->getTotalViews(),
+                'alreadyViewed' => $interaction && $interaction->isViewed()
             ]);
         } catch (\Exception $e) {
             return new JsonResponse([
@@ -606,6 +631,9 @@ class IkhlasController extends AbstractController
     #[Route('/api/quotes/{id}/comments', name: 'app_quote_comments', methods: ['GET'])]
     public function getComments(int $id): JsonResponse
     {
+        /** @var Pegawai $user */
+        $user = $this->getUser();
+
         $quote = $this->quoteRepository->find($id);
         if (!$quote) {
             return new JsonResponse([
@@ -625,8 +653,58 @@ class IkhlasController extends AbstractController
             return new JsonResponse([
                 'success' => true,
                 'comments' => $comments,
-                'total' => count($comments)
+                'total' => count($comments),
+                'current_user_id' => $user->getId() // For delete button visibility
             ]);
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    #[Route('/api/comments/{id}', name: 'app_delete_comment', methods: ['DELETE'])]
+    public function deleteComment(int $id): JsonResponse
+    {
+        /** @var Pegawai $user */
+        $user = $this->getUser();
+
+        try {
+            $comment = $this->commentRepository->find($id);
+
+            if (!$comment) {
+                return new JsonResponse([
+                    'success' => false,
+                    'message' => 'Komentar tidak ditemukan'
+                ], 404);
+            }
+
+            // Check if user is the owner of the comment
+            if ($comment->getUser()->getId() !== $user->getId()) {
+                return new JsonResponse([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki izin untuk menghapus komentar ini'
+                ], 403);
+            }
+
+            $quote = $comment->getQuote();
+
+            // Delete the comment (replies will be cascade deleted)
+            $this->em->remove($comment);
+
+            // Decrement comment counter on quote
+            $quote->setTotalComments(max(0, $quote->getTotalComments() - 1));
+            $this->em->persist($quote);
+
+            $this->em->flush();
+
+            return new JsonResponse([
+                'success' => true,
+                'message' => '🗑️ Komentar berhasil dihapus',
+                'totalComments' => $quote->getTotalComments()
+            ]);
+
         } catch (\Exception $e) {
             return new JsonResponse([
                 'success' => false,

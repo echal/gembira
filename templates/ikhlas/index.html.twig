@@ -838,6 +838,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
 
             if (data.success) {
+                // Store current user ID for delete permission check
+                card.dataset.currentUserId = data.current_user_id || 0;
+
                 if (data.comments.length === 0) {
                     if (emptyMsg) emptyMsg.classList.remove('hidden');
                     if (commentsList) commentsList.innerHTML = '';
@@ -855,6 +858,71 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
+
+    // Delete Comment
+    async function deleteComment(btn, commentId) {
+        const card = btn.closest('.quote-card');
+        const quoteId = card.dataset.quoteId;
+
+        // Confirm delete
+        const confirmed = await Swal.fire({
+            title: 'Hapus Komentar?',
+            text: 'Komentar yang dihapus tidak dapat dikembalikan',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#EF4444',
+            cancelButtonColor: '#6B7280',
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal',
+            customClass: {
+                popup: 'rounded-2xl',
+                confirmButton: 'rounded-lg px-6 py-2.5',
+                cancelButton: 'rounded-lg px-6 py-2.5'
+            }
+        });
+
+        if (!confirmed.isConfirmed) return;
+
+        try {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+
+            const response = await fetch(`/ikhlas/api/comments/${commentId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast(result.message || '🗑️ Komentar berhasil dihapus', 'success');
+
+                // Update comment counter
+                const commentsCount = card.querySelectorAll('.comments-count');
+                commentsCount.forEach(el => {
+                    el.textContent = result.totalComments || 0;
+                });
+
+                // Reload comments
+                await loadComments(card, quoteId);
+            } else {
+                showToast(result.message || '❌ Gagal menghapus komentar', 'error');
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
+        } catch (error) {
+            console.error('Delete comment error:', error);
+            showToast('❌ Terjadi kesalahan saat menghapus komentar', 'error');
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        }
+    }
+
+    // Make deleteComment global so it can be called from onclick
+    window.deleteComment = deleteComment;
 
     // Render Comment - Compact & Mobile Optimized
     function renderComment(comment, card, isReply = false) {
@@ -897,7 +965,18 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <div class="font-semibold text-gray-800 text-sm mb-1">${escapeHtml(userName)}</div>
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="font-semibold text-gray-800 text-sm mb-1">${escapeHtml(userName)}</div>
+                                ${parseInt(card.dataset.currentUserId) === parseInt(comment.user.id) ? `
+                                    <button onclick="deleteComment(this, ${comment.id}); return false;"
+                                            class="text-red-400 hover:text-red-600 transition-colors flex-shrink-0"
+                                            title="Hapus komentar">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                    </button>
+                                ` : ''}
+                            </div>
                             <p class="text-gray-700 text-[14px] mb-1.5 break-words leading-relaxed">${escapeHtml(commentText)}</p>
                             <div class="flex items-center gap-2 text-[10px] text-gray-400">
                                 <span class="font-normal">${escapeHtml(timeAgo)}</span>
@@ -983,17 +1062,49 @@ document.addEventListener('DOMContentLoaded', function() {
                         commentInput.value = '';
 
                         // Clear reply state
+                        const isReply = parentIdInput.value !== '';
                         parentIdInput.value = '';
                         card.querySelector('.replying-to').classList.add('hidden');
 
                         // Update comment count
-                        const commentsCount = card.querySelector('.comments-count');
+                        const commentsCount = card.querySelectorAll('.comments-count');
                         if (commentsCount && data.totalComments !== undefined) {
-                            commentsCount.textContent = data.totalComments;
+                            commentsCount.forEach(el => {
+                                el.textContent = data.totalComments;
+                            });
                         }
 
-                        // Reload comments
-                        loadComments(card, quoteId);
+                        // Add comment to DOM immediately for real-time feel
+                        const commentsList = card.querySelector('.comments-list');
+                        const emptyMsg = card.querySelector('.empty-comments-msg');
+
+                        if (data.comment) {
+                            // Hide empty message
+                            if (emptyMsg) emptyMsg.classList.add('hidden');
+
+                            // If it's a reply, reload to show nested properly
+                            // Otherwise, prepend the new comment
+                            if (isReply) {
+                                loadComments(card, quoteId);
+                            } else {
+                                if (commentsList) {
+                                    const newCommentHtml = renderComment(data.comment, card, false);
+                                    commentsList.insertAdjacentHTML('afterbegin', newCommentHtml);
+
+                                    // Add animation to new comment
+                                    const firstComment = commentsList.firstElementChild;
+                                    if (firstComment) {
+                                        firstComment.style.animation = 'slideDown 0.3s ease-out';
+                                    }
+                                }
+                            }
+                        }
+
+                        // Check for level up
+                        if (data.level_up || (data.level_info && data.level_info.new_level)) {
+                            const levelUpData = data.level_info || data.level_up;
+                            setTimeout(() => showLevelUpNotification(levelUpData), 800);
+                        }
                     } else {
                         showToast('❌ ' + data.message, 'error');
                     }

@@ -690,19 +690,23 @@ class IkhlasController extends AbstractController
 
             $quote = $comment->getQuote();
 
-            // Delete the comment (replies will be cascade deleted)
+            // Count total comments to delete (parent + all nested replies)
+            $totalToDelete = $this->countCommentWithReplies($comment);
+
+            // Delete the comment (replies will be cascade deleted by database)
             $this->em->remove($comment);
 
-            // Decrement comment counter on quote
-            $quote->setTotalComments(max(0, $quote->getTotalComments() - 1));
+            // Decrement comment counter by total deleted (parent + replies)
+            $quote->setTotalComments(max(0, $quote->getTotalComments() - $totalToDelete));
             $this->em->persist($quote);
 
             $this->em->flush();
 
             return new JsonResponse([
                 'success' => true,
-                'message' => '🗑️ Komentar berhasil dihapus',
-                'totalComments' => $quote->getTotalComments()
+                'message' => '🗑️ Komentar berhasil dihapus' . ($totalToDelete > 1 ? " ({$totalToDelete} komentar)" : ''),
+                'totalComments' => $quote->getTotalComments(),
+                'deletedCount' => $totalToDelete
             ]);
 
         } catch (\Exception $e) {
@@ -861,5 +865,23 @@ class IkhlasController extends AbstractController
                 'message' => 'Terjadi kesalahan: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Count total comments to delete (parent + all nested replies recursively)
+     */
+    private function countCommentWithReplies(QuoteComment $comment): int
+    {
+        $count = 1; // Count the comment itself
+
+        // Get all replies to this comment
+        $replies = $this->commentRepository->findBy(['parent' => $comment]);
+
+        // Recursively count each reply and its sub-replies
+        foreach ($replies as $reply) {
+            $count += $this->countCommentWithReplies($reply);
+        }
+
+        return $count;
     }
 }

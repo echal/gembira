@@ -1074,6 +1074,17 @@ document.addEventListener('DOMContentLoaded', function() {
                             });
                         }
 
+                        // Ensure comments section is visible
+                        const commentsSection = card.querySelector('.comments-section');
+                        const allToggleBtns = card.querySelectorAll('.comments-toggle');
+                        const toggleText = card.querySelector('.comment-toggle-text');
+
+                        if (commentsSection && commentsSection.classList.contains('hidden')) {
+                            commentsSection.classList.remove('hidden');
+                            allToggleBtns.forEach(btn => btn.dataset.showing = 'true');
+                            if (toggleText) toggleText.textContent = 'Sembunyikan';
+                        }
+
                         // Add comment to DOM immediately for real-time feel
                         const commentsList = card.querySelector('.comments-list');
                         const emptyMsg = card.querySelector('.empty-comments-msg');

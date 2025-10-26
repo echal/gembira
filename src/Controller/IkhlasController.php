@@ -8,6 +8,7 @@ use App\Entity\QuoteComment;
 use App\Repository\QuoteRepository;
 use App\Repository\QuoteCommentRepository;
 use App\Repository\UserQuoteInteractionRepository;
+use App\Repository\PegawaiRepository;
 use App\Service\IkhlasLeaderboardService;
 use App\Service\GamificationService;
 use App\Service\UserXpService;
@@ -28,6 +29,7 @@ class IkhlasController extends AbstractController
         private QuoteRepository $quoteRepository,
         private QuoteCommentRepository $commentRepository,
         private UserQuoteInteractionRepository $interactionRepository,
+        private PegawaiRepository $pegawaiRepository,
         private EntityManagerInterface $em,
         private IkhlasLeaderboardService $leaderboardService,
         private GamificationService $gamificationService,
@@ -69,11 +71,21 @@ class IkhlasController extends AbstractController
             // Get users who liked this quote (for Facebook-style display)
             $likedByUsers = $this->interactionRepository->getUsersWhoLiked($quote, 1); // Get last 1 user
 
+            // Get author photo
+            $authorPhoto = null;
+            if ($quote->getAuthor()) {
+                $authorUser = $this->pegawaiRepository->findOneBy(['nama' => $quote->getAuthor()]);
+                if ($authorUser && $authorUser->getPhoto()) {
+                    $authorPhoto = $authorUser->getPhoto();
+                }
+            }
+
             $quotesWithData[] = [
                 'quote' => $quote,
                 'hasLiked' => $hasLiked,
                 'hasSaved' => $hasSaved,
-                'likedByUsers' => $likedByUsers
+                'likedByUsers' => $likedByUsers,
+                'authorPhoto' => $authorPhoto
             ];
         }
 

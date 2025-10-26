@@ -202,31 +202,39 @@ document.addEventListener('click', function(event) {
             {% set hasSaved = item.hasSaved %}
 
             <div class="quote-card bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300" data-quote-id="{{ quote.id }}">
-                <!-- Card Header with Category & Timestamp -->
-                <div class="p-4 pb-3 border-b border-gray-100">
+                <!-- Card Header: Foto + Nama User + Waktu | Icon Favorite + Titik 3 -->
+                <div class="p-4 pb-3">
                     <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <span class="text-2xl">💭</span>
-                            <div class="flex items-center gap-1.5">
-                                <span class="inline-block bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-medium">
-                                    {{ quote.category ?? 'Inspirasi' }}
-                                </span>
-                                <span class="text-gray-400 text-xs">•</span>
-                                <span class="text-gray-500 text-xs font-medium"
-                                      title="{{ quote.createdAt|time_tooltip }}">
+                        <!-- Left: Foto + Nama + Waktu -->
+                        <div class="flex items-center gap-3">
+                            <!-- User Photo -->
+                            <div class="flex-shrink-0">
+                                <div class="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center">
+                                    {% if item.authorPhoto %}
+                                        <img src="/uploads/photos/{{ item.authorPhoto }}" alt="{{ quote.author }}" class="w-full h-full object-cover">
+                                    {% else %}
+                                        <span class="text-white font-bold text-sm">{{ quote.author|first|upper }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Name + Time -->
+                            <div>
+                                <h3 class="font-semibold text-gray-900 text-sm md:text-base">{{ quote.author ?? 'Anonim' }}</h3>
+                                <p class="text-xs text-gray-500" title="{{ quote.createdAt|time_tooltip }}">
                                     {{ quote.createdAt|time_ago }}
-                                </span>
+                                </p>
                             </div>
                         </div>
 
-                        <!-- Action Buttons: Save & Three-Dots Menu -->
+                        <!-- Right: Save Button + Three-Dots Menu -->
                         <div class="flex items-center gap-2">
                             <!-- Save Button -->
                             <button class="save-btn transition-transform hover:scale-110 {{ hasSaved ? 'text-yellow-500' : 'text-gray-400 hover:text-yellow-500' }}"
                                     data-quote-id="{{ quote.id }}"
                                     data-saved="{{ hasSaved ? 'true' : 'false' }}"
                                     title="{{ hasSaved ? 'Hapus dari favorit' : 'Simpan ke favorit' }}">
-                                <span class="text-2xl">{{ hasSaved ? '📌' : '🔖' }}</span>
+                                <span class="text-xl">{{ hasSaved ? '📌' : '🔖' }}</span>
                             </button>
 
                             <!-- Three-Dots Menu -->
@@ -279,11 +287,11 @@ document.addEventListener('click', function(event) {
                 </div>
 
                 <!-- Quote Content -->
-                <div class="p-6">
+                <div class="px-6 pt-2 pb-4">
                     {% set contentLength = quote.content|length %}
                     {% set shouldTruncate = contentLength > 150 %}
 
-                    <blockquote class="quote-content text-gray-800 text-base md:text-lg leading-relaxed italic font-light mb-4" data-full-content="{{ quote.content }}" data-truncated="{{ shouldTruncate ? 'true' : 'false' }}">
+                    <blockquote class="quote-content text-gray-800 text-base md:text-lg leading-relaxed italic font-light mb-3" data-full-content="{{ quote.content }}" data-truncated="{{ shouldTruncate ? 'true' : 'false' }}">
                         {% if shouldTruncate %}
                             <span class="quote-text">"{{ quote.content[:150] }}..."</span>
                             <span class="quote-full hidden">"{{ quote.content }}"</span>
@@ -293,7 +301,7 @@ document.addEventListener('click', function(event) {
                     </blockquote>
 
                     {% if shouldTruncate %}
-                    <div class="text-center -mt-2 mb-2">
+                    <div class="text-center -mt-1 mb-3">
                         <button class="read-more-btn text-purple-600 hover:text-purple-800 text-sm font-medium transition-colors inline-flex items-center gap-1"
                                 data-expanded="false">
                             <span class="read-more-text">Lihat Selengkapnya</span>
@@ -303,49 +311,46 @@ document.addEventListener('click', function(event) {
                         </button>
                     </div>
                     {% endif %}
+
+                    <!-- Category Badge -->
+                    <div class="mt-2">
+                        <span class="inline-block bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-medium">
+                            {{ quote.category ?? 'Inspirasi' }}
+                        </span>
+                    </div>
                 </div>
 
-                <!-- Stats Bar with Author - Inline Layout -->
+                <!-- Stats Bar: Like & Comment Display -->
                 <div class="px-6 pb-3">
-                    <div class="bg-gray-50 rounded-lg p-3">
-                        <div class="flex justify-between items-center">
-                            <!-- Left: Facebook-style Like & Comment Display -->
-                            <div class="flex items-center gap-3 text-sm flex-wrap">
-                                {% if quote.totalLikes > 0 %}
-                                <div class="flex items-center gap-1.5">
-                                    <div class="flex items-center">
-                                        <span class="inline-flex items-center justify-center w-5 h-5 bg-red-500 rounded-full">
-                                            <span class="text-white text-[10px]">❤️</span>
-                                        </span>
-                                    </div>
-                                    <span class="text-gray-700 text-xs md:text-sm">
-                                        {% if item.likedByUsers|length > 0 %}
-                                            {# Show only the last user who liked (most recent) #}
-                                            <span class="font-medium hover:underline cursor-pointer">{{ item.likedByUsers[0] }}</span>
-                                            {% if quote.totalLikes > 1 %}
-                                                <span class="text-gray-600"> +{{ quote.totalLikes - 1 }}</span>
-                                            {% endif %}
-                                        {% else %}
-                                            <span class="likes-count font-semibold">{{ quote.totalLikes }}</span> orang
-                                        {% endif %}
-                                    </span>
-                                </div>
-                                {% endif %}
-
-                                {% if quote.totalComments > 0 %}
-                                <div class="flex items-center gap-1 text-gray-600 cursor-pointer hover:text-purple-600 transition-colors comments-toggle text-xs md:text-sm"
-                                     data-showing="false">
-                                    <span class="comments-count font-semibold">{{ quote.totalComments }}</span>
-                                    <span>komentar</span>
-                                </div>
-                                {% endif %}
+                    <div class="flex items-center gap-3 text-sm flex-wrap">
+                        {% if quote.totalLikes > 0 %}
+                        <div class="flex items-center gap-1.5">
+                            <div class="flex items-center">
+                                <span class="inline-flex items-center justify-center w-5 h-5 bg-red-500 rounded-full">
+                                    <span class="text-white text-[10px]">❤️</span>
+                                </span>
                             </div>
-
-                            <!-- Right: Author -->
-                            <div class="text-right">
-                                <p class="text-xs md:text-sm font-medium text-gray-700">- {{ quote.author ?? 'Anonim' }} -</p>
-                            </div>
+                            <span class="text-gray-700 text-xs md:text-sm">
+                                {% if item.likedByUsers|length > 0 %}
+                                    {# Show only the last user who liked (most recent) #}
+                                    <span class="font-medium hover:underline cursor-pointer">{{ item.likedByUsers[0] }}</span>
+                                    {% if quote.totalLikes > 1 %}
+                                        <span class="text-gray-600"> +{{ quote.totalLikes - 1 }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="likes-count font-semibold">{{ quote.totalLikes }}</span> orang
+                                {% endif %}
+                            </span>
                         </div>
+                        {% endif %}
+
+                        {% if quote.totalComments > 0 %}
+                        <div class="flex items-center gap-1 text-gray-600 cursor-pointer hover:text-purple-600 transition-colors comments-toggle text-xs md:text-sm"
+                             data-showing="false">
+                            <span class="comments-count font-semibold">{{ quote.totalComments }}</span>
+                            <span>komentar</span>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
 

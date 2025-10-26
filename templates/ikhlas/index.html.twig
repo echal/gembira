@@ -186,11 +186,12 @@ document.addEventListener('click', function(event) {
                             <span id="charCounter" class="text-xs text-gray-500">0 / 500 karakter</span>
                         </div>
 
-                        <!-- Category and Submit -->
-                        <div class="flex items-center justify-between mt-2">
+                        <!-- Category and Submit - Responsive Fix -->
+                        <div class="flex flex-col gap-2 mt-2">
+                            <!-- Category Row -->
                             <div class="flex items-center gap-2">
-                                <label class="text-xs text-gray-600 font-medium">Kategori:</label>
-                                <select id="createQuoteCategory" class="text-xs border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                                <label class="text-xs text-gray-600 font-medium whitespace-nowrap">Kategori:</label>
+                                <select id="createQuoteCategory" class="flex-1 text-xs border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
                                     <option value="Gaspul">🚀 Gaspul</option>
                                     <option value="Motivasi">💪 Motivasi</option>
                                     <option value="Informasi">📢 Informasi</option>
@@ -199,9 +200,10 @@ document.addEventListener('click', function(event) {
                                     <option value="Pantun">📖 Pantun</option>
                                 </select>
                             </div>
+                            <!-- Submit Button - Full Width Mobile -->
                             <button
                                 id="submitQuoteBtn"
-                                class="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-2 rounded-lg transition-all font-medium text-sm shadow-md hover:shadow-lg transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                                class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-2.5 rounded-lg transition-all font-medium text-sm shadow-md hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Bagikan Semangat 🚀
                             </button>
@@ -405,33 +407,33 @@ document.addEventListener('click', function(event) {
                     </div>
                 </div>
 
-                <!-- Action Buttons -->
-                <div class="px-6 pb-4">
+                <!-- Action Buttons - Responsive Fix -->
+                <div class="px-4 sm:px-6 pb-4">
                     <div class="flex items-center justify-around border-t border-gray-100 pt-3">
                         <!-- Like Button -->
-                        <button class="like-btn flex items-center gap-2 px-4 py-2 rounded-lg transition-all hover:bg-red-50 {{ hasLiked ? 'text-red-500' : 'text-gray-600' }}"
+                        <button class="like-btn flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg transition-all hover:bg-red-50 {{ hasLiked ? 'text-red-500' : 'text-gray-600' }}"
                                 data-quote-id="{{ quote.id }}"
                                 data-liked="{{ hasLiked ? 'true' : 'false' }}">
-                            <span class="text-xl">{{ hasLiked ? '❤️' : '🤍' }}</span>
-                            <span class="text-sm font-medium">{{ hasLiked ? 'Disukai' : 'Suka' }}</span>
+                            <span class="text-lg sm:text-xl">{{ hasLiked ? '❤️' : '🤍' }}</span>
+                            <span class="text-xs sm:text-sm font-medium hidden sm:inline">{{ hasLiked ? 'Disukai' : 'Suka' }}</span>
                         </button>
 
                         <!-- Comment Button -->
-                        <button class="comments-toggle flex items-center gap-2 px-4 py-2 rounded-lg transition-all hover:bg-purple-50 text-gray-600"
+                        <button class="comments-toggle flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg transition-all hover:bg-purple-50 text-gray-600"
                                 data-showing="false">
-                            <span class="text-xl">💬</span>
-                            <span class="text-sm font-medium comment-toggle-text">Lihat Komentar</span>
+                            <span class="text-lg sm:text-xl">💬</span>
+                            <span class="text-xs sm:text-sm font-medium comment-toggle-text hidden sm:inline">Lihat Komentar</span>
                         </button>
 
-                        <!-- Share Button -->
-                        <button class="share-btn flex items-center gap-2 px-4 py-2 rounded-lg transition-all hover:bg-blue-50 text-gray-600"
+                        <!-- Share Button - Fixed Responsive -->
+                        <button class="share-btn flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg transition-all hover:bg-blue-50 text-gray-600"
                                 data-quote-id="{{ quote.id }}"
                                 data-content="{{ quote.content }}"
                                 data-author="{{ quote.author ?? 'Anonim' }}"
                                 data-category="{{ quote.category ?? 'Gaspul' }}"
                                 data-level="{{ item.authorLevel }}">
-                            <span class="text-xl">🔗</span>
-                            <span class="text-sm font-medium">Bagikan</span>
+                            <span class="text-lg sm:text-xl">🔗</span>
+                            <span class="text-xs sm:text-sm font-medium hidden sm:inline">Bagikan</span>
                         </button>
                     </div>
                 </div>
@@ -564,8 +566,38 @@ document.addEventListener('DOMContentLoaded', function() {
         setupCommentSubmit();
         setupShareButtons();
         setupThreeDotsMenu();
+        setupBottomNavAutoHide();
         // Note: View tracking removed - using like count display instead
         // Note: Link extraction now handled server-side in Controller
+    }
+
+    // Setup Bottom Navigation Auto Hide/Show on Scroll
+    function setupBottomNavAutoHide() {
+        const bottomNav = document.querySelector('.fixed.bottom-0');
+        if (!bottomNav) return;
+
+        let lastScrollTop = 0;
+        let scrollTimeout;
+
+        window.addEventListener('scroll', function() {
+            clearTimeout(scrollTimeout);
+
+            scrollTimeout = setTimeout(function() {
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+                if (scrollTop > lastScrollTop && scrollTop > 100) {
+                    // Scrolling DOWN - Hide nav
+                    bottomNav.style.transform = 'translateY(100%)';
+                    bottomNav.style.transition = 'transform 0.3s ease-in-out';
+                } else {
+                    // Scrolling UP - Show nav
+                    bottomNav.style.transform = 'translateY(0)';
+                    bottomNav.style.transition = 'transform 0.3s ease-in-out';
+                }
+
+                lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+            }, 50); // Debounce 50ms
+        }, false);
     }
 
     // Setup Read More Toggle

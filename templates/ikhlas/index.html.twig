@@ -49,12 +49,12 @@
                 <div class="relative">
                     <button id="userMenuButton"
                             onclick="toggleUserDropdown()"
-                            class="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 bg-gradient-to-br from-purple-400 to-pink-400 hover:from-purple-500 hover:to-pink-500 rounded-full transition-all duration-200 hover:scale-110 active:scale-95 overflow-hidden">
+                            class="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 bg-gray-100 hover:bg-gray-200 rounded-full transition-all duration-200 hover:scale-110 active:scale-95 p-0.5">
                         {% if app.user.photo %}
                             <img src="/uploads/photos/{{ app.user.photo }}" alt="{{ app.user.nama }}" class="w-full h-full object-cover rounded-full">
                         {% else %}
-                            <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-400 to-pink-400">
-                                <span class="text-white font-bold text-xl">👤</span>
+                            <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-400 to-pink-400 rounded-full">
+                                <span class="text-white font-bold text-base">👤</span>
                             </div>
                         {% endif %}
                     </button>

@@ -71,12 +71,16 @@ class IkhlasController extends AbstractController
             // Get users who liked this quote (for Facebook-style display)
             $likedByUsers = $this->interactionRepository->getUsersWhoLiked($quote, 1); // Get last 1 user
 
-            // Get author photo
+            // Get author photo and level
             $authorPhoto = null;
+            $authorLevel = 1; // Default level
             if ($quote->getAuthor()) {
                 $authorUser = $this->pegawaiRepository->findOneBy(['nama' => $quote->getAuthor()]);
-                if ($authorUser && $authorUser->getPhoto()) {
-                    $authorPhoto = $authorUser->getPhoto();
+                if ($authorUser) {
+                    if ($authorUser->getPhoto()) {
+                        $authorPhoto = $authorUser->getPhoto();
+                    }
+                    $authorLevel = $authorUser->getCurrentLevel() ?? 1;
                 }
             }
 
@@ -85,7 +89,8 @@ class IkhlasController extends AbstractController
                 'hasLiked' => $hasLiked,
                 'hasSaved' => $hasSaved,
                 'likedByUsers' => $likedByUsers,
-                'authorPhoto' => $authorPhoto
+                'authorPhoto' => $authorPhoto,
+                'authorLevel' => $authorLevel
             ];
         }
 

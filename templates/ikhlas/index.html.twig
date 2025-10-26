@@ -47,11 +47,28 @@
 
                 <!-- User Avatar/Menu -->
                 <div class="relative">
+                    {# Level-based border colors #}
+                    {% set levelBorder = 'border-gray-300' %}
+                    {% if app.user.currentLevel == 1 %}
+                        {% set levelBorder = 'border-purple-500' %}
+                    {% elseif app.user.currentLevel == 2 %}
+                        {% set levelBorder = 'border-green-500' %}
+                    {% elseif app.user.currentLevel == 3 %}
+                        {% set levelBorder = 'border-blue-500' %}
+                    {% elseif app.user.currentLevel == 4 %}
+                        {% set levelBorder = 'border-yellow-400' %}
+                    {% elseif app.user.currentLevel == 5 %}
+                        {% set levelBorder = 'border-amber-500' %}
+                    {% endif %}
+
                     <button id="userMenuButton"
                             onclick="toggleUserDropdown()"
                             class="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 bg-gray-100 hover:bg-gray-200 rounded-full transition-all duration-200 hover:scale-110 active:scale-95">
                         {% if app.user.photo %}
-                            <img src="/uploads/photos/{{ app.user.photo }}" alt="{{ app.user.nama }}" class="w-6 h-6 md:w-7 md:h-7 object-cover rounded-full">
+                            <img src="/uploads/photos/{{ app.user.photo }}"
+                                 alt="{{ app.user.nama }}"
+                                 class="w-6 h-6 md:w-7 md:h-7 object-cover rounded-full border-4 {{ levelBorder }}"
+                                 title="Level {{ app.user.currentLevel }} - {{ app.user.levelTitle }}">
                         {% else %}
                             <span class="text-xl md:text-2xl">👤</span>
                         {% endif %}
@@ -209,13 +226,30 @@ document.addEventListener('click', function(event) {
                         <div class="flex items-center gap-2">
                             <!-- User Photo -->
                             <div class="flex-shrink-0">
-                                <div class="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center">
-                                    {% if item.authorPhoto %}
-                                        <img src="/uploads/photos/{{ item.authorPhoto }}" alt="{{ quote.author }}" class="w-full h-full object-cover">
-                                    {% else %}
+                                {# Author level-based border colors #}
+                                {% set authorBorder = 'border-gray-300' %}
+                                {% if item.authorLevel == 1 %}
+                                    {% set authorBorder = 'border-purple-500' %}
+                                {% elseif item.authorLevel == 2 %}
+                                    {% set authorBorder = 'border-green-500' %}
+                                {% elseif item.authorLevel == 3 %}
+                                    {% set authorBorder = 'border-blue-500' %}
+                                {% elseif item.authorLevel == 4 %}
+                                    {% set authorBorder = 'border-yellow-400' %}
+                                {% elseif item.authorLevel == 5 %}
+                                    {% set authorBorder = 'border-amber-500' %}
+                                {% endif %}
+
+                                {% if item.authorPhoto %}
+                                    <img src="/uploads/photos/{{ item.authorPhoto }}"
+                                         alt="{{ quote.author }}"
+                                         class="w-8 h-8 object-cover rounded-full border-2 {{ authorBorder }}"
+                                         title="{{ quote.author }} - Level {{ item.authorLevel }}">
+                                {% else %}
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center border-2 {{ authorBorder }}">
                                         <span class="text-white font-bold text-xs">{{ quote.author|first|upper }}</span>
-                                    {% endif %}
-                                </div>
+                                    </div>
+                                {% endif %}
                             </div>
 
                             <!-- Name + Time -->

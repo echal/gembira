@@ -292,7 +292,7 @@ class ProfileController extends AbstractController
     {
         /** @var Pegawai $pegawai */
         $pegawai = $this->getUser();
-        
+
         if (!$pegawai instanceof Pegawai) {
             return new JsonResponse(['success' => false, 'message' => 'Unauthorized'], 401);
         }
@@ -303,5 +303,98 @@ class ProfileController extends AbstractController
             'signature_path' => $pegawai->getTandaTanganPath(),
             'uploaded_at' => $pegawai->getTandaTanganUploadedAt()?->format('d/m/Y H:i'),
         ]);
+    }
+
+    // Upload foto profil dengan validasi max 100KB
+    #[Route('/api/upload-photo', name: 'app_profile_upload_photo', methods: ['POST'])]
+    public function uploadPhoto(Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        /** @var Pegawai $pegawai */
+        $pegawai = $this->getUser();
+
+        if (!$pegawai instanceof Pegawai) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Anda harus login terlebih dahulu'
+            ], 401);
+        }
+
+        /** @var UploadedFile $photoFile */
+        $photoFile = $request->files->get('photo');
+
+        if (!$photoFile) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => '❌ File foto tidak ditemukan'
+            ], 400);
+        }
+
+        // Validasi tipe file
+        $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+        if (!in_array($photoFile->getMimeType(), $allowedMimeTypes)) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => '❌ Format file harus JPG, JPEG, atau PNG'
+            ], 400);
+        }
+
+        // Validasi ukuran file (max 100KB = 102400 bytes)
+        $maxSize = 100 * 1024; // 100KB in bytes
+        if ($photoFile->getSize() > $maxSize) {
+            $fileSizeKB = round($photoFile->getSize() / 1024, 2);
+            return new JsonResponse([
+                'success' => false,
+                'message' => "❌ Ukuran file terlalu besar ({$fileSizeKB} KB). Maksimal 100 KB"
+            ], 400);
+        }
+
+        try {
+            // Generate nama file unik
+            $extension = $photoFile->guessExtension();
+            $newFilename = 'photo_' . $pegawai->getId() . '_' . uniqid() . '.' . $extension;
+
+            // Direktori upload
+            $uploadDirectory = $this->getParameter('kernel.project_dir') . '/public/uploads/photos';
+
+            // Buat direktori jika belum ada
+            if (!is_dir($uploadDirectory)) {
+                mkdir($uploadDirectory, 0755, true);
+            }
+
+            // Hapus foto lama jika ada
+            if ($pegawai->getPhoto()) {
+                $oldPhotoPath = $this->getParameter('kernel.project_dir') . '/public/uploads/photos/' . $pegawai->getPhoto();
+                if (file_exists($oldPhotoPath)) {
+                    unlink($oldPhotoPath);
+                }
+            }
+
+            // Upload file baru
+            $photoFile->move($uploadDirectory, $newFilename);
+
+            // Update database
+            $pegawai->setPhoto($newFilename);
+            $pegawai->setUpdatedAt(new \DateTime());
+
+            $em->persist($pegawai);
+            $em->flush();
+
+            return new JsonResponse([
+                'success' => true,
+                'message' => '✅ Foto profil berhasil diupload!',
+                'photo_path' => '/uploads/photos/' . $newFilename
+            ]);
+
+        } catch (FileException $e) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => '❌ Gagal mengupload foto: ' . $e->getMessage()
+            ], 500);
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => '❌ Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

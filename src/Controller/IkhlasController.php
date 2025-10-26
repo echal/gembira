@@ -188,12 +188,12 @@ class IkhlasController extends AbstractController
             $this->logger->info('=== CREATE QUOTE START ===');
             $this->logger->info('User: ' . $user->getNama() . ' (ID: ' . $user->getId() . ')');
             $this->logger->info('Content: ' . trim($data['content']));
-            $this->logger->info('Category: ' . ($data['category'] ?? 'Motivasi'));
+            $this->logger->info('Category: ' . ($data['category'] ?? 'Gaspul'));
 
             // Create new quote
             $quote = new Quote();
             $quote->setContent(trim($data['content']));
-            $quote->setCategory($data['category'] ?? 'Motivasi');
+            $quote->setCategory($data['category'] ?? 'Gaspul');
             $quote->setAuthor($user->getNama()); // Set author as current user's name
             $quote->setTotalViews(0);
             $quote->setTotalLikes(0);

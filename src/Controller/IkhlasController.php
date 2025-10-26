@@ -84,13 +84,18 @@ class IkhlasController extends AbstractController
                 }
             }
 
+            // Extract link from content and get clean text
+            $extractedData = $this->extractLinkFromContent($quote->getContent());
+
             $quotesWithData[] = [
                 'quote' => $quote,
                 'hasLiked' => $hasLiked,
                 'hasSaved' => $hasSaved,
                 'likedByUsers' => $likedByUsers,
                 'authorPhoto' => $authorPhoto,
-                'authorLevel' => $authorLevel
+                'authorLevel' => $authorLevel,
+                'cleanContent' => $extractedData['content'],
+                'sourceLink' => $extractedData['link']
             ];
         }
 
@@ -865,5 +870,39 @@ class IkhlasController extends AbstractController
         }
 
         return $count;
+    }
+
+    /**
+     * Extract link from content and return clean content + link separately
+     *
+     * @param string $content Original quote content
+     * @return array ['content' => clean text without link, 'link' => extracted URL or null]
+     */
+    private function extractLinkFromContent(string $content): array
+    {
+        // Regex to match http:// or https:// URLs
+        $urlPattern = '/(https?:\/\/[^\s]+)/i';
+
+        // Find first URL in content
+        if (preg_match($urlPattern, $content, $matches)) {
+            $link = $matches[1];
+
+            // Remove the link from content to get clean text
+            $cleanContent = preg_replace($urlPattern, '', $content);
+
+            // Clean up extra whitespace
+            $cleanContent = trim(preg_replace('/\s+/', ' ', $cleanContent));
+
+            return [
+                'content' => $cleanContent,
+                'link' => $link
+            ];
+        }
+
+        // No link found, return original content
+        return [
+            'content' => $content,
+            'link' => null
+        ];
     }
 }

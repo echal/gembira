@@ -55,3 +55,20 @@ backup_*.php
 backup_*.sql
 **/Test*Command.php
 migrations/fix_*.sql
+
+# Development utility files (keep only in localhost)
+check_*.php
+cleanup_*.php
+clear_opcache.php
+verify_*.php
+verify_*.sql
+import_*.php
+list_*.php
+create_*.sql
+add_*.sql
+delete_*.sql
+setup_*.sql
+*.bat
+*.sh
+*.zip
+qr_repair_tool.py

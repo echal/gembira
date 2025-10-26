@@ -92,4 +92,25 @@ class UserQuoteInteractionRepository extends ServiceEntityRepository
 
         return $interaction && $interaction->isSaved();
     }
+
+    /**
+     * Get users who liked a quote (for Facebook-style display)
+     * Returns array of user names
+     */
+    public function getUsersWhoLiked(Quote $quote, int $limit = 3): array
+    {
+        $interactions = $this->createQueryBuilder('i')
+            ->select('p.nama')
+            ->join('i.user', 'p')
+            ->where('i.quote = :quote')
+            ->andWhere('i.liked = :liked')
+            ->setParameter('quote', $quote)
+            ->setParameter('liked', true)
+            ->orderBy('i.updatedAt', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+
+        return array_column($interactions, 'nama');
+    }
 }

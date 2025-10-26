@@ -309,27 +309,37 @@ document.addEventListener('click', function(event) {
                 <div class="px-6 pb-3">
                     <div class="bg-gray-50 rounded-lg p-3">
                         <div class="flex justify-between items-center">
-                            <!-- Left: Stats -->
-                            <div class="flex items-center gap-3 text-sm">
-                                <div class="flex items-center gap-1 text-gray-600">
-                                    <span>👁️</span>
-                                    <span class="views-count font-semibold">{{ quote.totalViews }}</span>
+                            <!-- Left: Facebook-style Like & Comment Display -->
+                            <div class="flex items-center gap-3 text-sm flex-wrap">
+                                {% if quote.totalLikes > 0 %}
+                                <div class="flex items-center gap-1.5">
+                                    <div class="flex items-center">
+                                        <span class="inline-flex items-center justify-center w-5 h-5 bg-red-500 rounded-full">
+                                            <span class="text-white text-[10px]">❤️</span>
+                                        </span>
+                                    </div>
+                                    <span class="text-gray-700 text-xs md:text-sm">
+                                        {% if item.likedByUsers|length > 0 %}
+                                            {% for userName in item.likedByUsers %}
+                                                <span class="font-medium hover:underline cursor-pointer">{{ userName }}</span>{% if not loop.last %}, {% endif %}
+                                            {% endfor %}
+                                            {% if quote.totalLikes > item.likedByUsers|length %}
+                                                <span class="text-gray-600"> dan {{ quote.totalLikes - item.likedByUsers|length }} lainnya</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="likes-count font-semibold">{{ quote.totalLikes }}</span> orang
+                                        {% endif %}
+                                    </span>
                                 </div>
-                                <div class="flex items-center gap-1 text-gray-600">
-                                    <span>❤️</span>
-                                    <span class="likes-count font-semibold">{{ quote.totalLikes }}</span>
-                                </div>
-                                <div class="flex items-center gap-1 text-gray-600 cursor-pointer hover:text-purple-600 transition-colors comments-toggle"
+                                {% endif %}
+
+                                {% if quote.totalComments > 0 %}
+                                <div class="flex items-center gap-1 text-gray-600 cursor-pointer hover:text-purple-600 transition-colors comments-toggle text-xs md:text-sm"
                                      data-showing="false">
-                                    <span>💬</span>
                                     <span class="comments-count font-semibold">{{ quote.totalComments }}</span>
+                                    <span>komentar</span>
                                 </div>
-                                <button class="share-btn flex items-center gap-1 text-gray-600 hover:text-purple-600 transition-colors"
-                                        data-quote-id="{{ quote.id }}"
-                                        data-content="{{ quote.content }}"
-                                        data-author="{{ quote.author ?? 'Anonim' }}">
-                                    <span>🔗</span>
-                                </button>
+                                {% endif %}
                             </div>
 
                             <!-- Right: Author -->
@@ -497,38 +507,7 @@ document.addEventListener('DOMContentLoaded', function() {
         setupCommentSubmit();
         setupShareButtons();
         setupThreeDotsMenu();
-        trackQuoteViews();
-    }
-
-    // Track views for all visible quotes
-    function trackQuoteViews() {
-        document.querySelectorAll('.quote-card').forEach(async card => {
-            const quoteId = card.dataset.quoteId;
-            if (quoteId) {
-                try {
-                    // Track view via API
-                    const response = await fetch(`/ikhlas/api/quotes/${quoteId}/view`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    });
-
-                    const data = await response.json();
-
-                    // Update view counter in UI if incremented
-                    if (data.success && data.totalViews !== undefined) {
-                        const viewsCount = card.querySelector('.views-count');
-                        if (viewsCount) {
-                            viewsCount.textContent = data.totalViews;
-                        }
-                    }
-                } catch (err) {
-                    console.log('View tracking error:', err);
-                }
-            }
-        });
+        // Note: View tracking removed - using like count display instead
     }
 
     // Setup Read More Toggle

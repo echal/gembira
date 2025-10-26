@@ -66,10 +66,14 @@ class IkhlasController extends AbstractController
             $hasLiked = $this->interactionRepository->hasUserLiked($user, $quote);
             $hasSaved = $this->interactionRepository->hasUserSaved($user, $quote);
 
+            // Get users who liked this quote (for Facebook-style display)
+            $likedByUsers = $this->interactionRepository->getUsersWhoLiked($quote, 3); // Get first 3
+
             $quotesWithData[] = [
                 'quote' => $quote,
                 'hasLiked' => $hasLiked,
-                'hasSaved' => $hasSaved
+                'hasSaved' => $hasSaved,
+                'likedByUsers' => $likedByUsers
             ];
         }
 

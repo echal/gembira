@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Laporan Absensi {{ periode }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #333;
+            margin: 20px;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #0284c7;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+            color: #0284c7;
+        }
+        .header .subtitle {
+            margin: 5px 0;
+            color: #666;
+            font-size: 11px;
+        }
+        .header h2 {
+            margin: 10px 0 5px 0;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .info-box {
+            background-color: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .info-row {
+            display: flex;
+            margin-bottom: 8px;
+        }
+        .info-label {
+            width: 150px;
+            font-weight: bold;
+            color: #0284c7;
+        }
+        .info-value {
+            flex: 1;
+            color: #333;
+        }
+
+        .stats-box {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 25px;
+            border: 1px solid #e5e7eb;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .stat-item {
+            flex: 1;
+            text-align: center;
+            padding: 15px 10px;
+            background-color: #f9fafb;
+            border-right: 1px solid #e5e7eb;
+        }
+        .stat-item:last-child {
+            border-right: none;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0284c7;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 10px;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        thead {
+            background-color: #0284c7;
+            color: white;
+        }
+
+        th {
+            border: 1px solid #0284c7;
+            padding: 10px 8px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        td {
+            border: 1px solid #e5e7eb;
+            padding: 8px;
+            font-size: 10px;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+
+        tbody tr:hover {
+            background-color: #f0f9ff;
+        }
+
+        .text-center { text-align: center; }
+        .text-left { text-align: left; }
+
+        .status-hadir {
+            color: #059669;
+            font-weight: bold;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 10px;
+            color: #666;
+        }
+
+        .note {
+            background-color: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 10px;
+            margin-top: 20px;
+            font-size: 10px;
+        }
+
+        .signature-section {
+            margin-top: 40px;
+            text-align: right;
+        }
+
+        .signature-box {
+            display: inline-block;
+            text-align: center;
+            min-width: 200px;
+        }
+
+        .signature-line {
+            margin-top: 60px;
+            border-top: 1px solid #333;
+            padding-top: 5px;
+        }
+
+        @media print {
+            body {
+                margin: 0;
+                padding: 15px;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Laporan -->
+    <div class="header">
+        <h1>🤲 GEMBIRA</h1>
+        <p class="subtitle">Gerakan Munajat Bersama Untuk Kinerja</p>
+        <h2>LAPORAN ABSENSI PRIBADI</h2>
+        <p class="subtitle">Periode: {{ periode }}</p>
+    </div>
+
+    <!-- Informasi Pegawai -->
+    <div class="info-box">
+        <div class="info-row">
+            <div class="info-label">Nama Pegawai</div>
+            <div class="info-value">: {{ pegawai.nama }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">NIP</div>
+            <div class="info-value">: {{ pegawai.nip }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Jabatan</div>
+            <div class="info-value">: {{ pegawai.jabatan ?? '-' }}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Unit Kerja</div>
+            <div class="info-value">: {{ pegawai.unitKerja ?? '-' }}</div>
+        </div>
+    </div>
+
+    <!-- Statistik Kehadiran -->
+    <div class="stats-box">
+        <div class="stat-item">
+            <div class="stat-number">{{ statistik.total_hari_kerja }}</div>
+            <div class="stat-label">Hari Kerja</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">{{ statistik.total_hadir }}</div>
+            <div class="stat-label">Hadir</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">{{ statistik.total_hari_kerja - statistik.total_hadir }}</div>
+            <div class="stat-label">Tidak Hadir</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">{{ statistik.persentase }}%</div>
+            <div class="stat-label">Kehadiran</div>
+        </div>
+    </div>
+
+    <!-- Tabel Detail Absensi -->
+    <h3 style="color: #0284c7; margin-bottom: 10px;">Detail Riwayat Absensi</h3>
+
+    {% if riwayat_absensi|length > 0 %}
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 5%;">No</th>
+                <th style="width: 15%;">Tanggal</th>
+                <th style="width: 12%;">Jam Absensi</th>
+                <th style="width: 25%;">Jenis Absensi</th>
+                <th style="width: 13%;">Jam Jadwal</th>
+                <th style="width: 10%;">Status</th>
+                <th style="width: 20%;">Keterangan</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for absensi in riwayat_absensi %}
+            <tr>
+                <td class="text-center">{{ loop.index }}</td>
+                <td class="text-center">{{ absensi.tanggal|date('d/m/Y') }}</td>
+                <td class="text-center">
+                    {% if absensi.waktuAbsensi %}
+                        {{ absensi.waktuAbsensi|date('H:i:s') }}
+                    {% elseif absensi.waktuMasuk %}
+                        {{ absensi.waktuMasuk|date('H:i') }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td class="text-left">
+                    {% if absensi.konfigurasiJadwal %}
+                        {{ absensi.konfigurasiJadwal.emoji ?? '' }} {{ absensi.konfigurasiJadwal.namaJadwal }}
+                    {% elseif absensi.jadwalAbsensi %}
+                        {{ absensi.jadwalAbsensi.emojiJenisAbsensi ?? '' }} {{ absensi.jadwalAbsensi.namaJenisAbsensi }}
+                    {% else %}
+                        Absensi Umum
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    {% if absensi.konfigurasiJadwal %}
+                        {{ absensi.konfigurasiJadwal.jamMulai|date('H:i') }} - {{ absensi.konfigurasiJadwal.jamSelesai|date('H:i') }}
+                    {% elseif absensi.jadwalAbsensi %}
+                        {{ absensi.jadwalAbsensi.jamMulai|date('H:i') }} - {{ absensi.jadwalAbsensi.jamSelesai|date('H:i') }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td class="text-center status-hadir">
+                    {% set status = absensi.status ?? absensi.statusKehadiran ?? 'hadir' %}
+                    {{ status|capitalize }}
+                </td>
+                <td class="text-left">
+                    {% if absensi.fotoPath %}
+                        Dengan foto
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="note">
+        <strong>Tidak ada data absensi</strong><br>
+        Belum ada riwayat absensi untuk periode {{ periode }}.
+    </div>
+    {% endif %}
+
+    <!-- Catatan Kaki -->
+    <div class="note">
+        <strong>Catatan:</strong><br>
+        • Laporan ini menampilkan data absensi untuk bulan <strong>{{ periode }}</strong><br>
+        • Hari kerja dihitung berdasarkan jadwal yang dibuat oleh administrator<br>
+        • Status "Hadir" menunjukkan kehadiran yang telah divalidasi sistem<br>
+        • Laporan ini dibuat secara otomatis oleh Sistem Gembira
+    </div>
+
+    <!-- Tanda Tangan -->
+    <div class="signature-section">
+        <div class="signature-box">
+            <p style="margin: 0;">{{ pegawai.unitKerja ?? 'Unit Kerja' }}, {{ "now"|date('d F Y') }}</p>
+            <p style="margin: 0;">Pegawai</p>
+            <div class="signature-line">
+                {{ pegawai.nama }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <strong>Dicetak:</strong> {{ "now"|date('d F Y, H:i:s') }} WITA<br>
+        <strong>Sistem:</strong> Gembira (Gerakan Munajat Bersama Untuk Kinerja)<br>
+        <strong>Dokumen:</strong> Laporan Absensi Pribadi - {{ periode }}
+    </div>
+</body>
+</html>

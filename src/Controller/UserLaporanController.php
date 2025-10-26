@@ -343,8 +343,8 @@ final class UserLaporanController extends AbstractController
 
         $periode = $namaBulan[(int)$now->format('n')] . ' ' . $now->format('Y');
 
-        // Render HTML untuk PDF
-        $html = $this->twig->render('laporan/pdf_template.html.twig', [
+        // Render HTML untuk PDF (printable HTML)
+        $html = $this->twig->render('laporan/pegawai_pdf.html.twig', [
             'pegawai' => $pengguna,
             'riwayat_absensi' => $riwayatAbsensi,
             'periode' => $periode,
@@ -355,11 +355,11 @@ final class UserLaporanController extends AbstractController
             ]
         ]);
 
-        // Return sebagai PDF download
+        // Return sebagai HTML yang bisa di-print sebagai PDF
         $response = new Response($html);
-        $filename = sprintf('Laporan_Absensi_%s_%s.pdf', $pengguna->getNip(), $now->format('Ymd'));
-        $response->headers->set('Content-Type', 'application/pdf');
-        $response->headers->set('Content-Disposition', 'attachment; filename="' . $filename . '"');
+        $filename = sprintf('Laporan_Absensi_%s_%s.html', $pengguna->getNip(), $now->format('Ymd'));
+        $response->headers->set('Content-Type', 'text/html; charset=utf-8');
+        $response->headers->set('Content-Disposition', 'inline; filename="' . $filename . '"');
 
         return $response;
     }

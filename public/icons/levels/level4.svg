@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Level 4: Pohon Beringin - Sila Kerakyatan Yang Dipimpin oleh Hikmat Kebijaksanaan -->
+  <defs>
+    <linearGradient id="treeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#228B22;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#006400;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="trunkGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B4513;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#654321;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="28" fill="#90EE90" opacity="0.2"/>
+
+  <!-- Banyan tree trunk -->
+  <rect x="28" y="35" width="8" height="20" rx="2" fill="url(#trunkGradient)"/>
+
+  <!-- Aerial roots (khas pohon beringin) -->
+  <line x1="24" y1="30" x2="24" y2="48" stroke="#8B4513" stroke-width="1.5" opacity="0.7"/>
+  <line x1="40" y1="30" x2="40" y2="48" stroke="#8B4513" stroke-width="1.5" opacity="0.7"/>
+  <line x1="20" y1="35" x2="20" y2="52" stroke="#8B4513" stroke-width="1" opacity="0.5"/>
+  <line x1="44" y1="35" x2="44" y2="52" stroke="#8B4513" stroke-width="1" opacity="0.5"/>
+
+  <!-- Canopy - flat design style -->
+  <!-- Top layer -->
+  <ellipse cx="32" cy="20" rx="16" ry="10" fill="url(#treeGradient)"/>
+  <ellipse cx="32" cy="20" rx="14" ry="8" fill="#32CD32" opacity="0.5"/>
+
+  <!-- Middle layer -->
+  <ellipse cx="32" cy="26" rx="20" ry="12" fill="url(#treeGradient)" opacity="0.9"/>
+  <ellipse cx="32" cy="26" rx="18" ry="10" fill="#3CB371" opacity="0.4"/>
+
+  <!-- Bottom layer -->
+  <ellipse cx="32" cy="32" rx="22" ry="10" fill="url(#treeGradient)" opacity="0.8"/>
+  <ellipse cx="32" cy="32" rx="20" ry="8" fill="#2E8B57" opacity="0.3"/>
+
+  <!-- Highlights for depth -->
+  <ellipse cx="28" cy="22" rx="4" ry="3" fill="#90EE90" opacity="0.6"/>
+  <ellipse cx="36" cy="28" rx="3" ry="2" fill="#90EE90" opacity="0.5"/>
+</svg>

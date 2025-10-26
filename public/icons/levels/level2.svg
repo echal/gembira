@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Level 2: Kepala Banteng - Sila Kemanusiaan Yang Adil dan Beradab -->
+  <defs>
+    <linearGradient id="bullGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#C0C0C0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#808080;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="28" fill="url(#bullGradient)" opacity="0.2"/>
+
+  <!-- Bull head silhouette -->
+  <g fill="url(#bullGradient)" stroke="#A0A0A0" stroke-width="1">
+    <!-- Head -->
+    <ellipse cx="32" cy="36" rx="12" ry="14"/>
+
+    <!-- Left horn -->
+    <path d="M 24 28 Q 18 24 16 20 Q 15 18 17 17 Q 19 18 20 22 Q 22 26 24 28" fill="#808080"/>
+
+    <!-- Right horn -->
+    <path d="M 40 28 Q 46 24 48 20 Q 49 18 47 17 Q 45 18 44 22 Q 42 26 40 28" fill="#808080"/>
+
+    <!-- Ears -->
+    <ellipse cx="24" cy="32" rx="3" ry="5" fill="#A0A0A0"/>
+    <ellipse cx="40" cy="32" rx="3" ry="5" fill="#A0A0A0"/>
+
+    <!-- Nose ring -->
+    <circle cx="32" cy="44" r="4" fill="none" stroke="#FFD700" stroke-width="2"/>
+  </g>
+
+  <!-- Eyes -->
+  <circle cx="28" cy="34" r="1.5" fill="#333"/>
+  <circle cx="36" cy="34" r="1.5" fill="#333"/>
+</svg>

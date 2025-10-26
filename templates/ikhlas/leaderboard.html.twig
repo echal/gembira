@@ -87,7 +87,11 @@
                 <div class="bg-sky-50 rounded-lg p-4 border border-sky-200">
                     <div class="text-sm text-sky-700 font-medium mb-1">Level Saat Ini</div>
                     <div class="text-3xl font-bold text-sky-600 flex items-center justify-center gap-2">
-                        <span>{{ app.user.currentBadge }}</span>
+                        {# Level Icon - Garuda Pancasila Theme #}
+                        <img src="/icons/levels/level{{ app.user.currentLevel }}.svg"
+                             alt="Level {{ app.user.currentLevel }}"
+                             class="w-8 h-8"
+                             title="{{ app.user.levelTitle }}">
                         <span>Lvl {{ app.user.currentLevel }}</span>
                     </div>
                     <div class="text-xs text-gray-600 mt-1">{{ app.user.levelTitle }}</div>
@@ -176,8 +180,13 @@
                                     <div class="font-bold text-base md:text-lg text-gray-800 truncate">
                                         {{ user.nama }}
                                     </div>
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ levelBg }} {{ levelText }} flex-shrink-0">
-                                        {{ user.currentBadge }} Lvl {{ user.currentLevel }}
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium {{ levelBg }} {{ levelText }} flex-shrink-0">
+                                        {# Level Icon - Garuda Pancasila Theme #}
+                                        <img src="/icons/levels/level{{ user.currentLevel }}.svg"
+                                             alt="Level {{ user.currentLevel }}"
+                                             class="w-4 h-4"
+                                             title="{{ user.levelTitle }}">
+                                        Lvl {{ user.currentLevel }}
                                     </span>
                                 </div>
 

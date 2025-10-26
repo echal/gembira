@@ -107,8 +107,13 @@
                             <p class="text-muted mb-1 small">Top User</p>
                             {% if topUserThisMonth %}
                                 <h6 class="mb-0 fw-bold text-truncate fs-6">{{ topUserThisMonth.user.nama }}</h6>
-                                <small class="text-muted d-block text-truncate" style="font-size: 0.7rem;">
-                                    {{ topUserThisMonth.user.currentBadge }} Lvl {{ topUserThisMonth.user.currentLevel }}
+                                <small class="text-muted d-block text-truncate d-flex align-items-center gap-1" style="font-size: 0.7rem;">
+                                    {# Level Icon - Garuda Pancasila Theme #}
+                                    <img src="/icons/levels/level{{ topUserThisMonth.user.currentLevel }}.svg"
+                                         alt="Level {{ topUserThisMonth.user.currentLevel }}"
+                                         style="width: 14px; height: 14px;"
+                                         title="{{ topUserThisMonth.user.levelTitle }}">
+                                    Lvl {{ topUserThisMonth.user.currentLevel }}
                                 </small>
                             {% else %}
                                 <p class="mb-0 text-muted small">Tidak ada</p>
@@ -259,7 +264,11 @@
 
                                     <!-- Badge -->
                                     <td class="text-center align-middle">
-                                        <span class="fs-5" title="{{ user.levelTitle }}">{{ user.currentBadge }}</span>
+                                        {# Level Icon - Garuda Pancasila Theme #}
+                                        <img src="/icons/levels/level{{ user.currentLevel }}.svg"
+                                             alt="Level {{ user.currentLevel }}"
+                                             style="width: 24px; height: 24px;"
+                                             title="{{ user.levelTitle }}">
                                     </td>
                                 </tr>
                                 {% endfor %}

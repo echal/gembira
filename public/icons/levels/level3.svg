@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Level 3: Rantai - Sila Persatuan Indonesia -->
+  <defs>
+    <linearGradient id="chainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#CD7F32;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8B4513;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="28" fill="url(#chainGradient)" opacity="0.15"/>
+
+  <!-- Chain links - modern geometric style -->
+  <g stroke="url(#chainGradient)" stroke-width="3" fill="none" stroke-linecap="round">
+    <!-- Top link -->
+    <rect x="22" y="12" width="20" height="12" rx="6" fill="#CD7F32" opacity="0.3"/>
+    <rect x="22" y="12" width="20" height="12" rx="6"/>
+
+    <!-- Middle left link -->
+    <rect x="12" y="26" width="20" height="12" rx="6" fill="#B8860B" opacity="0.3"/>
+    <rect x="12" y="26" width="20" height="12" rx="6"/>
+
+    <!-- Middle right link -->
+    <rect x="32" y="26" width="20" height="12" rx="6" fill="#B8860B" opacity="0.3"/>
+    <rect x="32" y="26" width="20" height="12" rx="6"/>
+
+    <!-- Bottom link -->
+    <rect x="22" y="40" width="20" height="12" rx="6" fill="#CD7F32" opacity="0.3"/>
+    <rect x="22" y="40" width="20" height="12" rx="6"/>
+  </g>
+
+  <!-- Connecting lines to show unity -->
+  <line x1="32" y1="24" x2="22" y2="32" stroke="#8B4513" stroke-width="2"/>
+  <line x1="32" y1="24" x2="42" y2="32" stroke="#8B4513" stroke-width="2"/>
+  <line x1="22" y1="38" x2="32" y2="40" stroke="#8B4513" stroke-width="2"/>
+  <line x1="42" y1="38" x2="32" y2="40" stroke="#8B4513" stroke-width="2"/>
+</svg>

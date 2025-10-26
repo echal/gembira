@@ -113,7 +113,13 @@
                         </div>
 
                         <div class="text-center flex-1">
-                            <div class="text-6xl mb-2">{{ pegawai.currentBadge }}</div>
+                            {# Level Icon - Garuda Pancasila Theme #}
+                            <div class="flex justify-center mb-2">
+                                <img src="/icons/levels/level{{ pegawai.currentLevel }}.svg"
+                                     alt="Level {{ pegawai.currentLevel }}"
+                                     class="w-16 h-16"
+                                     title="{{ pegawai.levelTitle }}">
+                            </div>
                             <div class="text-sm font-bold text-gray-800">Level {{ pegawai.currentLevel }}</div>
                             <div class="text-xs text-gray-600">{{ pegawai.levelTitle }}</div>
                         </div>

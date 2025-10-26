@@ -40,8 +40,26 @@
                 </div>
             </div>
 
-            <!-- Right: Notifikasi & User Info -->
+            <!-- Right: Icons & User Photo -->
             <div class="flex items-center gap-1 md:gap-1.5 flex-shrink-0">
+                <!-- Leaderboard Icon -->
+                <div class="relative flex-shrink-0">
+                    <a href="{{ path('app_ikhlas_leaderboard') }}"
+                       class="flex items-center justify-center w-8 h-8 md:w-9 md:h-9 bg-white bg-opacity-10 hover:bg-opacity-20 rounded-full transition-all duration-150 ease-in-out hover:scale-110 active:scale-95"
+                       title="Leaderboard">
+                        <span class="text-lg md:text-xl">🏆</span>
+                    </a>
+                </div>
+
+                <!-- Learning Icon -->
+                <div class="relative flex-shrink-0">
+                    <a href="#"
+                       class="flex items-center justify-center w-8 h-8 md:w-9 md:h-9 bg-white bg-opacity-10 hover:bg-opacity-20 rounded-full transition-all duration-150 ease-in-out hover:scale-110 active:scale-95"
+                       title="Learning">
+                        <span class="text-lg md:text-xl">📚</span>
+                    </a>
+                </div>
+
                 <!-- Ikon Notifikasi -->
                 <div class="relative flex-shrink-0">
                     <a href="{{ path('app_notifikasi_index') }}"
@@ -57,32 +75,21 @@
                     </a>
                 </div>
 
-                <!-- User Info dengan Dropdown -->
+                <!-- User Photo dengan Dropdown -->
                 <div class="relative z-50">
                     <button id="userMenuButton"
                             onclick="toggleUserDropdown()"
-                            class="flex items-center gap-0.5 md:gap-1 bg-white bg-opacity-20 hover:bg-opacity-30 px-1.5 py-1 md:px-2 md:py-1.5 rounded-lg backdrop-blur-sm transition-all duration-150 ease-in-out">
-                        <!-- Nama & NIP (flex-col for vertical stacking) -->
-                        <div class="text-right flex flex-col items-end min-w-0 max-w-[75px] sm:max-w-[95px] md:max-w-[115px]">
-                            <span class="font-semibold text-[10px] md:text-xs text-white truncate w-full leading-tight">
-                                {{ app.user.nama|default('User') }}
-                            </span>
-                            <span class="text-[9px] md:text-[10px] text-sky-100 truncate w-full leading-tight">
-                                {{ app.user.nip|default('---') }}
-                            </span>
+                            class="flex items-center bg-white bg-opacity-20 hover:bg-opacity-30 p-0.5 rounded-full backdrop-blur-sm transition-all duration-150 ease-in-out hover:scale-105 active:scale-95">
+                        <!-- User Photo -->
+                        {% if app.user.photo %}
+                        <img src="/uploads/photos/{{ app.user.photo }}"
+                             alt="{{ app.user.nama }}"
+                             class="w-8 h-8 md:w-9 md:h-9 rounded-full object-cover border-2 border-white shadow-sm">
+                        {% else %}
+                        <div class="w-8 h-8 md:w-9 md:h-9 rounded-full bg-gradient-to-br from-blue-400 to-cyan-400 flex items-center justify-center text-white text-base md:text-lg border-2 border-white shadow-sm">
+                            👤
                         </div>
-
-                        <!-- Avatar Icon -->
-                        <div class="flex-shrink-0 text-sm md:text-base">👤</div>
-
-                        <!-- Dropdown Arrow -->
-                        <svg id="dropdownArrow"
-                             class="flex-shrink-0 w-3 h-3 transition-transform duration-200"
-                             fill="none"
-                             stroke="currentColor"
-                             viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
+                        {% endif %}
                     </button>
 
                     <!-- Dropdown Menu -->

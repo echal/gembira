@@ -17,16 +17,16 @@ class UserBadges
     #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
     private ?Pegawai $user = null;
 
-    #[ORM\Column(type: 'string', length: 100)]
+    #[ORM\Column(name: 'badgeName', type: 'string', length: 100)]
     private ?string $badgeName = null;
 
-    #[ORM\Column(type: 'string', length: 50)]
+    #[ORM\Column(name: 'badgeIcon', type: 'string', length: 50)]
     private ?string $badgeIcon = null;
 
-    #[ORM\Column(type: 'integer', options: ['default' => 1])]
+    #[ORM\Column(name: 'badgeLevel', type: 'integer', options: ['default' => 1])]
     private int $badgeLevel = 1;
 
-    #[ORM\Column(type: 'datetime')]
+    #[ORM\Column(name: 'earnedDate', type: 'datetime')]
     private ?\DateTimeInterface $earnedDate = null;
 
     public function __construct()

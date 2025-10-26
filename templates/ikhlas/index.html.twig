@@ -1223,9 +1223,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 // - Nama User
                 // [Badge] Dibagikan dari GEMBIRA
                 const shareText = `${category}:\n${content}\n\n- ${author}\n${badge} Dibagikan dari GEMBIRA`;
-                const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
 
-                window.open(whatsappUrl, '_blank');
+                // Gunakan encodeURIComponent untuk encoding yang aman
+                const encodedText = encodeURIComponent(shareText);
+                const whatsappUrl = `https://wa.me/?text=${encodedText}`;
+
+                // Buka WhatsApp di tab/window baru dengan rel="noopener noreferrer"
+                const whatsappWindow = window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+
+                // Fallback untuk browser yang memblokir popup
+                if (!whatsappWindow || whatsappWindow.closed || typeof whatsappWindow.closed === 'undefined') {
+                    // Jika popup diblokir, gunakan location.href sebagai fallback
+                    window.location.href = whatsappUrl;
+                }
+
                 showToast('🔗 Membuka WhatsApp...', 'success');
             });
         });

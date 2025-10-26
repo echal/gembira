@@ -45,3 +45,13 @@ gaspulco_gembira.sql
 # Documentation files (keep only in localhost)
 *.md
 !README.md
+
+# Test, Fix, and Backup files (keep only in localhost)
+test_*.php
+fix_*.sql
+fix_*.php
+run_*.php
+backup_*.php
+backup_*.sql
+**/Test*Command.php
+migrations/fix_*.sql

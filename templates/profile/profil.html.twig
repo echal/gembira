@@ -174,28 +174,43 @@
                     <div class="border-t border-indigo-200 pt-4">
                         <div class="text-xs font-medium text-gray-700 mb-3">Sistem Level:</div>
                         <div class="grid grid-cols-5 gap-2 text-center">
+                            {# Level 1: Bintang Emas - Sila Ketuhanan #}
                             <div class="bg-white rounded-lg px-2 py-3 border {{ pegawai.currentLevel == 1 ? 'border-indigo-400 ring-2 ring-indigo-300' : 'border-gray-200' }}">
-                                <div class="text-2xl mb-1">🌱</div>
+                                <div class="flex justify-center mb-1">
+                                    <img src="/icons/levels/level1.svg" alt="Level 1" class="w-8 h-8" title="Bintang Emas">
+                                </div>
                                 <div class="text-[10px] font-medium text-gray-800">Pemula</div>
                                 <div class="text-[9px] text-gray-500">0-3.7K</div>
                             </div>
+                            {# Level 2: Banteng - Sila Kemanusiaan #}
                             <div class="bg-white rounded-lg px-2 py-3 border {{ pegawai.currentLevel == 2 ? 'border-indigo-400 ring-2 ring-indigo-300' : 'border-gray-200' }}">
-                                <div class="text-2xl mb-1">🌿</div>
+                                <div class="flex justify-center mb-1">
+                                    <img src="/icons/levels/level2.svg" alt="Level 2" class="w-8 h-8" title="Kepala Banteng">
+                                </div>
                                 <div class="text-[10px] font-medium text-gray-800">Aktor Kebaikan</div>
                                 <div class="text-[9px] text-gray-500">3.7K-9.4K</div>
                             </div>
+                            {# Level 3: Rantai - Sila Persatuan #}
                             <div class="bg-white rounded-lg px-2 py-3 border {{ pegawai.currentLevel == 3 ? 'border-indigo-400 ring-2 ring-indigo-300' : 'border-gray-200' }}">
-                                <div class="text-2xl mb-1">🌺</div>
+                                <div class="flex justify-center mb-1">
+                                    <img src="/icons/levels/level3.svg" alt="Level 3" class="w-8 h-8" title="Rantai Persatuan">
+                                </div>
                                 <div class="text-[10px] font-medium text-gray-800">Penggerak Semangat</div>
                                 <div class="text-[9px] text-gray-500">9.4K-17.8K</div>
                             </div>
+                            {# Level 4: Pohon Beringin - Sila Kerakyatan #}
                             <div class="bg-white rounded-lg px-2 py-3 border {{ pegawai.currentLevel == 4 ? 'border-indigo-400 ring-2 ring-indigo-300' : 'border-gray-200' }}">
-                                <div class="text-2xl mb-1">🌞</div>
+                                <div class="flex justify-center mb-1">
+                                    <img src="/icons/levels/level4.svg" alt="Level 4" class="w-8 h-8" title="Pohon Beringin">
+                                </div>
                                 <div class="text-[10px] font-medium text-gray-800">Inspirator Gembira</div>
                                 <div class="text-[9px] text-gray-500">17.8K-30K</div>
                             </div>
+                            {# Level 5: Padi & Kapas - Sila Keadilan Sosial #}
                             <div class="bg-white rounded-lg px-2 py-3 border {{ pegawai.currentLevel == 5 ? 'border-indigo-400 ring-2 ring-indigo-300' : 'border-gray-200' }}">
-                                <div class="text-2xl mb-1">🏆</div>
+                                <div class="flex justify-center mb-1">
+                                    <img src="/icons/levels/level5.svg" alt="Level 5" class="w-8 h-8" title="Padi & Kapas">
+                                </div>
                                 <div class="text-[10px] font-medium text-gray-800">Teladan Kinerja</div>
                                 <div class="text-[9px] text-gray-500">30K+</div>
                             </div>

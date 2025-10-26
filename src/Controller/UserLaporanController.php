@@ -9,8 +9,10 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Twig\Environment;
 
 /**
  * Controller untuk Laporan Pegawai
@@ -24,10 +26,14 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 final class UserLaporanController extends AbstractController
 {
     private EntityManagerInterface $entityManager;
+    private Environment $twig;
 
-    public function __construct(EntityManagerInterface $entityManager)
-    {
+    public function __construct(
+        EntityManagerInterface $entityManager,
+        Environment $twig
+    ) {
         $this->entityManager = $entityManager;
+        $this->twig = $twig;
     }
 
     /**
@@ -247,10 +253,10 @@ final class UserLaporanController extends AbstractController
 
     /**
      * HELPER METHOD: Tentukan status kehadiran berdasarkan persentase
-     * 
+     *
      * Method ini menentukan status pegawai berdasarkan persentase kehadiran
      * dalam bulan berjalan. Status akan reset setiap bulan baru.
-     * 
+     *
      * @param float $persentase Persentase kehadiran (0-100)
      * @return array Status dengan informasi warna dan teks
      */
@@ -285,5 +291,183 @@ final class UserLaporanController extends AbstractController
                 'kategori' => 'needs_attention'
             ];
         }
+    }
+
+    /**
+     * Download Laporan Absensi dalam format PDF
+     * Hanya menampilkan data pegawai yang login untuk bulan berjalan
+     */
+    #[Route('/download-pdf', name: 'app_user_laporan_download_pdf')]
+    #[IsGranted('ROLE_USER')]
+    public function downloadPDF(): Response
+    {
+        $pengguna = $this->getUser();
+
+        if (!$pengguna instanceof Pegawai) {
+            throw $this->createAccessDeniedException('Hanya pegawai yang dapat download laporan.');
+        }
+
+        // Hitung tanggal bulan ini
+        $now = new \DateTime();
+        $bulanIni = $now->format('Y-m');
+        $tanggalAwalBulan = new \DateTime($bulanIni . '-01 00:00:00');
+        $tanggalAkhirBulan = new \DateTime($bulanIni . '-' . $now->format('t') . ' 23:59:59');
+
+        // Ambil data absensi bulan ini
+        $absensiRepo = $this->entityManager->getRepository(Absensi::class);
+        $riwayatAbsensi = $absensiRepo->createQueryBuilder('a')
+            ->where('a.pegawai = :pegawai')
+            ->andWhere('a.tanggal >= :tanggal_awal')
+            ->andWhere('a.tanggal <= :tanggal_akhir')
+            ->andWhere('(a.statusKehadiran IN (:status_lama) OR a.status IN (:status_baru))')
+            ->setParameter('pegawai', $pengguna)
+            ->setParameter('tanggal_awal', $tanggalAwalBulan)
+            ->setParameter('tanggal_akhir', $tanggalAkhirBulan)
+            ->setParameter('status_lama', ['hadir'])
+            ->setParameter('status_baru', ['hadir'])
+            ->orderBy('a.tanggal', 'ASC')
+            ->addOrderBy('a.waktuAbsensi', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        // Hitung statistik
+        $totalHariKerja = $this->hitungHariKerjaBerdasarkanJadwalAdmin($tanggalAwalBulan, $tanggalAkhirBulan);
+        $totalHadir = count($riwayatAbsensi);
+        $persentase = $totalHariKerja > 0 ? round(($totalHadir / $totalHariKerja) * 100, 1) : 0;
+
+        $namaBulan = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+
+        $periode = $namaBulan[(int)$now->format('n')] . ' ' . $now->format('Y');
+
+        // Render HTML untuk PDF
+        $html = $this->twig->render('laporan/pdf_template.html.twig', [
+            'pegawai' => $pengguna,
+            'riwayat_absensi' => $riwayatAbsensi,
+            'periode' => $periode,
+            'statistik' => [
+                'total_hari_kerja' => $totalHariKerja,
+                'total_hadir' => $totalHadir,
+                'persentase' => $persentase
+            ]
+        ]);
+
+        // Return sebagai PDF download
+        $response = new Response($html);
+        $filename = sprintf('Laporan_Absensi_%s_%s.pdf', $pengguna->getNip(), $now->format('Ymd'));
+        $response->headers->set('Content-Type', 'application/pdf');
+        $response->headers->set('Content-Disposition', 'attachment; filename="' . $filename . '"');
+
+        return $response;
+    }
+
+    /**
+     * Download Laporan Absensi dalam format Excel
+     * Hanya menampilkan data pegawai yang login untuk bulan berjalan
+     */
+    #[Route('/download-excel', name: 'app_user_laporan_download_excel')]
+    #[IsGranted('ROLE_USER')]
+    public function downloadExcel(): Response
+    {
+        $pengguna = $this->getUser();
+
+        if (!$pengguna instanceof Pegawai) {
+            throw $this->createAccessDeniedException('Hanya pegawai yang dapat download laporan.');
+        }
+
+        // Hitung tanggal bulan ini
+        $now = new \DateTime();
+        $bulanIni = $now->format('Y-m');
+        $tanggalAwalBulan = new \DateTime($bulanIni . '-01 00:00:00');
+        $tanggalAkhirBulan = new \DateTime($bulanIni . '-' . $now->format('t') . ' 23:59:59');
+
+        // Ambil data absensi bulan ini
+        $absensiRepo = $this->entityManager->getRepository(Absensi::class);
+        $riwayatAbsensi = $absensiRepo->createQueryBuilder('a')
+            ->where('a.pegawai = :pegawai')
+            ->andWhere('a.tanggal >= :tanggal_awal')
+            ->andWhere('a.tanggal <= :tanggal_akhir')
+            ->andWhere('(a.statusKehadiran IN (:status_lama) OR a.status IN (:status_baru))')
+            ->setParameter('pegawai', $pengguna)
+            ->setParameter('tanggal_awal', $tanggalAwalBulan)
+            ->setParameter('tanggal_akhir', $tanggalAkhirBulan)
+            ->setParameter('status_lama', ['hadir'])
+            ->setParameter('status_baru', ['hadir'])
+            ->orderBy('a.tanggal', 'ASC')
+            ->addOrderBy('a.waktuAbsensi', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        // Hitung statistik
+        $totalHariKerja = $this->hitungHariKerjaBerdasarkanJadwalAdmin($tanggalAwalBulan, $tanggalAkhirBulan);
+        $totalHadir = count($riwayatAbsensi);
+        $persentase = $totalHariKerja > 0 ? round(($totalHadir / $totalHariKerja) * 100, 1) : 0;
+
+        $namaBulan = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+
+        $periode = $namaBulan[(int)$now->format('n')] . ' ' . $now->format('Y');
+
+        // Generate CSV (kompatibel dengan Excel)
+        $response = new StreamedResponse(function() use ($pengguna, $riwayatAbsensi, $periode, $totalHariKerja, $totalHadir, $persentase) {
+            $output = fopen('php://output', 'w');
+
+            // Header CSV
+            fputcsv($output, ['LAPORAN ABSENSI - ' . $periode]);
+            fputcsv($output, ['Nama: ' . $pengguna->getNama()]);
+            fputcsv($output, ['NIP: ' . $pengguna->getNip()]);
+            fputcsv($output, ['Jabatan: ' . $pengguna->getJabatan()]);
+            fputcsv($output, ['Unit Kerja: ' . $pengguna->getUnitKerja()]);
+            fputcsv($output, []);
+            fputcsv($output, ['Total Hari Kerja: ' . $totalHariKerja]);
+            fputcsv($output, ['Total Hadir: ' . $totalHadir]);
+            fputcsv($output, ['Persentase Kehadiran: ' . $persentase . '%']);
+            fputcsv($output, []);
+
+            // Header tabel
+            fputcsv($output, ['No', 'Tanggal', 'Jam Absensi', 'Jenis Absensi', 'Status']);
+
+            // Data absensi
+            $no = 1;
+            foreach ($riwayatAbsensi as $absensi) {
+                $jenisAbsensi = '';
+                if ($absensi->getKonfigurasiJadwal()) {
+                    $jenisAbsensi = $absensi->getKonfigurasiJadwal()->getNamaJadwal();
+                } elseif ($absensi->getJadwalAbsensi()) {
+                    $jenisAbsensi = $absensi->getJadwalAbsensi()->getNamaJenisAbsensi();
+                }
+
+                $jamAbsensi = '';
+                if ($absensi->getWaktuAbsensi()) {
+                    $jamAbsensi = $absensi->getWaktuAbsensi()->format('H:i:s');
+                } elseif ($absensi->getWaktuMasuk()) {
+                    $jamAbsensi = $absensi->getWaktuMasuk()->format('H:i');
+                }
+
+                $status = $absensi->getStatus() ?? $absensi->getStatusKehadiran() ?? 'hadir';
+
+                fputcsv($output, [
+                    $no++,
+                    $absensi->getTanggal()->format('d/m/Y'),
+                    $jamAbsensi,
+                    $jenisAbsensi,
+                    ucfirst($status)
+                ]);
+            }
+
+            fclose($output);
+        });
+
+        $filename = sprintf('Laporan_Absensi_%s_%s.csv', $pengguna->getNip(), $now->format('Ymd'));
+        $response->headers->set('Content-Type', 'text/csv; charset=utf-8');
+        $response->headers->set('Content-Disposition', 'attachment; filename="' . $filename . '"');
+
+        return $response;
     }
 }

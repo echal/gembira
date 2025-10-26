@@ -320,11 +320,10 @@ document.addEventListener('click', function(event) {
                                     </div>
                                     <span class="text-gray-700 text-xs md:text-sm">
                                         {% if item.likedByUsers|length > 0 %}
-                                            {% for userName in item.likedByUsers %}
-                                                <span class="font-medium hover:underline cursor-pointer">{{ userName }}</span>{% if not loop.last %}, {% endif %}
-                                            {% endfor %}
-                                            {% if quote.totalLikes > item.likedByUsers|length %}
-                                                <span class="text-gray-600"> dan {{ quote.totalLikes - item.likedByUsers|length }} lainnya</span>
+                                            {# Show only the last user who liked (most recent) #}
+                                            <span class="font-medium hover:underline cursor-pointer">{{ item.likedByUsers[0] }}</span>
+                                            {% if quote.totalLikes > 1 %}
+                                                <span class="text-gray-600"> +{{ quote.totalLikes - 1 }}</span>
                                             {% endif %}
                                         {% else %}
                                             <span class="likes-count font-semibold">{{ quote.totalLikes }}</span> orang

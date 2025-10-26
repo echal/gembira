@@ -21,12 +21,27 @@
                 </div>
             </div>
 
-            <!-- Right: User Avatar -->
-            <div class="flex items-center gap-3">
+            <!-- Right: Action Icons -->
+            <div class="flex items-center gap-3 md:gap-4">
+                <!-- Leaderboard Icon -->
+                <a href="{{ path('app_ikhlas_leaderboard') }}"
+                   class="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 bg-gray-100 hover:bg-gray-200 rounded-full transition-all duration-200 hover:scale-110 active:scale-95"
+                   title="Leaderboard">
+                    <span class="text-xl md:text-2xl">🏆</span>
+                </a>
+
+                <!-- Favorites Icon (Active) -->
+                <a href="{{ path('app_ikhlas_favorites') }}"
+                   class="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 bg-purple-100 border-2 border-purple-400 rounded-full transition-all duration-200"
+                   title="Favorit Saya">
+                    <span class="text-xl md:text-2xl">📚</span>
+                </a>
+
                 <!-- Notification Icon -->
                 <a href="{{ path('app_notifikasi_index') }}"
-                   class="relative flex items-center justify-center w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full transition-all">
-                    <span class="text-xl">🔔</span>
+                   class="relative flex items-center justify-center w-10 h-10 md:w-11 md:h-11 bg-gray-100 hover:bg-gray-200 rounded-full transition-all duration-200 hover:scale-110 active:scale-95"
+                   title="Notifikasi">
+                    <span class="text-xl md:text-2xl">🔔</span>
                     {% if app.user.unreadNotifications|default(0) > 0 %}
                     <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs flex items-center justify-center rounded-full border-2 border-white font-bold">
                         {{ app.user.unreadNotifications > 9 ? '9+' : app.user.unreadNotifications }}
@@ -34,13 +49,17 @@
                     {% endif %}
                 </a>
 
-                <!-- User Avatar -->
-                <div class="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full">
-                    {% if app.user.photo %}
-                        <img src="{{ app.user.photo }}" alt="{{ app.user.nama }}" class="w-full h-full object-cover rounded-full">
-                    {% else %}
-                        <span class="text-white font-bold text-lg">{{ app.user.nama|first|upper }}</span>
-                    {% endif %}
+                <!-- User Avatar/Menu -->
+                <div class="relative">
+                    <button id="userMenuButton"
+                            onclick="toggleUserDropdown()"
+                            class="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 bg-gray-100 hover:bg-gray-200 rounded-full transition-all duration-200 hover:scale-110 active:scale-95">
+                        {% if app.user.photo %}
+                            <img src="/uploads/photos/{{ app.user.photo }}" alt="{{ app.user.nama }}" class="w-6 h-6 md:w-7 md:h-7 object-cover rounded-full">
+                        {% else %}
+                            <span class="text-xl md:text-2xl">👤</span>
+                        {% endif %}
+                    </button>
                 </div>
             </div>
         </div>

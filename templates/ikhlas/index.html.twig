@@ -186,27 +186,27 @@ document.addEventListener('click', function(event) {
                             <span id="charCounter" class="text-xs text-gray-500">0 / 500 karakter</span>
                         </div>
 
-                        <!-- Category and Submit - Responsive Fix -->
-                        <div class="flex flex-col gap-2 mt-2">
-                            <!-- Category Row -->
-                            <div class="flex items-center gap-2">
-                                <label class="text-xs text-gray-600 font-medium whitespace-nowrap">Kategori:</label>
-                                <select id="createQuoteCategory" class="flex-1 text-xs border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
-                                    <option value="Gaspul">🚀 Gaspul</option>
-                                    <option value="Motivasi">💪 Motivasi</option>
-                                    <option value="Informasi">📢 Informasi</option>
-                                    <option value="Keteladanan">⭐ Keteladanan</option>
-                                    <option value="Integritas">🛡️ Integritas</option>
-                                    <option value="Pantun">📖 Pantun</option>
-                                </select>
+                        <div class="max-w-md mx-auto mt-4">
+                            <div class="flex flex-col gap-3">
+                                <div class="flex flex-col gap-2">
+                                    <label class="text-xs text-gray-600 font-medium text-center">Kategori</label>
+                                    <select id="createQuoteCategory" class="w-full text-sm border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white hover:border-purple-300 transition-colors">
+                                        <option value="Gaspul">🚀 Gaspul</option>
+                                        <option value="Motivasi">💪 Motivasi</option>
+                                        <option value="Informasi">📢 Informasi</option>
+                                        <option value="Keteladanan">⭐ Keteladanan</option>
+                                        <option value="Integritas">🛡️ Integritas</option>
+                                        <option value="Pantun">📖 Pantun</option>
+                                    </select>
+                                </div>
+
+                                <button
+                                    id="submitQuoteBtn"
+                                    class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-3 rounded-lg transition-all font-semibold text-sm shadow-md hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Bagikan Semangat 🚀
+                                </button>
                             </div>
-                            <!-- Submit Button - Full Width Mobile -->
-                            <button
-                                id="submitQuoteBtn"
-                                class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-2.5 rounded-lg transition-all font-medium text-sm shadow-md hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                Bagikan Semangat 🚀
-                            </button>
                         </div>
                     </div>
                 </div>

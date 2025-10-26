@@ -410,7 +410,9 @@ document.addEventListener('click', function(event) {
                         <button class="share-btn flex items-center gap-2 px-4 py-2 rounded-lg transition-all hover:bg-blue-50 text-gray-600"
                                 data-quote-id="{{ quote.id }}"
                                 data-content="{{ quote.content }}"
-                                data-author="{{ quote.author ?? 'Anonim' }}">
+                                data-author="{{ quote.author ?? 'Anonim' }}"
+                                data-category="{{ quote.category ?? 'Inspirasi' }}"
+                                data-level="{{ item.authorLevel }}">
                             <span class="text-xl">🔗</span>
                             <span class="text-sm font-medium">Bagikan</span>
                         </button>
@@ -1163,12 +1165,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Setup Share Buttons
     function setupShareButtons() {
+        // Level badge icons (Garuda Pancasila theme)
+        const levelBadges = {
+            1: '⭐', // Bintang Emas
+            2: '🐂', // Banteng
+            3: '⛓️', // Rantai
+            4: '🌳', // Pohon Beringin
+            5: '🌾'  // Padi & Kapas
+        };
+
         document.querySelectorAll('.share-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const content = this.dataset.content;
                 const author = this.dataset.author;
+                const category = this.dataset.category || 'Inspirasi';
+                const level = parseInt(this.dataset.level) || 1;
+                const badge = levelBadges[level] || '⭐';
 
-                const shareText = `${content}\n\n- ${author}\n\n✨ Dibagikan dari GEMBIRA - Ikhlas\n(Inspirasi Kehidupan Lahirkan Semangat)`;
+                // Format baru:
+                // Kategori:
+                // Isi konten
+                // - Nama User
+                // [Badge] Dibagikan dari GEMBIRA
+                const shareText = `${category}:\n${content}\n\n- ${author}\n${badge} Dibagikan dari GEMBIRA`;
                 const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
 
                 window.open(whatsappUrl, '_blank');

@@ -41,3 +41,7 @@ public/uploads/
 *.sql.gz
 gaspulco_gembira.sql
 /database/*.sql
+
+# Documentation files (keep only in localhost)
+*.md
+!README.md

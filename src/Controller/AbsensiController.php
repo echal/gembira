@@ -88,15 +88,10 @@ class AbsensiController extends AbstractController
         $banners = $this->sliderRepository->findActiveSliders();
 
         // Ambil data ranking pegawai menggunakan RankingService
-        // SISTEM LAMA - Berdasarkan PERSENTASE (untuk ranking bulanan)
-        $rankingPribadi = $this->rankingService->getRankingPribadi($pegawai);
-        $rankingGroup = $this->rankingService->getRankingGroup($pegawai);
-        $top10Pegawai = $this->rankingService->getTop10();
-
-        // SISTEM BARU - Berdasarkan SKOR HARIAN (connect dengan admin)
-        $rankingPribadiSkor = $this->rankingService->getRankingPribadiByScore($pegawai);
-        $rankingGroupSkor = $this->rankingService->getRankingGroupByScore($pegawai);
-        $top10Skor = $this->rankingService->getTop10ByScore();
+        // SISTEM BARU - Berdasarkan AKUMULASI SKOR BULANAN (PRIMARY SYSTEM)
+        $rankingPribadi = $this->rankingService->getRankingPribadiByMonthlyScore($pegawai);
+        $rankingGroup = $this->rankingService->getRankingGroupByMonthlyScore($pegawai);
+        $top10Pegawai = $this->rankingService->getTop10ByMonthlyScore();
 
         return $this->render('dashboard/flexible.html.twig', [
             'pegawai' => $pegawai,
@@ -105,14 +100,10 @@ class AbsensiController extends AbstractController
             'waktu_sekarang' => $waktuSekarang,
             'banners' => $banners,
             'page_title' => 'Dashboard Absensi',
-            // Ranking berdasarkan persentase (bulanan)
+            // SEMUA RANKING BERDASARKAN AKUMULASI SKOR BULANAN
             'ranking_pribadi' => $rankingPribadi,
             'ranking_group' => $rankingGroup,
-            'top_10_pegawai' => $top10Pegawai,
-            // Ranking berdasarkan skor (harian) - KONEKSI KE ADMIN
-            'ranking_pribadi_skor' => $rankingPribadiSkor,
-            'ranking_group_skor' => $rankingGroupSkor,
-            'top_10_skor' => $top10Skor
+            'top_10_pegawai' => $top10Pegawai
         ]);
     }
 
@@ -235,6 +226,7 @@ class AbsensiController extends AbstractController
     /**
      * API endpoint untuk mendapatkan data ranking pegawai secara real-time
      * Digunakan untuk auto-refresh ranking tanpa reload halaman
+     * SEMUA BERDASARKAN AKUMULASI SKOR BULANAN
      */
     #[Route('/api/ranking-update', name: 'api_ranking_update', methods: ['GET'])]
     public function apiRankingUpdate(): JsonResponse
@@ -251,26 +243,16 @@ class AbsensiController extends AbstractController
         }
 
         try {
-            // Ambil data ranking terbaru - SISTEM LAMA (Persentase)
-            $rankingPribadi = $this->rankingService->getRankingPribadi($pegawai);
-            $rankingGroup = $this->rankingService->getRankingGroup($pegawai);
-            $top10Pegawai = $this->rankingService->getTop10();
-
-            // Ambil data ranking terbaru - SISTEM BARU (Skor)
-            $rankingPribadiSkor = $this->rankingService->getRankingPribadiByScore($pegawai);
-            $rankingGroupSkor = $this->rankingService->getRankingGroupByScore($pegawai);
-            $top10Skor = $this->rankingService->getTop10ByScore();
+            // Ambil data ranking terbaru - SEMUA BERDASARKAN AKUMULASI SKOR BULANAN
+            $rankingPribadi = $this->rankingService->getRankingPribadiByMonthlyScore($pegawai);
+            $rankingGroup = $this->rankingService->getRankingGroupByMonthlyScore($pegawai);
+            $top10Pegawai = $this->rankingService->getTop10ByMonthlyScore();
 
             return new JsonResponse([
                 'success' => true,
-                // Ranking berdasarkan persentase (bulanan)
                 'ranking_pribadi' => $rankingPribadi,
                 'ranking_group' => $rankingGroup,
                 'top_10_pegawai' => $top10Pegawai,
-                // Ranking berdasarkan skor (harian) - KONEKSI KE ADMIN
-                'ranking_pribadi_skor' => $rankingPribadiSkor,
-                'ranking_group_skor' => $rankingGroupSkor,
-                'top_10_skor' => $top10Skor,
                 'timestamp' => (new \DateTime())->format('Y-m-d H:i:s')
             ]);
         } catch (\Exception $e) {

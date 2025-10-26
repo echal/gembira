@@ -503,14 +503,14 @@ class RankingService
      *
      * Method ini dipanggil setiap kali pegawai melakukan absensi.
      * Alur:
-     * 1. Hitung durasi absensi (selisih dengan jam ideal)
-     * 2. Simpan ke tabel absensi_durasi
-     * 3. Update ranking harian untuk hari ini
-     * 4. Update ranking bulanan (akumulasi)
+     * 1. Hitung SKOR harian berdasarkan waktu absensi (07:00-08:15)
+     * 2. Simpan/update ke tabel ranking_harian
+     * 3. Recalculate ranking harian untuk hari ini (berdasarkan skor)
+     * 4. Update ranking bulanan (akumulasi skor)
      *
      * @param Pegawai $pegawai Pegawai yang baru melakukan absensi
      * @param \DateTimeInterface|null $waktuAbsensi Waktu absensi (default: sekarang)
-     * @return array ['success' => bool, 'message' => string, 'durasi_menit' => int, 'peringkat_harian' => int]
+     * @return array ['success' => bool, 'message' => string, 'skor_harian' => int, 'peringkat_harian' => int]
      */
     public function updateDailyRanking(Pegawai $pegawai, ?\DateTimeInterface $waktuAbsensi = null): array
     {
@@ -524,30 +524,31 @@ class RankingService
 
             $tanggal = (clone $waktuAbsensi)->setTime(0, 0, 0);
 
-            // 1. Hitung durasi absensi
-            $durasiMenit = $this->hitungDurasiAbsensi($waktuAbsensi);
+            // 1. Hitung SKOR harian (bukan durasi)
+            $skorHarian = $this->attendanceService->hitungSkorHarian($waktuAbsensi);
 
-            // 2. Cek apakah sudah ada record absensi durasi untuk hari ini
-            $absensiDurasi = $this->absensiDurasiRepo->findByPegawaiAndTanggal($pegawai, $tanggal);
+            // 2. Cek apakah sudah ada record ranking harian untuk hari ini
+            $rankingHarian = $this->rankingHarianRepo->findByPegawaiAndTanggal($pegawai, $tanggal);
 
-            if (!$absensiDurasi) {
+            if (!$rankingHarian) {
                 // Buat record baru
-                $absensiDurasi = new AbsensiDurasi();
-                $absensiDurasi->setPegawai($pegawai);
-                $absensiDurasi->setTanggal($tanggal);
+                $rankingHarian = new RankingHarian();
+                $rankingHarian->setPegawai($pegawai);
+                $rankingHarian->setTanggal($tanggal);
             }
 
-            // Update jam masuk dan durasi (bisa jadi pegawai absen beberapa kali dalam sehari)
-            $absensiDurasi->setJamMasuk($waktuAbsensi);
-            $absensiDurasi->setDurasiMenit($durasiMenit);
+            // Update jam masuk dan skor harian
+            $rankingHarian->setJamMasuk($waktuAbsensi);
+            $rankingHarian->setSkorHarian($skorHarian);
+            $rankingHarian->setUpdatedAt(new \DateTime());
 
-            $this->absensiDurasiRepo->save($absensiDurasi, true);
+            $this->rankingHarianRepo->save($rankingHarian, true);
 
-            // 3. Update ranking harian untuk hari ini (seluruh pegawai yang absen hari ini)
-            $this->recalculateRankingHarian($tanggal);
+            // 3. Recalculate ranking harian untuk hari ini berdasarkan SKOR
+            $this->recalculateRankingHarianBySkor($tanggal);
 
-            // 4. Update ranking bulanan (akumulasi)
-            $this->calculateMonthlyAccumulation($waktuAbsensi->format('Y'), (int)$waktuAbsensi->format('n'));
+            // 4. Update ranking bulanan berdasarkan AKUMULASI SKOR
+            $this->calculateMonthlyAccumulationBySkor((int)$waktuAbsensi->format('Y'), (int)$waktuAbsensi->format('n'));
 
             // Dapatkan peringkat pegawai setelah update
             $rankingHarian = $this->rankingHarianRepo->findByPegawaiAndTanggal($pegawai, $tanggal);
@@ -556,16 +557,16 @@ class RankingService
             return [
                 'success' => true,
                 'message' => 'Ranking berhasil diupdate',
-                'durasi_menit' => $durasiMenit,
+                'skor_harian' => $skorHarian,
                 'peringkat_harian' => $peringkat,
-                'formatted_durasi' => $this->formatDurasi($durasiMenit)
+                'jam_masuk' => $waktuAbsensi->format('H:i')
             ];
 
         } catch (\Exception $e) {
             return [
                 'success' => false,
                 'message' => 'Gagal update ranking: ' . $e->getMessage(),
-                'durasi_menit' => 0,
+                'skor_harian' => 0,
                 'peringkat_harian' => 0
             ];
         }
@@ -897,6 +898,55 @@ class RankingService
     }
 
     /**
+     * Dapatkan Top 10 pegawai berdasarkan AKUMULASI SKOR BULANAN
+     *
+     * Method ini untuk dashboard pegawai - menampilkan ranking berdasarkan
+     * total akumulasi skor dari awal bulan sampai hari ini.
+     *
+     * Auto-update setiap ada absensi baru karena ranking bulanan
+     * di-recalculate setiap kali ada absensi.
+     *
+     * @param int|null $tahun Default: tahun ini
+     * @param int|null $bulan Default: bulan ini
+     * @return array Top 10 pegawai dengan total skor tertinggi
+     */
+    public function getTop10ByMonthlyScore(?int $tahun = null, ?int $bulan = null): array
+    {
+        $now = new \DateTime();
+        $tahun = $tahun ?? (int)$now->format('Y');
+        $bulan = $bulan ?? (int)$now->format('n');
+        $periode = sprintf('%04d-%02d', $tahun, $bulan);
+
+        // Ambil ranking bulanan untuk periode ini
+        $rankingBulananList = $this->rankingBulananRepo->findByPeriode($periode);
+
+        // Ambil 10 teratas saja
+        $top10 = array_slice($rankingBulananList, 0, 10);
+
+        $result = [];
+        foreach ($top10 as $ranking) {
+            $pegawai = $ranking->getPegawai();
+
+            // Hitung persentase kehadiran untuk display
+            $dataKehadiran = $this->attendanceService->getPersentaseKehadiran($pegawai, $tahun, $bulan);
+            $persentase = $dataKehadiran['perhitungan']['persentase_kehadiran'];
+
+            $result[] = [
+                'peringkat' => $ranking->getPeringkat(),
+                'nip' => $pegawai->getNip(),
+                'nama' => $pegawai->getNama(),
+                'unit_kerja' => $pegawai->getNamaUnitKerja(),
+                'total_skor' => $ranking->getTotalDurasi(), // Ini sebenarnya total skor
+                'rata_rata_skor' => $ranking->getRataRataDurasi(),
+                'persentase' => $persentase, // Untuk kompatibilitas template
+                'status' => $this->getStatusBySkor((int)$ranking->getRataRataDurasi())
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
      * Dapatkan ranking per unit kerja untuk tanggal tertentu (untuk admin)
      *
      * Menghitung rata-rata skor harian per unit kerja
@@ -1205,5 +1255,152 @@ class RankingService
         } else {
             return '⚠️ Perlu Perbaikan';
         }
+    }
+
+    // ============================================================
+    // METHOD BARU: RANKING PRIBADI & GROUP BERDASARKAN SKOR BULANAN
+    // ============================================================
+
+    /**
+     * Dapatkan ranking pribadi pegawai berdasarkan AKUMULASI SKOR BULANAN
+     *
+     * @param Pegawai $pegawai
+     * @param int|null $tahun Default: tahun ini
+     * @param int|null $bulan Default: bulan ini
+     * @return array ['posisi' => int, 'total_pegawai' => int, 'total_skor' => int, 'rata_rata_skor' => float]
+     */
+    public function getRankingPribadiByMonthlyScore(Pegawai $pegawai, ?int $tahun = null, ?int $bulan = null): array
+    {
+        $now = new \DateTime();
+        $tahun = $tahun ?? (int)$now->format('Y');
+        $bulan = $bulan ?? (int)$now->format('n');
+        $periode = sprintf('%04d-%02d', $tahun, $bulan);
+
+        // Ambil ranking bulanan pegawai
+        $rankingBulanan = $this->rankingBulananRepo->findByPegawaiAndPeriode($pegawai, $periode);
+
+        if (!$rankingBulanan) {
+            // Pegawai belum ada di ranking bulanan (belum absen bulan ini)
+            $totalPegawai = count($this->rankingBulananRepo->findByPeriode($periode));
+
+            return [
+                'posisi' => 0,
+                'total_pegawai' => $totalPegawai,
+                'total_skor' => 0,
+                'rata_rata_skor' => 0.0,
+                'status' => '⚠️ Belum Ada Data'
+            ];
+        }
+
+        $totalPegawai = count($this->rankingBulananRepo->findByPeriode($periode));
+
+        return [
+            'posisi' => $rankingBulanan->getPeringkat(),
+            'total_pegawai' => $totalPegawai,
+            'total_skor' => $rankingBulanan->getTotalDurasi(), // Field ini menyimpan total skor
+            'rata_rata_skor' => round($rankingBulanan->getRataRataDurasi(), 2),
+            'status' => $this->getStatusBySkor((int)$rankingBulanan->getRataRataDurasi())
+        ];
+    }
+
+    /**
+     * Dapatkan ranking unit kerja berdasarkan AKUMULASI SKOR BULANAN
+     *
+     * @param Pegawai $pegawai
+     * @param int|null $tahun Default: tahun ini
+     * @param int|null $bulan Default: bulan ini
+     * @return array ['posisi' => int, 'nama_unit' => string, 'rata_rata_skor' => float, 'total_pegawai' => int, 'total_unit' => int]
+     */
+    public function getRankingGroupByMonthlyScore(Pegawai $pegawai, ?int $tahun = null, ?int $bulan = null): array
+    {
+        $now = new \DateTime();
+        $tahun = $tahun ?? (int)$now->format('Y');
+        $bulan = $bulan ?? (int)$now->format('n');
+        $periode = sprintf('%04d-%02d', $tahun, $bulan);
+
+        $unitKerja = $pegawai->getUnitKerjaEntity();
+        $namaUnit = $unitKerja ? $unitKerja->getNamaUnit() : 'Unit Tidak Diketahui';
+
+        if (!$unitKerja) {
+            return [
+                'posisi' => 0,
+                'nama_unit' => $namaUnit,
+                'rata_rata_skor' => 0.0,
+                'total_pegawai' => 0,
+                'total_unit' => 0
+            ];
+        }
+
+        // Ambil semua ranking bulanan untuk periode ini
+        $rankingBulananList = $this->rankingBulananRepo->findByPeriode($periode);
+
+        // Group by unit kerja dan hitung rata-rata
+        $groupData = [];
+
+        foreach ($rankingBulananList as $ranking) {
+            $pegawaiRanking = $ranking->getPegawai();
+            $unitKerjaPegawai = $pegawaiRanking->getUnitKerjaEntity();
+
+            if (!$unitKerjaPegawai) {
+                continue;
+            }
+
+            $unitKerjaId = $unitKerjaPegawai->getId();
+            $namaUnitPegawai = $unitKerjaPegawai->getNamaUnit();
+
+            if (!isset($groupData[$unitKerjaId])) {
+                $groupData[$unitKerjaId] = [
+                    'unit_kerja_id' => $unitKerjaId,
+                    'nama_unit' => $namaUnitPegawai,
+                    'total_skor' => 0,
+                    'total_pegawai' => 0,
+                    'rata_rata_skor' => 0
+                ];
+            }
+
+            // Gunakan rata-rata skor pegawai untuk menghitung rata-rata unit
+            $groupData[$unitKerjaId]['total_skor'] += $ranking->getRataRataDurasi();
+            $groupData[$unitKerjaId]['total_pegawai']++;
+        }
+
+        // Hitung rata-rata per unit
+        foreach ($groupData as $key => $data) {
+            if ($data['total_pegawai'] > 0) {
+                $groupData[$key]['rata_rata_skor'] = round($data['total_skor'] / $data['total_pegawai'], 2);
+            }
+        }
+
+        // Urutkan berdasarkan rata-rata skor tertinggi
+        usort($groupData, function($a, $b) {
+            return $b['rata_rata_skor'] <=> $a['rata_rata_skor'];
+        });
+
+        // Tambahkan peringkat
+        $peringkat = 1;
+        foreach ($groupData as &$data) {
+            $data['peringkat'] = $peringkat++;
+        }
+
+        // Cari posisi unit kerja pegawai
+        $posisi = 0;
+        $rataRataSkor = 0.0;
+        $totalPegawai = 0;
+
+        foreach ($groupData as $group) {
+            if ($group['unit_kerja_id'] === $unitKerja->getId()) {
+                $posisi = $group['peringkat'];
+                $rataRataSkor = $group['rata_rata_skor'];
+                $totalPegawai = $group['total_pegawai'];
+                break;
+            }
+        }
+
+        return [
+            'posisi' => $posisi,
+            'nama_unit' => $namaUnit,
+            'rata_rata_skor' => $rataRataSkor,
+            'total_pegawai' => $totalPegawai,
+            'total_unit' => count($groupData)
+        ];
     }
 }

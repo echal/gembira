@@ -204,16 +204,8 @@ class IkhlasController extends AbstractController
                 ];
             }
 
-            // Also award old gamification points for backward compatibility
-            try {
-                $this->gamificationService->addPoints(
-                    $user,
-                    GamificationService::POINTS_LIKE_QUOTE * 2,
-                    'Create quote #' . $quote->getId()
-                );
-            } catch (\Exception $gamificationError) {
-                $this->logger->error('Gamification Service Error: ' . $gamificationError->getMessage());
-            }
+            // Note: Old gamification service removed to improve performance
+            // Now using XP system exclusively
 
             return new JsonResponse([
                 'success' => true,
@@ -329,13 +321,6 @@ class IkhlasController extends AbstractController
                             );
                         }
                     }
-
-                    // Also award old gamification points for backward compatibility
-                    $this->gamificationService->addPoints(
-                        $user,
-                        GamificationService::POINTS_LIKE_QUOTE,
-                        'Like quote #' . $quoteId
-                    );
                 }
 
                 return new JsonResponse([
@@ -356,24 +341,14 @@ class IkhlasController extends AbstractController
                 $this->em->persist($interaction);
                 $this->em->flush();
 
-                // Award/subtract points for save
-                if ($newStatus && !$oldStatus) {
-                    // Just saved - award points
-                    $result = $this->gamificationService->addPoints(
-                        $user,
-                        GamificationService::POINTS_SAVE_QUOTE,
-                        'Save quote #' . $quoteId
-                    );
-                    if ($result['level_up']) {
-                        $levelUpInfo = $result;
-                    }
-                }
+                // Note: Save action doesn't award XP to keep it simple
+                // Only create, like, comment, share award XP
 
                 return new JsonResponse([
                     'success' => true,
                     'action' => 'save',
                     'status' => $newStatus,
-                    'message' => $newStatus ? '✅ Quote disimpan ke favorit! +' . GamificationService::POINTS_SAVE_QUOTE . ' poin' : 'Favorit dibatalkan',
+                    'message' => $newStatus ? '📌 Quote disimpan ke favorit!' : 'Favorit dibatalkan',
                     'level_up' => $levelUpInfo
                 ]);
             }
@@ -600,13 +575,6 @@ class IkhlasController extends AbstractController
                 $quote->getId()
             );
 
-            // Also award old gamification points for backward compatibility
-            $this->gamificationService->addPoints(
-                $user,
-                GamificationService::POINTS_COMMENT_QUOTE,
-                'Comment on quote #' . $quote->getId()
-            );
-
             return new JsonResponse([
                 'success' => true,
                 'message' => '💬 Komentar berhasil ditambahkan! +' . UserXpService::XP_COMMENT_QUOTE . ' XP',
@@ -737,13 +705,6 @@ class IkhlasController extends AbstractController
                 $user,
                 'share_quote',
                 $quote->getId()
-            );
-
-            // Also award old gamification points for backward compatibility
-            $this->gamificationService->addPoints(
-                $user,
-                GamificationService::POINTS_SHARE_QUOTE,
-                'Share quote #' . $quote->getId()
             );
 
             return new JsonResponse([

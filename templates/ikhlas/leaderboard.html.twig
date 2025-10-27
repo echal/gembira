@@ -164,59 +164,67 @@
                     {% set iconColor = 'text-purple-600' %}
                 {% endif %}
 
-                <div class="{{ bgClass }} rounded-xl p-4 shadow-sm transition-all duration-300 hover:shadow-md">
-                    <div class="flex items-center justify-between">
+                <div class="{{ bgClass }} rounded-xl p-3 md:p-4 shadow-sm transition-all duration-300 hover:shadow-md">
+                    <div class="flex items-center justify-between gap-2">
                         <!-- Rank & User Info -->
-                        <div class="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
+                        <div class="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
                             <!-- Rank Badge -->
                             <div class="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full {{ iconBg }}">
-                                <span class="text-xl md:text-2xl {{ iconColor }}">{{ badge }}</span>
+                                <span class="text-lg md:text-2xl {{ iconColor }}">{{ badge }}</span>
                             </div>
 
                             <!-- User Details -->
                             <div class="flex-1 min-w-0">
                                 <!-- Name and Level Badge -->
-                                <div class="flex items-center gap-2 mb-1">
-                                    <div class="font-bold text-base md:text-lg text-gray-800 truncate">
+                                <div class="flex items-center gap-1.5 mb-0.5">
+                                    <div class="font-bold text-sm md:text-lg text-gray-800 truncate max-w-[140px] md:max-w-none">
                                         {{ user.nama }}
                                     </div>
-                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium {{ levelBg }} {{ levelText }} flex-shrink-0">
+                                    <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] md:text-xs font-medium {{ levelBg }} {{ levelText }} flex-shrink-0">
                                         {# Level Icon - Garuda Pancasila Theme #}
                                         <img src="/icons/levels/level{{ user.currentLevel }}.svg"
                                              alt="Level {{ user.currentLevel }}"
-                                             class="w-4 h-4"
+                                             class="w-3 h-3 md:w-4 md:h-4"
                                              title="{{ user.levelTitle }}">
                                         Lvl {{ user.currentLevel }}
                                     </span>
                                 </div>
 
-                                <!-- Jabatan -->
-                                <div class="text-xs md:text-sm text-gray-600 truncate">
+                                <!-- Jabatan - Only on Desktop -->
+                                <div class="hidden md:block text-xs md:text-sm text-gray-600 truncate">
                                     {{ user.jabatan }}
                                     {% if user.namaUnitKerja %}
                                         - {{ user.namaUnitKerja }}
                                     {% endif %}
                                 </div>
 
+                                <!-- Mobile: Jabatan (shortened) -->
+                                <div class="md:hidden text-[10px] text-gray-600 truncate max-w-[140px]">
+                                    {{ user.jabatan }}
+                                    {% if user.namaUnitKerja %}
+                                        - {{ user.namaUnitKerja|slice(0, 15) }}...
+                                    {% endif %}
+                                </div>
+
                                 <!-- Level Title & Total XP -->
-                                <div class="text-[10px] md:text-xs text-gray-500 mt-1 flex items-center gap-1 flex-wrap">
+                                <div class="text-[9px] md:text-xs text-gray-500 mt-0.5 flex items-center gap-1 flex-wrap">
                                     <span class="inline-flex items-center gap-0.5">
-                                        <span>{{ user.levelTitle }}</span>
+                                        <span class="truncate max-w-[80px] md:max-w-none">{{ user.levelTitle }}</span>
                                     </span>
-                                    <span>•</span>
+                                    <span class="hidden md:inline">•</span>
                                     <span class="inline-flex items-center gap-0.5">
-                                        <span>Total: {{ user.totalXp }} XP</span>
+                                        <span class="whitespace-nowrap">Total: {{ user.totalXp }} XP</span>
                                     </span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Monthly XP -->
-                        <div class="text-right flex-shrink-0 ml-3 md:ml-4">
-                            <div class="text-2xl md:text-3xl font-bold text-gray-800">
+                        <!-- Monthly XP - Compact for Mobile -->
+                        <div class="text-right flex-shrink-0">
+                            <div class="text-xl md:text-3xl font-bold text-gray-800 leading-tight">
                                 {{ entry.xpMonthly }}
                             </div>
-                            <div class="text-[10px] md:text-xs font-medium text-gray-500">
+                            <div class="text-[9px] md:text-xs font-medium text-gray-500 whitespace-nowrap leading-tight mt-0.5">
                                 XP bulan ini
                             </div>
                         </div>

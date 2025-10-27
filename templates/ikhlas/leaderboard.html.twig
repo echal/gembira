@@ -164,67 +164,50 @@
                     {% set iconColor = 'text-purple-600' %}
                 {% endif %}
 
+                <!-- Leaderboard Card - Stack Layout untuk Mobile -->
                 <div class="{{ bgClass }} rounded-xl p-3 md:p-4 shadow-sm transition-all duration-300 hover:shadow-md">
-                    <div class="flex items-center justify-between gap-2">
-                        <!-- Rank & User Info -->
-                        <div class="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
-                            <!-- Rank Badge -->
-                            <div class="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full {{ iconBg }}">
-                                <span class="text-lg md:text-2xl {{ iconColor }}">{{ badge }}</span>
+                    <!-- Mobile & Desktop: Horizontal Flex -->
+                    <div class="flex items-start gap-3">
+                        <!-- Left: Rank Badge -->
+                        <div class="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full {{ iconBg }}">
+                            <span class="text-xl md:text-2xl {{ iconColor }} font-bold">{{ badge }}</span>
+                        </div>
+
+                        <!-- Center: User Info (Full Width) -->
+                        <div class="flex-1 min-w-0">
+                            <!-- Name & Level Badge - Full Name Visible -->
+                            <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                <h3 class="font-bold text-sm md:text-lg text-gray-800 break-words leading-tight">
+                                    {{ user.nama }}
+                                </h3>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] md:text-xs font-medium {{ levelBg }} {{ levelText }} flex-shrink-0">
+                                    <img src="/icons/levels/level{{ user.currentLevel }}.svg"
+                                         alt="Level {{ user.currentLevel }}"
+                                         class="w-3 h-3 md:w-4 md:h-4"
+                                         title="{{ user.levelTitle }}">
+                                    Lvl {{ user.currentLevel }}
+                                </span>
                             </div>
 
-                            <!-- User Details -->
-                            <div class="flex-1 min-w-0">
-                                <!-- Name and Level Badge -->
-                                <div class="flex items-center gap-1.5 mb-0.5">
-                                    <div class="font-bold text-sm md:text-lg text-gray-800 truncate max-w-[140px] md:max-w-none">
-                                        {{ user.nama }}
-                                    </div>
-                                    <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] md:text-xs font-medium {{ levelBg }} {{ levelText }} flex-shrink-0">
-                                        {# Level Icon - Garuda Pancasila Theme #}
-                                        <img src="/icons/levels/level{{ user.currentLevel }}.svg"
-                                             alt="Level {{ user.currentLevel }}"
-                                             class="w-3 h-3 md:w-4 md:h-4"
-                                             title="{{ user.levelTitle }}">
-                                        Lvl {{ user.currentLevel }}
-                                    </span>
-                                </div>
+                            <!-- Jabatan - Full Text, Break if Needed -->
+                            <p class="text-[11px] md:text-sm text-gray-600 leading-snug mb-1 break-words">
+                                {{ user.jabatan }}{% if user.namaUnitKerja %} - {{ user.namaUnitKerja }}{% endif %}
+                            </p>
 
-                                <!-- Jabatan - Only on Desktop -->
-                                <div class="hidden md:block text-xs md:text-sm text-gray-600 truncate">
-                                    {{ user.jabatan }}
-                                    {% if user.namaUnitKerja %}
-                                        - {{ user.namaUnitKerja }}
-                                    {% endif %}
-                                </div>
-
-                                <!-- Mobile: Jabatan (shortened) -->
-                                <div class="md:hidden text-[10px] text-gray-600 truncate max-w-[140px]">
-                                    {{ user.jabatan }}
-                                    {% if user.namaUnitKerja %}
-                                        - {{ user.namaUnitKerja|slice(0, 15) }}...
-                                    {% endif %}
-                                </div>
-
-                                <!-- Level Title & Total XP -->
-                                <div class="text-[9px] md:text-xs text-gray-500 mt-0.5 flex items-center gap-1 flex-wrap">
-                                    <span class="inline-flex items-center gap-0.5">
-                                        <span class="truncate max-w-[80px] md:max-w-none">{{ user.levelTitle }}</span>
-                                    </span>
-                                    <span class="hidden md:inline">•</span>
-                                    <span class="inline-flex items-center gap-0.5">
-                                        <span class="whitespace-nowrap">Total: {{ user.totalXp }} XP</span>
-                                    </span>
-                                </div>
+                            <!-- Level Title & Total XP - Compact -->
+                            <div class="flex items-center gap-2 text-[10px] md:text-xs text-gray-500 flex-wrap">
+                                <span>{{ user.levelTitle }}</span>
+                                <span class="hidden md:inline">•</span>
+                                <span class="whitespace-nowrap">Total: {{ user.totalXp }} XP</span>
                             </div>
                         </div>
 
-                        <!-- Monthly XP - Compact for Mobile -->
-                        <div class="text-right flex-shrink-0">
-                            <div class="text-xl md:text-3xl font-bold text-gray-800 leading-tight">
+                        <!-- Right: Monthly XP Score -->
+                        <div class="flex-shrink-0 text-right">
+                            <div class="text-2xl md:text-3xl font-bold text-gray-800 leading-none">
                                 {{ entry.xpMonthly }}
                             </div>
-                            <div class="text-[9px] md:text-xs font-medium text-gray-500 whitespace-nowrap leading-tight mt-0.5">
+                            <div class="text-[10px] md:text-xs text-gray-500 font-medium mt-1 whitespace-nowrap">
                                 XP bulan ini
                             </div>
                         </div>

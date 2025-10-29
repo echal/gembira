@@ -45,6 +45,11 @@ class Quote
     #[ORM\Column(type: Types::INTEGER, options: ['default' => 0])]
     private int $totalViews = 0;
 
+    // Field untuk menyimpan path foto (JSON array untuk multiple photos)
+    // Contoh: ["inspirasi_1_1234567890.jpg", "inspirasi_1_1234567891.jpg"]
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $photos = null;
+
     #[ORM\OneToMany(targetEntity: UserQuoteInteraction::class, mappedBy: 'quote', orphanRemoval: true)]
     private Collection $interactions;
 
@@ -215,5 +220,33 @@ class Quote
     {
         $this->totalViews++;
         return $this;
+    }
+
+    // Getter dan Setter untuk photos
+    public function getPhotos(): ?array
+    {
+        return $this->photos;
+    }
+
+    public function setPhotos(?array $photos): static
+    {
+        $this->photos = $photos;
+        return $this;
+    }
+
+    // Helper method untuk menambah foto
+    public function addPhoto(string $photoPath): static
+    {
+        if ($this->photos === null) {
+            $this->photos = [];
+        }
+        $this->photos[] = $photoPath;
+        return $this;
+    }
+
+    // Helper method untuk cek apakah ada foto
+    public function hasPhotos(): bool
+    {
+        return !empty($this->photos);
     }
 }

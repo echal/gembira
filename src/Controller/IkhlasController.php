@@ -169,6 +169,167 @@ class IkhlasController extends AbstractController
         ]);
     }
 
+    // ===============================================
+    // API: Create Quote dengan Upload Foto
+    // ===============================================
+    #[Route('/api/create-with-photos', name: 'app_ikhlas_create_with_photos', methods: ['POST'])]
+    public function createQuoteWithPhotos(Request $request): JsonResponse
+    {
+        /** @var Pegawai $user */
+        $user = $this->getUser();
+
+        // Ambil data dari request
+        $quoteText = $request->request->get('quote');
+        $category = $request->request->get('category', 'Gaspul');
+
+        // Validasi: Quote tidak boleh kosong
+        if (!isset($quoteText) || empty(trim($quoteText))) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Quote tidak boleh kosong'
+            ], 400);
+        }
+
+        // Validasi: Quote minimal 10 karakter
+        if (strlen(trim($quoteText)) < 10) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Quote minimal 10 karakter'
+            ], 400);
+        }
+
+        try {
+            $this->logger->info('=== CREATE QUOTE WITH PHOTOS START ===');
+            $this->logger->info('User: ' . $user->getNama() . ' (ID: ' . $user->getId() . ')');
+            $this->logger->info('Content: ' . trim($quoteText));
+            $this->logger->info('Category: ' . $category);
+
+            // Create new quote
+            $quote = new Quote();
+            $quote->setContent(trim($quoteText));
+            $quote->setCategory($category);
+            $quote->setAuthor($user->getNama());
+            $quote->setTotalViews(0);
+            $quote->setTotalLikes(0);
+            $quote->setTotalComments(0);
+
+            // Handle foto upload
+            $uploadedFiles = $request->files->get('photos', []); // Array dari uploaded files
+            $photosPaths = []; // Array untuk menyimpan path foto
+
+            if (!empty($uploadedFiles)) {
+                $this->logger->info('Photos uploaded: ' . count($uploadedFiles));
+
+                // Directory untuk menyimpan foto inspirasi
+                $uploadDir = $this->getParameter('kernel.project_dir') . '/public/uploads/inspirasi';
+
+                // Buat direktori jika belum ada
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+
+                // Loop setiap file yang di-upload
+                foreach ($uploadedFiles as $file) {
+                    // Validasi: File harus ada
+                    if (!$file) continue;
+
+                    // Validasi: Tipe file harus image
+                    $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+                    if (!in_array($file->getMimeType(), $allowedTypes)) {
+                        return new JsonResponse([
+                            'success' => false,
+                            'message' => 'Format file harus JPG atau PNG'
+                        ], 400);
+                    }
+
+                    // Validasi: Ukuran file maksimal 1MB
+                    $maxSize = 1024 * 1024; // 1MB in bytes
+                    if ($file->getSize() > $maxSize) {
+                        return new JsonResponse([
+                            'success' => false,
+                            'message' => 'Ukuran file maksimal 1MB'
+                        ], 400);
+                    }
+
+                    // Generate nama file unik: inspirasi_{userID}_{timestamp}_{random}.jpg
+                    $fileName = 'inspirasi_' . $user->getId() . '_' . time() . '_' . uniqid() . '.' . $file->guessExtension();
+
+                    // Pindahkan file ke direktori upload
+                    $file->move($uploadDir, $fileName);
+
+                    // Simpan path relatif ke array
+                    $photosPaths[] = $fileName; // Hanya nama file, bukan full path
+
+                    $this->logger->info('Photo saved: ' . $fileName);
+                }
+            }
+
+            // Set photos ke quote (JSON array)
+            if (!empty($photosPaths)) {
+                $quote->setPhotos($photosPaths);
+                $this->logger->info('Photos attached to quote: ' . json_encode($photosPaths));
+            }
+
+            // Persist dan save ke database
+            $this->em->persist($quote);
+            $this->em->flush();
+
+            $this->logger->info('Quote saved! ID: ' . $quote->getId());
+
+            // Award XP untuk membuat quote
+            try {
+                $xpResult = $this->userXpService->awardXpForActivity(
+                    $user,
+                    'create_quote',
+                    $quote->getId()
+                );
+            } catch (\Exception $xpError) {
+                $this->logger->error('XP Service Error: ' . $xpError->getMessage());
+                $xpResult = [
+                    'xp_earned' => UserXpService::XP_CREATE_QUOTE,
+                    'total_xp' => $user->getTotalXp(),
+                    'level_up' => false,
+                    'current_level' => $user->getCurrentLevel(),
+                    'current_badge' => $user->getCurrentBadge(),
+                    'level_title' => 'Pemula'
+                ];
+            }
+
+            return new JsonResponse([
+                'success' => true,
+                'message' => '🎉 Inspirasi berhasil dibagikan! +' . UserXpService::XP_CREATE_QUOTE . ' XP',
+                'quote' => [
+                    'id' => $quote->getId(),
+                    'content' => $quote->getContent(),
+                    'author' => $quote->getAuthor(),
+                    'category' => $quote->getCategory(),
+                    'photos' => $quote->getPhotos(),
+                    'totalViews' => 0,
+                    'totalLikes' => 0,
+                    'totalComments' => 0,
+                    'hasLiked' => false,
+                    'hasSaved' => false
+                ],
+                'xp_earned' => $xpResult['xp_earned'] ?? 0,
+                'level_up' => $xpResult['level_up'] ?? false,
+                'level_info' => $xpResult['level_up'] ? [
+                    'new_level' => $xpResult['new_level'],
+                    'badge' => $xpResult['current_badge'],
+                    'title' => $xpResult['level_title']
+                ] : null
+            ]);
+
+        } catch (\Exception $e) {
+            $this->logger->error('Create Quote Error: ' . $e->getMessage());
+            $this->logger->error('Stack Trace: ' . $e->getTraceAsString());
+
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     #[Route('/api/create-quote', name: 'app_ikhlas_create_quote', methods: ['POST'])]
     public function createQuote(Request $request): JsonResponse
     {

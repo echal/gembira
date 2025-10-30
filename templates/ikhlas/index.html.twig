@@ -1538,7 +1538,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Setup Share Buttons
+    // Setup Share Buttons - Using Native Share API
     function setupShareButtons() {
         // Level badge icons (Garuda Pancasila theme)
         const levelBadges = {
@@ -1550,36 +1550,56 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         document.querySelectorAll('.share-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', async function() {
                 const content = this.dataset.content;
                 const author = this.dataset.author;
                 const category = this.dataset.category || 'Gaspul';
                 const level = parseInt(this.dataset.level) || 1;
                 const badge = levelBadges[level] || '⭐';
 
-                // Format baru:
-                // Kategori:
-                // Isi konten
-                // - Nama User
-                // [Badge] Dibagikan dari GEMBIRA
+                // Format share text
                 const shareText = `${category}:\n${content}\n\n- ${author}\n${badge} Dibagikan dari GEMBIRA`;
+                const shareUrl = window.location.origin + '/ikhlas';
 
-                // Gunakan encodeURIComponent untuk encoding yang aman
-                const encodedText = encodeURIComponent(shareText);
-                const whatsappUrl = `https://wa.me/?text=${encodedText}`;
-
-                // Buka WhatsApp di tab/window baru dengan rel="noopener noreferrer"
-                const whatsappWindow = window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-
-                // Fallback untuk browser yang memblokir popup
-                if (!whatsappWindow || whatsappWindow.closed || typeof whatsappWindow.closed === 'undefined') {
-                    // Jika popup diblokir, gunakan location.href sebagai fallback
-                    window.location.href = whatsappUrl;
+                // Check if Web Share API is supported (native share menu)
+                if (navigator.share) {
+                    try {
+                        await navigator.share({
+                            title: 'Inspirasi dari GEMBIRA',
+                            text: shareText,
+                            url: shareUrl
+                        });
+                        showToast('✅ Berhasil dibagikan!', 'success');
+                    } catch (error) {
+                        // User cancelled or error occurred
+                        if (error.name !== 'AbortError') {
+                            console.error('Error sharing:', error);
+                            // Fallback to WhatsApp
+                            fallbackToWhatsApp(shareText);
+                        }
+                    }
+                } else {
+                    // Fallback for browsers that don't support Web Share API
+                    fallbackToWhatsApp(shareText);
                 }
-
-                showToast('🔗 Membuka WhatsApp...', 'success');
             });
         });
+
+        // Fallback function to WhatsApp
+        function fallbackToWhatsApp(text) {
+            const encodedText = encodeURIComponent(text);
+            const whatsappUrl = `https://wa.me/?text=${encodedText}`;
+
+            // Try to open in new window
+            const whatsappWindow = window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+
+            // If popup blocked, redirect
+            if (!whatsappWindow || whatsappWindow.closed || typeof whatsappWindow.closed === 'undefined') {
+                window.location.href = whatsappUrl;
+            }
+
+            showToast('🔗 Membuka WhatsApp...', 'info');
+        }
     }
 
     // Show Level Up Notification

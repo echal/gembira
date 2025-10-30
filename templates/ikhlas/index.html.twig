@@ -1561,57 +1561,125 @@ document.addEventListener('DOMContentLoaded', function() {
                 const shareText = `${category}:\n${content}\n\n- ${author}\n${badge} Dibagikan dari GEMBIRA`;
                 const shareUrl = window.location.origin + '/ikhlas';
 
-                // Check if Web Share API is supported (native share menu)
-                if (navigator.share) {
+                // Detect mobile device
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+                // On mobile, try native share first
+                if (isMobile && navigator.share && navigator.canShare) {
                     try {
-                        await navigator.share({
+                        const shareData = {
                             title: 'Inspirasi dari GEMBIRA',
                             text: shareText,
                             url: shareUrl
-                        });
-                        showToast('✅ Berhasil dibagikan!', 'success');
+                        };
+
+                        // Check if can share this data
+                        if (navigator.canShare(shareData)) {
+                            await navigator.share(shareData);
+                            showToast('✅ Berhasil dibagikan!', 'success');
+                            return;
+                        }
                     } catch (error) {
-                        // User cancelled or error occurred
+                        // User cancelled or error - try fallback
                         if (error.name !== 'AbortError') {
-                            console.error('Error sharing:', error);
-                            // Fallback to WhatsApp
-                            fallbackToWhatsApp(shareText);
+                            console.log('Native share failed, using fallback');
+                        } else {
+                            // User cancelled - don't show fallback
+                            return;
                         }
                     }
-                } else {
-                    // Fallback for browsers that don't support Web Share API
-                    fallbackToWhatsApp(shareText);
                 }
+
+                // Fallback: Show custom share menu
+                showCustomShareMenu(shareText, shareUrl);
             });
         });
 
-        // Fallback function to WhatsApp
-        function fallbackToWhatsApp(text) {
+        // Show custom share menu with popular apps
+        function showCustomShareMenu(text, url) {
             const encodedText = encodeURIComponent(text);
+            const encodedUrl = encodeURIComponent(url);
+            const fullText = encodeURIComponent(text + '\n\n' + url);
 
             // Detect if mobile device
             const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-            // Use appropriate WhatsApp URL scheme
-            let whatsappUrl;
-            if (isMobile) {
-                // Mobile: Use whatsapp:// scheme for better app detection
-                whatsappUrl = `whatsapp://send?text=${encodedText}`;
-            } else {
-                // Desktop: Use web.whatsapp.com
-                whatsappUrl = `https://web.whatsapp.com/send?text=${encodedText}`;
-            }
+            // Create share options
+            const shareOptions = [
+                {
+                    name: 'WhatsApp',
+                    icon: '💬',
+                    url: isMobile ? `whatsapp://send?text=${fullText}` : `https://web.whatsapp.com/send?text=${fullText}`,
+                    color: '#25D366'
+                },
+                {
+                    name: 'Telegram',
+                    icon: '✈️',
+                    url: `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`,
+                    color: '#0088cc'
+                },
+                {
+                    name: 'Facebook',
+                    icon: '📘',
+                    url: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+                    color: '#1877f2'
+                },
+                {
+                    name: 'Copy Link',
+                    icon: '📋',
+                    action: 'copy',
+                    color: '#6b7280'
+                }
+            ];
 
-            // Try to open in new window/app
-            const whatsappWindow = window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+            // Show SweetAlert with share options
+            const buttonsHtml = shareOptions.map(option => `
+                <button onclick="handleShareOption('${option.action || 'open'}', '${option.url || ''}', '${text}', '${url}')"
+                        class="share-option-btn"
+                        style="background: ${option.color}; color: white; padding: 12px 20px; border: none; border-radius: 8px; margin: 5px; min-width: 120px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px;">
+                    <span style="font-size: 20px;">${option.icon}</span>
+                    <span>${option.name}</span>
+                </button>
+            `).join('');
 
-            // If popup blocked, redirect
-            if (!whatsappWindow || whatsappWindow.closed || typeof whatsappWindow.closed === 'undefined') {
-                window.location.href = whatsappUrl;
-            }
-
-            showToast('🔗 Membuka WhatsApp...', 'info');
+            Swal.fire({
+                title: 'Bagikan Quote',
+                html: `<div style="padding: 20px;">${buttonsHtml}</div>`,
+                showConfirmButton: false,
+                showCloseButton: true,
+                width: '90%',
+                customClass: {
+                    popup: 'share-menu-popup'
+                }
+            });
         }
+
+        // Handle share option click
+        window.handleShareOption = function(action, url, text, pageUrl) {
+            if (action === 'copy') {
+                // Copy to clipboard
+                const fullText = text + '\n\n' + pageUrl;
+                navigator.clipboard.writeText(fullText).then(() => {
+                    Swal.close();
+                    showToast('✅ Link berhasil disalin!', 'success');
+                }).catch(() => {
+                    // Fallback for older browsers
+                    const textarea = document.createElement('textarea');
+                    textarea.value = fullText;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    Swal.close();
+                    showToast('✅ Link berhasil disalin!', 'success');
+                });
+            } else {
+                // Open share URL
+                window.open(url, '_blank', 'noopener,noreferrer');
+                Swal.close();
+                showToast('🔗 Membuka aplikasi...', 'info');
+            }
+        };
     }
 
     // Show Level Up Notification

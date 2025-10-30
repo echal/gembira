@@ -1633,10 +1633,12 @@ document.addEventListener('DOMContentLoaded', function() {
             ];
 
             // Show SweetAlert with share options
-            const buttonsHtml = shareOptions.map(option => `
-                <button onclick="handleShareOption('${option.action || 'open'}', '${option.url || ''}', '${text}', '${url}')"
+            const buttonsHtml = shareOptions.map((option, index) => `
+                <button data-share-index="${index}"
                         class="share-option-btn"
-                        style="background: ${option.color}; color: white; padding: 12px 20px; border: none; border-radius: 8px; margin: 5px; min-width: 120px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px;">
+                        style="background: ${option.color}; color: white; padding: 12px 20px; border: none; border-radius: 8px; margin: 5px; min-width: 120px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; transition: transform 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"
+                        onmouseover="this.style.transform='scale(1.05)'"
+                        onmouseout="this.style.transform='scale(1)'">
                     <span style="font-size: 20px;">${option.icon}</span>
                     <span>${option.name}</span>
                 </button>
@@ -1650,36 +1652,65 @@ document.addEventListener('DOMContentLoaded', function() {
                 width: '90%',
                 customClass: {
                     popup: 'share-menu-popup'
+                },
+                didOpen: () => {
+                    // Add click handlers after modal opens
+                    const buttons = document.querySelectorAll('.share-option-btn');
+                    buttons.forEach((btn, index) => {
+                        btn.addEventListener('click', () => {
+                            const option = shareOptions[index];
+                            handleShareOptionClick(option, text, url);
+                        });
+                    });
                 }
             });
         }
 
         // Handle share option click
-        window.handleShareOption = function(action, url, text, pageUrl) {
-            if (action === 'copy') {
+        function handleShareOptionClick(option, text, pageUrl) {
+            if (option.action === 'copy') {
                 // Copy to clipboard
                 const fullText = text + '\n\n' + pageUrl;
-                navigator.clipboard.writeText(fullText).then(() => {
-                    Swal.close();
-                    showToast('✅ Link berhasil disalin!', 'success');
-                }).catch(() => {
-                    // Fallback for older browsers
-                    const textarea = document.createElement('textarea');
-                    textarea.value = fullText;
-                    document.body.appendChild(textarea);
-                    textarea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(textarea);
-                    Swal.close();
-                    showToast('✅ Link berhasil disalin!', 'success');
-                });
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(fullText).then(() => {
+                        Swal.close();
+                        showToast('✅ Link berhasil disalin!', 'success');
+                    }).catch(() => {
+                        fallbackCopyToClipboard(fullText);
+                    });
+                } else {
+                    fallbackCopyToClipboard(fullText);
+                }
             } else {
                 // Open share URL
-                window.open(url, '_blank', 'noopener,noreferrer');
                 Swal.close();
+                const opened = window.open(option.url, '_blank', 'noopener,noreferrer');
+                if (!opened || opened.closed || typeof opened.closed === 'undefined') {
+                    // Popup blocked, try redirect
+                    window.location.href = option.url;
+                }
                 showToast('🔗 Membuka aplikasi...', 'info');
             }
-        };
+        }
+
+        // Fallback copy to clipboard
+        function fallbackCopyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                Swal.close();
+                showToast('✅ Link berhasil disalin!', 'success');
+            } catch (err) {
+                showToast('❌ Gagal menyalin link', 'error');
+            }
+            document.body.removeChild(textarea);
+        }
     }
 
     // Show Level Up Notification

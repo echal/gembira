@@ -1609,19 +1609,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 {
                     name: 'WhatsApp',
                     icon: '💬',
-                    url: isMobile ? `whatsapp://send?text=${fullText}` : `https://web.whatsapp.com/send?text=${fullText}`,
+                    url: `https://api.whatsapp.com/send?text=${fullText}`,
                     color: '#25D366'
                 },
                 {
                     name: 'Telegram',
                     icon: '✈️',
-                    url: `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`,
+                    url: `https://telegram.me/share/url?url=${encodedUrl}&text=${encodedText}`,
                     color: '#0088cc'
                 },
                 {
                     name: 'Facebook',
                     icon: '📘',
-                    url: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+                    url: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedText}`,
                     color: '#1877f2'
                 },
                 {

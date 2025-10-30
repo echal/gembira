@@ -1588,9 +1588,21 @@ document.addEventListener('DOMContentLoaded', function() {
         // Fallback function to WhatsApp
         function fallbackToWhatsApp(text) {
             const encodedText = encodeURIComponent(text);
-            const whatsappUrl = `https://wa.me/?text=${encodedText}`;
 
-            // Try to open in new window
+            // Detect if mobile device
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+            // Use appropriate WhatsApp URL scheme
+            let whatsappUrl;
+            if (isMobile) {
+                // Mobile: Use whatsapp:// scheme for better app detection
+                whatsappUrl = `whatsapp://send?text=${encodedText}`;
+            } else {
+                // Desktop: Use web.whatsapp.com
+                whatsappUrl = `https://web.whatsapp.com/send?text=${encodedText}`;
+            }
+
+            // Try to open in new window/app
             const whatsappWindow = window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
 
             // If popup blocked, redirect

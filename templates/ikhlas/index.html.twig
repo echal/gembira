@@ -1597,37 +1597,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Show custom share menu with popular apps
         function showCustomShareMenu(text, url) {
-            const encodedText = encodeURIComponent(text);
+            // Limit text length for URL compatibility (max 500 chars)
+            const maxLength = 400;
+            let shortText = text;
+            if (text.length > maxLength) {
+                shortText = text.substring(0, maxLength) + '...';
+            }
+
+            const encodedText = encodeURIComponent(shortText);
             const encodedUrl = encodeURIComponent(url);
-            const fullText = encodeURIComponent(text + '\n\n' + url);
+            const fullText = encodeURIComponent(shortText + '\n\n' + url);
 
             // Detect if mobile device
             const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-            // Create share options
+            // Create share options with proper data
             const shareOptions = [
                 {
                     name: 'WhatsApp',
                     icon: '💬',
                     url: `https://api.whatsapp.com/send?text=${fullText}`,
+                    shareData: { text: shortText, url: url },
                     color: '#25D366'
                 },
                 {
                     name: 'Telegram',
                     icon: '✈️',
                     url: `https://telegram.me/share/url?url=${encodedUrl}&text=${encodedText}`,
+                    shareData: { text: shortText, url: url },
                     color: '#0088cc'
                 },
                 {
                     name: 'Facebook',
                     icon: '📘',
-                    url: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedText}`,
+                    url: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+                    shareData: { url: url },
                     color: '#1877f2'
                 },
                 {
                     name: 'Copy Link',
                     icon: '📋',
                     action: 'copy',
+                    shareData: { text: text, url: url },
                     color: '#6b7280'
                 }
             ];
@@ -1682,14 +1693,35 @@ document.addEventListener('DOMContentLoaded', function() {
                     fallbackCopyToClipboard(fullText);
                 }
             } else {
-                // Open share URL
+                // Open share URL in new tab (prevent redirect)
                 Swal.close();
-                const opened = window.open(option.url, '_blank', 'noopener,noreferrer');
-                if (!opened || opened.closed || typeof opened.closed === 'undefined') {
-                    // Popup blocked, try redirect
-                    window.location.href = option.url;
-                }
+
+                // Create a temporary link element
+                const link = document.createElement('a');
+                link.href = option.url;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+
+                // Append to body, click, and remove
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
                 showToast('🔗 Membuka aplikasi...', 'info');
+
+                // If link didn't open (popup blocked), show alternative
+                setTimeout(() => {
+                    const stillOnPage = !document.hidden;
+                    if (stillOnPage && option.name === 'WhatsApp') {
+                        // Try alternative WhatsApp link
+                        const altLink = document.createElement('a');
+                        altLink.href = option.url.replace('api.whatsapp.com', 'wa.me');
+                        altLink.target = '_blank';
+                        document.body.appendChild(altLink);
+                        altLink.click();
+                        document.body.removeChild(altLink);
+                    }
+                }, 500);
             }
         }
 

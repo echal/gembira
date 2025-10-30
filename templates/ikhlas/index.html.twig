@@ -505,15 +505,18 @@ document.addEventListener('click', function(event) {
                             <span class="text-xs sm:text-sm font-medium comment-toggle-text hidden sm:inline">Lihat Komentar</span>
                         </button>
 
-                        <!-- Share Button - Fixed Responsive -->
-                        <button class="share-btn flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg transition-all hover:bg-blue-50 text-gray-600"
+                        <!-- Share Button - WhatsApp Green Style -->
+                        <button class="share-btn flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg transition-all text-white font-medium"
+                                style="background-color: #25D366; box-shadow: 0 2px 4px rgba(37, 211, 102, 0.3);"
+                                onmouseover="this.style.backgroundColor='#20BA5A'; this.style.transform='scale(1.05)'"
+                                onmouseout="this.style.backgroundColor='#25D366'; this.style.transform='scale(1)'"
                                 data-quote-id="{{ quote.id }}"
                                 data-content="{{ quote.content }}"
                                 data-author="{{ quote.author ?? 'Anonim' }}"
                                 data-category="{{ quote.category ?? 'Gaspul' }}"
                                 data-level="{{ item.authorLevel }}">
-                            <span class="text-lg sm:text-xl">🔗</span>
-                            <span class="text-xs sm:text-sm font-medium hidden sm:inline">Bagikan</span>
+                            <span class="text-lg sm:text-xl">📲</span>
+                            <span class="text-xs sm:text-sm hidden sm:inline">WhatsApp</span>
                         </button>
                     </div>
                 </div>
@@ -1538,7 +1541,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Setup Share Buttons - Using Native Share API
+    // Setup Share Buttons - Direct WhatsApp Share (Universal Format)
     function setupShareButtons() {
         // Level badge icons (Garuda Pancasila theme)
         const levelBadges = {
@@ -1550,7 +1553,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         document.querySelectorAll('.share-btn').forEach(btn => {
-            btn.addEventListener('click', async function() {
+            btn.addEventListener('click', function() {
                 const content = this.dataset.content;
                 const author = this.dataset.author;
                 const category = this.dataset.category || 'Gaspul';
@@ -1561,171 +1564,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 const shareText = `${category}:\n${content}\n\n- ${author}\n${badge} Dibagikan dari GEMBIRA`;
                 const shareUrl = window.location.origin + '/ikhlas';
 
-                // Detect mobile device
-                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                // Combine text and URL
+                const fullMessage = shareText + '\n\n' + shareUrl;
 
-                // On mobile, try native share first
-                if (isMobile && navigator.share && navigator.canShare) {
-                    try {
-                        const shareData = {
-                            title: 'Inspirasi dari GEMBIRA',
-                            text: shareText,
-                            url: shareUrl
-                        };
+                // Encode for URL - simple and reliable
+                const encodedMessage = encodeURIComponent(fullMessage);
 
-                        // Check if can share this data
-                        if (navigator.canShare(shareData)) {
-                            await navigator.share(shareData);
-                            showToast('✅ Berhasil dibagikan!', 'success');
-                            return;
-                        }
-                    } catch (error) {
-                        // User cancelled or error - try fallback
-                        if (error.name !== 'AbortError') {
-                            console.log('Native share failed, using fallback');
-                        } else {
-                            // User cancelled - don't show fallback
-                            return;
-                        }
+                // Use universal WhatsApp Web format - works on all devices
+                const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+
+                // Direct open - no complex logic
+                try {
+                    // Try opening in new window (works on desktop and most mobile browsers)
+                    const whatsappWindow = window.open(whatsappUrl, '_blank');
+
+                    // If popup was blocked or failed, use direct navigation
+                    if (!whatsappWindow || whatsappWindow.closed || typeof whatsappWindow.closed === 'undefined') {
+                        window.location.href = whatsappUrl;
+                    } else {
+                        showToast('🔗 Membuka WhatsApp...', 'success');
                     }
+                } catch (error) {
+                    // Fallback to direct navigation
+                    window.location.href = whatsappUrl;
                 }
-
-                // Fallback: Show custom share menu
-                showCustomShareMenu(shareText, shareUrl);
             });
         });
-
-        // Show custom share menu with popular apps
-        function showCustomShareMenu(text, url) {
-            // Limit text length for URL compatibility (max 500 chars)
-            const maxLength = 400;
-            let shortText = text;
-            if (text.length > maxLength) {
-                shortText = text.substring(0, maxLength) + '...';
-            }
-
-            const encodedText = encodeURIComponent(shortText);
-            const encodedUrl = encodeURIComponent(url);
-            const fullText = encodeURIComponent(shortText + '\n\n' + url);
-
-            // Detect if mobile device
-            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-            // Create share options with proper data
-            const shareOptions = [
-                {
-                    name: 'WhatsApp',
-                    icon: '💬',
-                    url: `https://wa.me/?text=${fullText}`,
-                    shareData: { text: shortText, url: url },
-                    color: '#25D366'
-                },
-                {
-                    name: 'Telegram',
-                    icon: '✈️',
-                    url: `https://telegram.me/share/url?url=${encodedUrl}&text=${encodedText}`,
-                    shareData: { text: shortText, url: url },
-                    color: '#0088cc'
-                },
-                {
-                    name: 'Facebook',
-                    icon: '📘',
-                    url: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
-                    shareData: { url: url },
-                    color: '#1877f2'
-                },
-                {
-                    name: 'Copy Link',
-                    icon: '📋',
-                    action: 'copy',
-                    shareData: { text: text, url: url },
-                    color: '#6b7280'
-                }
-            ];
-
-            // Show SweetAlert with share options
-            const buttonsHtml = shareOptions.map((option, index) => `
-                <button data-share-index="${index}"
-                        class="share-option-btn"
-                        style="background: ${option.color}; color: white; padding: 12px 20px; border: none; border-radius: 8px; margin: 5px; min-width: 120px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; transition: transform 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"
-                        onmouseover="this.style.transform='scale(1.05)'"
-                        onmouseout="this.style.transform='scale(1)'">
-                    <span style="font-size: 20px;">${option.icon}</span>
-                    <span>${option.name}</span>
-                </button>
-            `).join('');
-
-            Swal.fire({
-                title: 'Bagikan Quote',
-                html: `<div style="padding: 20px;">${buttonsHtml}</div>`,
-                showConfirmButton: false,
-                showCloseButton: true,
-                width: '90%',
-                customClass: {
-                    popup: 'share-menu-popup'
-                },
-                didOpen: () => {
-                    // Add click handlers after modal opens
-                    const buttons = document.querySelectorAll('.share-option-btn');
-                    buttons.forEach((btn, index) => {
-                        btn.addEventListener('click', () => {
-                            const option = shareOptions[index];
-                            handleShareOptionClick(option, text, url);
-                        });
-                    });
-                }
-            });
-        }
-
-        // Handle share option click
-        function handleShareOptionClick(option, text, pageUrl) {
-            if (option.action === 'copy') {
-                // Copy to clipboard
-                const fullText = text + '\n\n' + pageUrl;
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(fullText).then(() => {
-                        Swal.close();
-                        showToast('✅ Link berhasil disalin!', 'success');
-                    }).catch(() => {
-                        fallbackCopyToClipboard(fullText);
-                    });
-                } else {
-                    fallbackCopyToClipboard(fullText);
-                }
-            } else {
-                // Open share URL - direct window.open untuk better compatibility
-                Swal.close();
-
-                // Direct window.open - lebih reliable di mobile
-                try {
-                    const opened = window.open(option.url, '_blank', 'noopener,noreferrer');
-                    showToast('🔗 Membuka aplikasi...', 'info');
-                } catch (error) {
-                    // Fallback dengan location.href jika window.open gagal
-                    console.log('Window.open failed, using location.href');
-                    window.location.href = option.url;
-                }
-            }
-        }
-
-        // Fallback copy to clipboard
-        function fallbackCopyToClipboard(text) {
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            textarea.style.position = 'fixed';
-            textarea.style.opacity = '0';
-            document.body.appendChild(textarea);
-            textarea.focus();
-            textarea.select();
-            try {
-                document.execCommand('copy');
-                Swal.close();
-                showToast('✅ Link berhasil disalin!', 'success');
-            } catch (err) {
-                showToast('❌ Gagal menyalin link', 'error');
-            }
-            document.body.removeChild(textarea);
-        }
     }
 
     // Show Level Up Notification

@@ -1,0 +1,84 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Inspirasi - Gembira{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gradient-to-b from-purple-50 via-pink-50 to-sky-50 pb-20">
+    <!-- Header -->
+    <div class="bg-white sticky top-0 z-40 shadow-md border-b border-gray-200">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex-1">
+                    <h1 class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                        💡 inspirasi
+                    </h1>
+                    <p class="text-xs md:text-sm text-gray-600 mt-0.5 font-medium">
+                        Inspirasi Hari Ini, Semangat Selamanya
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Container -->
+    <div class="container mx-auto px-4 py-6 max-w-2xl">
+
+        {# Example: Loop through quotes #}
+        {% for quote in quotes|default([]) %}
+            {# Set variables for component #}
+            {% set userName = quote.author ?? 'Anonim' %}
+            {% set waktuPost = quote.createdAt|time_ago ?? 'Baru saja' %}
+            {% set quotesText = quote.content %}
+            {% set foto1 = quote.photos[0] ? '/uploads/inspirasi/' ~ quote.photos[0] : '' %}
+            {% set foto2 = quote.photos[1] ? '/uploads/inspirasi/' ~ quote.photos[1] : '' %}
+            {% set fotoProfil = quote.authorPhoto ? '/uploads/photos/' ~ quote.authorPhoto : '/images/default-user.png' %}
+            {% set kategori = quote.category ?? 'Gaspul' %}
+
+            {# Include component #}
+            {% include 'inspirasi/card_component.html.twig' with {
+                userName: userName,
+                waktuPost: waktuPost,
+                quotesText: quotesText,
+                foto1: foto1,
+                foto2: foto2,
+                fotoProfil: fotoProfil,
+                kategori: kategori
+            } %}
+        {% else %}
+            {# Empty state if no quotes #}
+            <div class="text-center py-12">
+                <div class="text-6xl mb-4">📭</div>
+                <h2 class="text-2xl font-bold text-gray-700 mb-2">Belum Ada Inspirasi</h2>
+                <p class="text-gray-500">Jadilah yang pertama membagikan kata semangat!</p>
+            </div>
+        {% endfor %}
+
+        {# Example: Single Card with Static Data (for demo) #}
+        {% include 'inspirasi/card_component.html.twig' with {
+            userName: 'FAISAL KASSIM, S.Kom',
+            waktuPost: 'Baru saja',
+            quotesText: 'Hidup itu harus gembira dan penuh inspirasi. Mari kita saling menyemangati!',
+            foto1: 'https://images.unsplash.com/photo-1511688878353-3a2f5be94cd7?w=600&h=400&fit=crop',
+            foto2: 'https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=600&h=400&fit=crop',
+            fotoProfil: 'https://ui-avatars.com/api/?name=Faisal+Kassim&background=A855F7&color=fff&size=128',
+            kategori: 'Motivasi'
+        } %}
+
+        {# Example: Single Photo Card #}
+        {% include 'inspirasi/card_component.html.twig' with {
+            userName: 'ABDUNNAFI H, S.Kom',
+            waktuPost: '6 menit yang lalu',
+            quotesText: 'Setiap hari adalah kesempatan baru untuk menjadi lebih baik.',
+            foto1: 'https://images.unsplash.com/photo-1506784365847-bbad939e9335?w=600&h=400&fit=crop',
+            foto2: '',
+            fotoProfil: 'https://ui-avatars.com/api/?name=Abdunnafi+H&background=8B5CF6&color=fff&size=128',
+            kategori: 'Gaspul'
+        } %}
+
+    </div>
+</div>
+
+<!-- Bottom Navigation (if needed) -->
+{% include 'components/bottom_nav.html.twig' with {'active_menu': 'inspirasi'} %}
+
+{% endblock %}

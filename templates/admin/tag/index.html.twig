@@ -1,0 +1,232 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Manajemen Tagar - Admin{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <div class="bg-white shadow">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">Manajemen Tagar</h1>
+                    <p class="text-gray-600 mt-1">Kelola tagar (hashtag) dari quotes inspirasi</p>
+                </div>
+                <a href="{{ path('app_admin_dashboard') }}" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
+                    Kembali ke Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">Total Tagar</p>
+                        <p class="text-3xl font-bold text-purple-600">{{ stats.total_tags }}</p>
+                    </div>
+                    <div class="text-4xl">📌</div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">Total Penggunaan</p>
+                        <p class="text-3xl font-bold text-blue-600">{{ stats.total_usages }}</p>
+                    </div>
+                    <div class="text-4xl">📊</div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">Rata-rata Penggunaan</p>
+                        <p class="text-3xl font-bold text-green-600">{{ stats.avg_usage }}</p>
+                    </div>
+                    <div class="text-4xl">📈</div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">Tag Tidak Terpakai</p>
+                        <p class="text-3xl font-bold text-orange-600">{{ stats.orphaned_tags }}</p>
+                    </div>
+                    <div class="text-4xl">🗑️</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <div class="flex gap-4">
+                <button onclick="recalculateUsage()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                    🔄 Perbarui Jumlah Penggunaan
+                </button>
+                <button onclick="cleanupOrphaned()" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition">
+                    🗑️ Hapus Tag Tidak Terpakai
+                </button>
+            </div>
+        </div>
+
+        <!-- Tags Table -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="p-6 border-b">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-bold text-gray-800">Daftar Tagar</h2>
+                    <div class="flex gap-2">
+                        <select onchange="changeSorting(this)" class="px-4 py-2 border rounded-lg">
+                            <option value="usage_desc" {% if sortBy == 'usage' and order == 'desc' %}selected{% endif %}>Terpopuler</option>
+                            <option value="usage_asc" {% if sortBy == 'usage' and order == 'asc' %}selected{% endif %}>Tersedikit</option>
+                            <option value="name_asc" {% if sortBy == 'name' and order == 'asc' %}selected{% endif %}>Nama A-Z</option>
+                            <option value="name_desc" {% if sortBy == 'name' and order == 'desc' %}selected{% endif %}>Nama Z-A</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tagar</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Slug</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah Quotes</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dibuat</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for tag in tags %}
+                        <tr id="tag-row-{{ tag.id }}" class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ tag.id }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                                    #{{ tag.name }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ tag.slug }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-bold">
+                                    {{ tag.usageCount }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ tag.createdAt|date('d M Y H:i') }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <div class="flex gap-2">
+                                    <a href="{{ path('app_admin_tag_show', {id: tag.id}) }}"
+                                       class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+                                        Lihat
+                                    </a>
+                                    <a href="{{ path('app_tag_show', {slug: tag.slug}) }}"
+                                       target="_blank"
+                                       class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition">
+                                        Preview
+                                    </a>
+                                    <button onclick="deleteTag({{ tag.id }}, '{{ tag.name }}')"
+                                            class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition">
+                                        Hapus
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                                Belum ada tagar
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function changeSorting(select) {
+    const value = select.value;
+    const [sort, order] = value.split('_');
+    window.location.href = `{{ path('app_admin_tag_index') }}?sort=${sort}&order=${order}`;
+}
+
+function deleteTag(id, name) {
+    if (!confirm(`Yakin ingin menghapus tag #${name}?\n\nTag akan dihapus dari semua quotes yang menggunakannya.`)) {
+        return;
+    }
+
+    fetch(`{{ path('app_admin_tag_delete', {id: '__ID__'}) }}`.replace('__ID__', id), {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById(`tag-row-${id}`).remove();
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Terjadi kesalahan: ' + error);
+    });
+}
+
+function cleanupOrphaned() {
+    if (!confirm('Yakin ingin menghapus semua tag yang tidak terpakai?')) {
+        return;
+    }
+
+    fetch('{{ path('app_admin_tag_cleanup') }}', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message);
+        if (data.success) {
+            location.reload();
+        }
+    })
+    .catch(error => {
+        alert('Terjadi kesalahan: ' + error);
+    });
+}
+
+function recalculateUsage() {
+    if (!confirm('Yakin ingin memperbarui jumlah penggunaan semua tag?')) {
+        return;
+    }
+
+    fetch('{{ path('app_admin_tag_recalculate') }}', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message);
+        if (data.success) {
+            location.reload();
+        }
+    })
+    .catch(error => {
+        alert('Terjadi kesalahan: ' + error);
+    });
+}
+</script>
+{% endblock %}

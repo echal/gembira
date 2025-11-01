@@ -1,0 +1,138 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Detail Tag #{{ tag.name }} - Admin{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <div class="bg-white shadow">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">Detail Tagar: #{{ tag.name }}</h1>
+                    <p class="text-gray-600 mt-1">Melihat semua quotes dengan tag ini</p>
+                </div>
+                <a href="{{ path('app_admin_tag_index') }}" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
+                    Kembali
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Tag Info Card -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <p class="text-gray-600 text-sm">ID</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ tag.id }}</p>
+                </div>
+                <div>
+                    <p class="text-gray-600 text-sm">Slug</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ tag.slug }}</p>
+                </div>
+                <div>
+                    <p class="text-gray-600 text-sm">Total Quotes</p>
+                    <p class="text-2xl font-bold text-purple-600">{{ tag.usageCount }}</p>
+                </div>
+                <div>
+                    <p class="text-gray-600 text-sm">Dibuat</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ tag.createdAt|date('d M Y') }}</p>
+                </div>
+            </div>
+            <div class="mt-4 flex gap-2">
+                <a href="{{ path('app_tag_show', {slug: tag.slug}) }}"
+                   target="_blank"
+                   class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                    Lihat di Frontend
+                </a>
+                <button onclick="deleteTag({{ tag.id }}, '{{ tag.name }}')"
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                    Hapus Tag
+                </button>
+            </div>
+        </div>
+
+        <!-- Quotes List -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="p-6 border-b">
+                <h2 class="text-xl font-bold text-gray-800">Quotes dengan Tag Ini ({{ quotes|length }})</h2>
+            </div>
+
+            {% if quotes|length > 0 %}
+                <div class="divide-y divide-gray-200">
+                    {% for quote in quotes %}
+                        <div class="p-6 hover:bg-gray-50">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span class="text-sm font-medium text-gray-700">ID: {{ quote.id }}</span>
+                                        <span class="text-sm text-gray-500">|</span>
+                                        <span class="text-sm text-gray-600">{{ quote.author ?? 'Anonim' }}</span>
+                                        <span class="text-sm text-gray-500">|</span>
+                                        <span class="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs">
+                                            {{ quote.category ?? 'Gaspul' }}
+                                        </span>
+                                    </div>
+                                    <p class="text-gray-800 mb-2">{{ quote.content }}</p>
+                                    <div class="flex flex-wrap gap-2 mb-2">
+                                        {% for quoteTag in quote.tags %}
+                                            <span class="px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs">
+                                                #{{ quoteTag.name }}
+                                            </span>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="flex gap-4 text-sm text-gray-500">
+                                        <span>👍 {{ quote.totalLikes }}</span>
+                                        <span>💬 {{ quote.totalComments }}</span>
+                                        <span>👁️ {{ quote.totalViews }}</span>
+                                        <span>📅 {{ quote.createdAt|date('d M Y H:i') }}</span>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <a href="{{ path('app_ikhlas') }}#quote-{{ quote.id }}"
+                                       target="_blank"
+                                       class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm">
+                                        Lihat
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="p-12 text-center text-gray-500">
+                    Tidak ada quotes dengan tag ini
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function deleteTag(id, name) {
+    if (!confirm(`Yakin ingin menghapus tag #${name}?\n\nTag akan dihapus dari semua quotes yang menggunakannya.`)) {
+        return;
+    }
+
+    fetch(`{{ path('app_admin_tag_delete', {id: tag.id}) }}`, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            window.location.href = '{{ path('app_admin_tag_index') }}';
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Terjadi kesalahan: ' + error);
+    });
+}
+</script>
+{% endblock %}

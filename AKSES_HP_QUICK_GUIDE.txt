@@ -1,0 +1,188 @@
+╔══════════════════════════════════════════════════════════════╗
+║          PANDUAN CEPAT - AKSES GEMBIRA DARI HP              ║
+║                   IP Laptop: 172.24.45.213                   ║
+║                                                              ║
+║  ENABLE:  enable_network_access.bat (Run as Admin)          ║
+║  DISABLE: disable_network_access.bat (Run as Admin)         ║
+╚══════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────┐
+│  STEP 1: KONFIGURASI XAMPP (DI LAPTOP)                      │
+└──────────────────────────────────────────────────────────────┘
+
+  ► Cara Otomatis (RECOMMENDED):
+    1. Buka folder: C:\xampp\htdocs\gembira
+    2. Klik kanan: enable_network_access.bat
+    3. Pilih: "Run as administrator"
+    4. Tunggu selesai
+    5. Restart Apache di XAMPP Control Panel
+
+  ► Cara Manual:
+    1. Buka file:
+       C:\xampp\apache\conf\extra\httpd-xampp.conf
+
+    2. Cari baris:
+       Require local
+
+    3. Ubah jadi:
+       Require all granted
+
+    4. Save file
+    5. Restart Apache
+
+┌──────────────────────────────────────────────────────────────┐
+│  STEP 2: CEK FIREWALL WINDOWS                                │
+└──────────────────────────────────────────────────────────────┘
+
+  ► Option A: Disable Firewall (Sementara)
+    1. Buka: Windows Defender Firewall
+    2. Click: Turn Windows Defender Firewall on or off
+    3. Pilih: Turn off (Private networks only)
+
+  ► Option B: Allow Apache (Lebih Aman)
+    Script otomatis sudah menambahkan rule firewall!
+    Check: Windows Defender Firewall → Inbound Rules → XAMPP Apache
+
+┌──────────────────────────────────────────────────────────────┐
+│  STEP 3: CEK IP LAPTOP                                       │
+└──────────────────────────────────────────────────────────────┘
+
+  1. Buka Command Prompt
+  2. Ketik: ipconfig
+  3. Cari:
+     Wireless LAN adapter Wi-Fi:
+        IPv4 Address. . . . . : 172.24.45.213
+
+  4. Jika IP berbeda, gunakan IP yang muncul!
+
+┌──────────────────────────────────────────────────────────────┐
+│  STEP 4: AKSES DARI HP                                       │
+└──────────────────────────────────────────────────────────────┘
+
+  ✓ Pastikan HP dan Laptop di WiFi YANG SAMA!
+
+  ► Buka Browser di HP (Chrome/Safari)
+
+  ► Ketik URL:
+
+    http://172.24.45.213/gembira/public/index.php/ikhlas
+
+  ► URL Lainnya:
+
+    Login:
+    http://172.24.45.213/gembira/public/index.php/login
+
+    Home:
+    http://172.24.45.213/gembira/public/
+
+    Leaderboard:
+    http://172.24.45.213/gembira/public/index.php/ikhlas/leaderboard
+
+┌──────────────────────────────────────────────────────────────┐
+│  TEST FITUR CAROUSEL DI HP                                   │
+└──────────────────────────────────────────────────────────────┘
+
+  ► Swipe Gesture:
+    - Geser KIRI → foto berikutnya
+    - Geser KANAN → foto sebelumnya
+
+  ► Modal Preview:
+    - Tap foto → muncul fullscreen
+    - Foto harus DI ATAS card (tidak tertutup)
+    - Tap di luar foto → close
+
+  ► Navigation Buttons:
+    - Tap < → prev foto
+    - Tap > → next foto
+
+┌──────────────────────────────────────────────────────────────┐
+│  TROUBLESHOOTING                                             │
+└──────────────────────────────────────────────────────────────┘
+
+  ❌ "Site can't be reached"
+     → HP dan Laptop beda WiFi?
+     → Firewall masih block?
+     → Apache tidak running?
+
+  ❌ "ERR_CONNECTION_REFUSED"
+     → Apache tidak running
+     → Restart Apache di XAMPP Control Panel
+
+  ❌ "403 Forbidden"
+     → Config belum diubah
+     → Jalankan enable_network_access.bat lagi
+
+  ❌ Halaman Blank
+     → Clear cache Symfony:
+       cd C:\xampp\htdocs\gembira
+       php bin/console cache:clear
+
+┌──────────────────────────────────────────────────────────────┐
+│  CHECKLIST                                                   │
+└──────────────────────────────────────────────────────────────┘
+
+  [ ] Script enable_network_access.bat dijalankan
+  [ ] Apache di-restart (hijau di XAMPP)
+  [ ] Firewall disabled atau Apache allowed
+  [ ] HP dan Laptop di WiFi yang SAMA
+  [ ] IP laptop dicek (ipconfig)
+  [ ] Test http://localhost/gembira di laptop BERHASIL
+  [ ] Buka URL di HP → BERHASIL!
+
+┌──────────────────────────────────────────────────────────────┐
+│  QUICK COMMANDS                                              │
+└──────────────────────────────────────────────────────────────┘
+
+  Check IP:
+  > ipconfig
+
+  Check Port 80:
+  > netstat -ano | findstr :80
+
+  Clear Symfony Cache:
+  > cd C:\xampp\htdocs\gembira
+  > php bin/console cache:clear
+
+  Restart Apache:
+  - XAMPP Control Panel → Stop → Start
+
+┌──────────────────────────────────────────────────────────────┐
+│  EXAMPLE                                                     │
+└──────────────────────────────────────────────────────────────┘
+
+  Laptop IP: 172.24.45.213
+  WiFi: "Office-WiFi"
+
+  HP (connect ke "Office-WiFi"):
+  ┌────────────────────────────────────────────────────────┐
+  │ http://172.24.45.213/gembira/public/index.php/ikhlas  │
+  └────────────────────────────────────────────────────────┘
+
+  ✅ SUCCESS → Halaman Inspirasi muncul
+  ✅ Swipe foto kiri-kanan → Carousel bergerak
+  ✅ Tap foto → Modal fullscreen
+  ✅ Menu titik tiga berfungsi
+
+┌──────────────────────────────────────────────────────────────┐
+│  NONAKTIFKAN AKSES DARI HP                                   │
+└──────────────────────────────────────────────────────────────┘
+
+  ► Jika sudah selesai testing, kembalikan ke localhost only:
+
+    1. Klik kanan: disable_network_access.bat
+    2. Pilih: "Run as administrator"
+    3. Restart Apache
+    4. HP tidak bisa akses lagi (403 Forbidden)
+
+  ► Untuk enable lagi:
+    - Jalankan: enable_network_access.bat
+
+╔══════════════════════════════════════════════════════════════╗
+║                    SELAMAT MENCOBA! 🚀                       ║
+╚══════════════════════════════════════════════════════════════╝
+
+File bantuan:
+- enable_network_access.bat   → Enable akses dari HP
+- disable_network_access.bat  → Disable akses dari HP
+- PANDUAN_AKSES_DARI_HP.md    → Detail lengkap
+- CHANGELOG_IKHLAS_INSPIRASI.md → Update terbaru

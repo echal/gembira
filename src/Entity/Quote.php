@@ -53,9 +53,14 @@ class Quote
     #[ORM\OneToMany(targetEntity: UserQuoteInteraction::class, mappedBy: 'quote', orphanRemoval: true)]
     private Collection $interactions;
 
+    #[ORM\ManyToMany(targetEntity: Tag::class, inversedBy: 'quotes', cascade: ['persist'])]
+    #[ORM\JoinTable(name: 'quote_tags')]
+    private Collection $tags;
+
     public function __construct()
     {
         $this->interactions = new ArrayCollection();
+        $this->tags = new ArrayCollection();
         $this->createdAt = new \DateTime();
     }
 
@@ -248,5 +253,47 @@ class Quote
     public function hasPhotos(): bool
     {
         return !empty($this->photos);
+    }
+
+    /**
+     * @return Collection<int, Tag>
+     */
+    public function getTags(): Collection
+    {
+        return $this->tags;
+    }
+
+    public function addTag(Tag $tag): static
+    {
+        if (!$this->tags->contains($tag)) {
+            $this->tags->add($tag);
+        }
+
+        return $this;
+    }
+
+    public function removeTag(Tag $tag): static
+    {
+        $this->tags->removeElement($tag);
+        return $this;
+    }
+
+    public function clearTags(): static
+    {
+        $this->tags->clear();
+        return $this;
+    }
+
+    public function hasTags(): bool
+    {
+        return !$this->tags->isEmpty();
+    }
+
+    /**
+     * Get tag names as array
+     */
+    public function getTagNames(): array
+    {
+        return $this->tags->map(fn(Tag $tag) => $tag->getName())->toArray();
     }
 }

@@ -1,0 +1,500 @@
+{# ========================================
+   INSPIRASI CARD COMPONENT
+   Tailwind CSS + Vanilla JavaScript
+   Symfony Twig Compatible
+   ======================================== #}
+
+{# Example Variables - Replace with real data #}
+{% set userName = userName|default('FAISAL KASSIM, S.Kom') %}
+{% set waktuPost = waktuPost|default('Baru saja') %}
+{% set quotesText = quotesText|default('Hidup itu harus gembira dan penuh inspirasi') %}
+{% set foto1 = foto1|default(asset('uploads/inspirasi/foto1.jpg')) %}
+{% set foto2 = foto2|default('') %}
+{% set fotoProfil = fotoProfil|default(asset('uploads/profil/default.jpg')) %}
+{% set kategori = kategori|default('Gaspul') %}
+
+{# Check if has multiple photos #}
+{% set hasMultiplePhotos = foto2 is not empty %}
+
+<!-- Inspirasi Card -->
+<div class="inspirasi-card bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 mb-4">
+
+    <!-- Header: Profile, Name, Time, Menu -->
+    <div class="card-header p-4 pb-3 flex items-center justify-between relative" style="z-index: 30;">
+        <!-- Left: Profile Info -->
+        <div class="flex items-center gap-3">
+            <!-- Profile Photo -->
+            <div class="w-10 h-10 rounded-full border-2 border-purple-500 overflow-hidden flex-shrink-0">
+                <img src="{{ fotoProfil }}"
+                     alt="{{ userName }}"
+                     class="w-full h-full object-cover"
+                     onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%23A855F7%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2240%22 fill=%22white%22 font-family=%22Arial%22%3E{{ userName|first|upper }}%3C/text%3E%3C/svg%3E';">
+            </div>
+            <!-- User Info -->
+            <div>
+                <h3 class="font-semibold text-gray-900 text-sm">{{ userName }}</h3>
+                <p class="text-xs text-gray-500">{{ waktuPost }}</p>
+            </div>
+        </div>
+
+        <!-- Right: Pin & Menu -->
+        <div class="flex items-center gap-2">
+            <!-- Save/Pin Button -->
+            <button class="save-btn transition-transform hover:scale-110 text-gray-400 hover:text-yellow-500"
+                    title="Simpan ke favorit"
+                    onclick="toggleSave(this)">
+                <span class="text-xl">🔖</span>
+            </button>
+
+            <!-- Three Dots Menu -->
+            <div class="menu-container relative">
+                <button class="menu-btn p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+                        onclick="toggleMenu(this)"
+                        title="Opsi lainnya">
+                    <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+                    </svg>
+                </button>
+
+                <!-- Dropdown Menu -->
+                <div class="menu-dropdown hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-2xl border border-gray-200 py-1"
+                     style="z-index: 40;">
+                    <button class="w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors flex items-center gap-3 text-gray-700"
+                            onclick="editInspirasi()">
+                        <span class="text-lg">✏️</span>
+                        <span class="text-sm font-medium">Edit Inspirasi</span>
+                    </button>
+                    <button class="w-full text-left px-4 py-2.5 hover:bg-red-50 transition-colors flex items-center gap-3 text-red-600"
+                            onclick="hapusInspirasi()">
+                        <span class="text-lg">🗑️</span>
+                        <span class="text-sm font-medium">Hapus Inspirasi</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Photo Carousel Section -->
+    {% if foto1 %}
+    <div class="photo-section px-4 pb-3 relative" style="z-index: 20;">
+        <div class="photo-carousel-wrapper relative rounded-lg overflow-hidden bg-gray-50" style="height: 320px;">
+
+            <!-- Photos Container -->
+            <div class="photo-carousel-container flex transition-transform duration-300 ease-out h-full"
+                 data-current="0"
+                 style="width: {% if hasMultiplePhotos %}200%{% else %}100%{% endif %};">
+
+                <!-- Photo 1 -->
+                <div class="photo-slide flex-shrink-0 h-full" style="width: {% if hasMultiplePhotos %}50%{% else %}100%{% endif %};">
+                    <img src="{{ foto1 }}"
+                         alt="Inspirasi 1"
+                         class="w-full h-full object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                         onclick="openPhotoPreview('{{ foto1 }}')"
+                         loading="lazy">
+                </div>
+
+                <!-- Photo 2 (if exists) -->
+                {% if hasMultiplePhotos %}
+                <div class="photo-slide flex-shrink-0 h-full" style="width: 50%;">
+                    <img src="{{ foto2 }}"
+                         alt="Inspirasi 2"
+                         class="w-full h-full object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                         onclick="openPhotoPreview('{{ foto2 }}')"
+                         loading="lazy">
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Navigation Buttons (only if multiple photos) -->
+            {% if hasMultiplePhotos %}
+            <div class="carousel-nav absolute inset-0 flex items-center justify-between px-3 pointer-events-none" style="z-index: 25;">
+                <button class="nav-btn prev-btn pointer-events-auto w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white transition-all flex items-center justify-center text-gray-700 hover:scale-110 active:scale-95"
+                        onclick="prevPhoto(this)"
+                        title="Foto sebelumnya">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+                <button class="nav-btn next-btn pointer-events-auto w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white transition-all flex items-center justify-center text-gray-700 hover:scale-110 active:scale-95"
+                        onclick="nextPhoto(this)"
+                        title="Foto berikutnya">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Dots Indicator -->
+            <div class="carousel-dots absolute bottom-3 left-1/2 transform -translate-x-1/2 flex gap-2" style="z-index: 25;">
+                <div class="dot w-2 h-2 rounded-full bg-white shadow-sm transition-all duration-300"></div>
+                <div class="dot w-2 h-2 rounded-full bg-white/40 shadow-sm transition-all duration-300"></div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Quote Content -->
+    <div class="quote-content px-6 pt-2 pb-4">
+        <blockquote class="text-gray-800 text-base md:text-lg leading-relaxed italic font-light mb-3">
+            "{{ quotesText }}"
+        </blockquote>
+
+        <!-- Category Badge -->
+        <div class="flex items-center justify-between">
+            <span class="inline-block bg-purple-100 text-purple-700 px-3 py-1.5 rounded-full text-xs font-semibold">
+                🚀 {{ kategori }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="card-actions px-4 pb-4">
+        <div class="flex items-center justify-around border-t border-gray-100 pt-3 gap-2">
+            <!-- Like Button -->
+            <button class="action-btn like-btn flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all hover:bg-red-50 text-gray-600 flex-1 justify-center"
+                    onclick="toggleLike(this)">
+                <span class="text-lg">🤍</span>
+                <span class="text-sm font-medium">Suka</span>
+            </button>
+
+            <!-- Comment Button -->
+            <button class="action-btn comment-btn flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all hover:bg-purple-50 text-gray-600 flex-1 justify-center"
+                    onclick="openComments()">
+                <span class="text-lg">💬</span>
+                <span class="text-sm font-medium">Komentar</span>
+            </button>
+
+            <!-- Share Button -->
+            <button class="action-btn share-btn flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all hover:bg-blue-50 text-gray-600 flex-1 justify-center"
+                    onclick="shareInspirasi('{{ quotesText }}')">
+                <span class="text-lg">🔗</span>
+                <span class="text-sm font-medium">Bagikan</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Bagikan Semangat Button -->
+    <div class="px-6 pb-4">
+        <button class="bagikan-semangat-btn w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-700 hover:via-pink-700 hover:to-purple-700 text-white px-6 py-3.5 rounded-xl transition-all font-extrabold text-base shadow-lg hover:shadow-xl active:scale-[0.98] disabled:opacity-50"
+                style="text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); letter-spacing: 0.5px;"
+                onclick="bagikanSemangat(this)">
+            🚀 Bagikan Semangat
+        </button>
+    </div>
+</div>
+
+<!-- Photo Preview Modal (Z-INDEX TERTINGGI) -->
+<div id="photoPreviewModal"
+     class="hidden fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+     style="z-index: 99999 !important;"
+     onclick="closePhotoPreview()">
+
+    <!-- Close Button -->
+    <button class="absolute top-4 right-4 text-white hover:text-gray-300 transition-all bg-black/50 rounded-full p-3 hover:bg-black/70 active:scale-95"
+            style="z-index: 100000 !important;"
+            onclick="closePhotoPreview(); event.stopPropagation();"
+            title="Tutup (ESC)">
+        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+    </button>
+
+    <!-- Image Preview -->
+    <div class="relative max-w-full max-h-full flex items-center justify-center" onclick="event.stopPropagation()">
+        <img id="photoPreviewImg"
+             src=""
+             alt="Preview"
+             class="max-w-[95vw] max-h-[95vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
+             style="background: transparent;">
+    </div>
+
+    <!-- Mobile Hint -->
+    <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 text-white text-xs bg-black/60 px-4 py-2 rounded-full md:hidden">
+        👆 Ketuk di luar gambar untuk menutup
+    </div>
+</div>
+
+<style>
+/* Ensure modal is on top of everything */
+#photoPreviewModal {
+    z-index: 99999 !important;
+}
+
+/* Smooth transitions */
+.photo-carousel-container {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Prevent background scroll when modal open */
+body.modal-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .photo-carousel-wrapper {
+        height: 280px !important;
+    }
+
+    .action-btn span:last-child {
+        font-size: 0.75rem;
+    }
+}
+</style>
+
+<script>
+(function() {
+    'use strict';
+
+    // ==========================================
+    // PHOTO CAROUSEL NAVIGATION
+    // ==========================================
+
+    window.nextPhoto = function(btn) {
+        const wrapper = btn.closest('.photo-carousel-wrapper');
+        const container = wrapper.querySelector('.photo-carousel-container');
+        const dots = wrapper.querySelectorAll('.dot');
+        const current = parseInt(container.dataset.current);
+
+        // Toggle between 0 and 1
+        const next = current === 0 ? 1 : 0;
+
+        // Update transform
+        container.style.transform = `translateX(-${next * 50}%)`;
+        container.dataset.current = next;
+
+        // Update dots
+        updateDots(dots, next);
+    };
+
+    window.prevPhoto = function(btn) {
+        const wrapper = btn.closest('.photo-carousel-wrapper');
+        const container = wrapper.querySelector('.photo-carousel-container');
+        const dots = wrapper.querySelectorAll('.dot');
+        const current = parseInt(container.dataset.current);
+
+        // Toggle between 0 and 1
+        const prev = current === 0 ? 1 : 0;
+
+        // Update transform
+        container.style.transform = `translateX(-${prev * 50}%)`;
+        container.dataset.current = prev;
+
+        // Update dots
+        updateDots(dots, prev);
+    };
+
+    function updateDots(dots, activeIndex) {
+        dots.forEach((dot, index) => {
+            if (index === activeIndex) {
+                dot.classList.remove('bg-white/40', 'w-2');
+                dot.classList.add('bg-white', 'w-6');
+            } else {
+                dot.classList.remove('bg-white', 'w-6');
+                dot.classList.add('bg-white/40', 'w-2');
+            }
+        });
+    }
+
+    // ==========================================
+    // SWIPE GESTURE SUPPORT
+    // ==========================================
+
+    document.querySelectorAll('.photo-carousel-container').forEach(container => {
+        let touchStartX = 0;
+        let touchEndX = 0;
+        let touchStartTime = 0;
+
+        container.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartTime = Date.now();
+        }, { passive: true });
+
+        container.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].clientX;
+            const touchTime = Date.now() - touchStartTime;
+            const swipeDistance = touchStartX - touchEndX;
+
+            // Swipe threshold: min 50px, max 300ms
+            if (Math.abs(swipeDistance) > 50 && touchTime < 300) {
+                const wrapper = container.closest('.photo-carousel-wrapper');
+                const nextBtn = wrapper.querySelector('.next-btn');
+                const prevBtn = wrapper.querySelector('.prev-btn');
+
+                if (swipeDistance > 0 && nextBtn) {
+                    // Swipe left → next
+                    nextBtn.click();
+                } else if (swipeDistance < 0 && prevBtn) {
+                    // Swipe right → prev
+                    prevBtn.click();
+                }
+            }
+        }, { passive: true });
+    });
+
+    // ==========================================
+    // PHOTO PREVIEW MODAL
+    // ==========================================
+
+    window.openPhotoPreview = function(photoUrl) {
+        const modal = document.getElementById('photoPreviewModal');
+        const img = document.getElementById('photoPreviewImg');
+
+        if (modal && img) {
+            img.src = photoUrl;
+            modal.classList.remove('hidden');
+            document.body.classList.add('modal-open');
+
+            console.log('Photo preview opened:', photoUrl);
+        }
+    };
+
+    window.closePhotoPreview = function() {
+        const modal = document.getElementById('photoPreviewModal');
+        const img = document.getElementById('photoPreviewImg');
+
+        if (modal && img) {
+            modal.classList.add('hidden');
+            document.body.classList.remove('modal-open');
+
+            setTimeout(() => {
+                img.src = '';
+            }, 300);
+
+            console.log('Photo preview closed');
+        }
+    };
+
+    // Close modal with ESC key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closePhotoPreview();
+        }
+    });
+
+    // ==========================================
+    // MENU DROPDOWN
+    // ==========================================
+
+    window.toggleMenu = function(btn) {
+        const dropdown = btn.nextElementSibling;
+
+        // Close other dropdowns
+        document.querySelectorAll('.menu-dropdown').forEach(d => {
+            if (d !== dropdown) d.classList.add('hidden');
+        });
+
+        // Toggle current
+        dropdown.classList.toggle('hidden');
+    };
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.menu-container')) {
+            document.querySelectorAll('.menu-dropdown').forEach(d => {
+                d.classList.add('hidden');
+            });
+        }
+    });
+
+    // ==========================================
+    // ACTION BUTTONS
+    // ==========================================
+
+    window.toggleLike = function(btn) {
+        const icon = btn.querySelector('span:first-child');
+        const text = btn.querySelector('span:last-child');
+        const isLiked = icon.textContent === '❤️';
+
+        if (isLiked) {
+            icon.textContent = '🤍';
+            text.textContent = 'Suka';
+            btn.classList.remove('text-red-500');
+            btn.classList.add('text-gray-600');
+        } else {
+            icon.textContent = '❤️';
+            text.textContent = 'Disukai';
+            btn.classList.remove('text-gray-600');
+            btn.classList.add('text-red-500');
+        }
+
+        console.log('Like toggled:', !isLiked);
+    };
+
+    window.toggleSave = function(btn) {
+        const icon = btn.querySelector('span');
+        const isSaved = icon.textContent === '📌';
+
+        if (isSaved) {
+            icon.textContent = '🔖';
+            btn.classList.remove('text-yellow-500');
+            btn.classList.add('text-gray-400');
+        } else {
+            icon.textContent = '📌';
+            btn.classList.remove('text-gray-400');
+            btn.classList.add('text-yellow-500');
+        }
+
+        console.log('Save toggled:', !isSaved);
+    };
+
+    window.openComments = function() {
+        console.log('Comments clicked');
+        alert('💬 Fitur komentar akan segera hadir!');
+    };
+
+    window.shareInspirasi = function(text) {
+        console.log('Share clicked');
+
+        // Web Share API if available
+        if (navigator.share) {
+            navigator.share({
+                title: 'Inspirasi Hari Ini',
+                text: text,
+                url: window.location.href
+            }).then(() => {
+                console.log('Shared successfully');
+            }).catch((err) => {
+                console.log('Share cancelled', err);
+            });
+        } else {
+            // Fallback: copy to clipboard
+            navigator.clipboard.writeText(text).then(() => {
+                alert('📋 Quote disalin ke clipboard!');
+            });
+        }
+    };
+
+    window.bagikanSemangat = function(btn) {
+        console.log('Bagikan Semangat clicked');
+
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Membagikan...';
+
+        // Simulate API call
+        setTimeout(() => {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            alert('🎉 Semangat berhasil dibagikan!');
+        }, 1500);
+    };
+
+    window.editInspirasi = function() {
+        console.log('Edit clicked');
+        alert('✏️ Fitur edit akan segera hadir!');
+    };
+
+    window.hapusInspirasi = function() {
+        console.log('Delete clicked');
+        if (confirm('🗑️ Hapus inspirasi ini?')) {
+            alert('Inspirasi dihapus!');
+        }
+    };
+
+    console.log('✅ Inspirasi Card Component loaded');
+})();
+</script>

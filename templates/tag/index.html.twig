@@ -1,0 +1,74 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Semua Tagar - Inspirasi Gembira{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+    <!-- Header -->
+    <div class="bg-white shadow-sm sticky top-0 z-10">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <a href="{{ path('app_ikhlas') }}" class="flex items-center gap-2 text-gray-600 hover:text-purple-600 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    <span class="font-medium">Kembali</span>
+                </a>
+                <h1 class="text-xl font-bold text-gray-800">Semua Tagar</h1>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-6xl mx-auto">
+            <!-- Stats Card -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-purple-600">{{ stats.total_tags }}</div>
+                        <div class="text-sm text-gray-600">Total Tagar</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-blue-600">{{ stats.total_usages }}</div>
+                        <div class="text-sm text-gray-600">Total Penggunaan</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-pink-600">{{ stats.avg_usage }}</div>
+                        <div class="text-sm text-gray-600">Rata-rata</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-orange-600">{{ stats.max_usage }}</div>
+                        <div class="text-sm text-gray-600">Terpopuler</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tags Cloud -->
+            {% if tags|length > 0 %}
+                <div class="bg-white rounded-2xl shadow-lg p-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Tagar Populer</h2>
+                    <div class="flex flex-wrap gap-3">
+                        {% for tag in tags %}
+                            {% set popularity = (tag.usageCount / stats.max_usage * 100)|round %}
+                            {% set size_class = popularity > 75 ? 'text-2xl' : (popularity > 50 ? 'text-xl' : (popularity > 25 ? 'text-lg' : 'text-base')) %}
+                            {% set color = popularity > 75 ? 'bg-purple-600' : (popularity > 50 ? 'bg-blue-600' : (popularity > 25 ? 'bg-pink-600' : 'bg-gray-600')) %}
+
+                            <a href="{{ path('app_tag_show', {slug: tag.slug}) }}"
+                               class="{{ color }} hover:opacity-80 text-white px-4 py-2 rounded-full {{ size_class }} font-medium transition-all hover:scale-105 shadow-md">
+                                #{{ tag.name }}
+                                <span class="text-sm opacity-75 ml-1">({{ tag.usageCount }})</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="bg-white rounded-2xl shadow-lg p-12 text-center">
+                    <div class="text-6xl mb-4">📌</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Belum Ada Tagar</h3>
+                    <p class="text-gray-600">Mulai gunakan tagar di inspirasi Anda!</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

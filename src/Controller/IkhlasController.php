@@ -12,6 +12,7 @@ use App\Repository\PegawaiRepository;
 use App\Service\IkhlasLeaderboardService;
 use App\Service\GamificationService;
 use App\Service\UserXpService;
+use App\Service\TagService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -34,6 +35,7 @@ class IkhlasController extends AbstractController
         private IkhlasLeaderboardService $leaderboardService,
         private GamificationService $gamificationService,
         private UserXpService $userXpService,
+        private TagService $tagService,
         private LoggerInterface $logger
     ) {}
 
@@ -276,6 +278,15 @@ class IkhlasController extends AbstractController
 
             $this->logger->info('Quote saved! ID: ' . $quote->getId());
 
+            // Process hashtags from content
+            try {
+                $this->tagService->processQuoteTags($quote);
+                $this->logger->info('Tags processed for quote ID: ' . $quote->getId());
+            } catch (\Exception $tagError) {
+                $this->logger->error('Tag processing error: ' . $tagError->getMessage());
+                // Continue even if tag processing fails
+            }
+
             // Award XP untuk membuat quote
             try {
                 $xpResult = $this->userXpService->awardXpForActivity(
@@ -367,6 +378,15 @@ class IkhlasController extends AbstractController
             $this->em->flush();
 
             $this->logger->info('Quote saved! ID: ' . $quote->getId());
+
+            // Process hashtags from content
+            try {
+                $this->tagService->processQuoteTags($quote);
+                $this->logger->info('Tags processed for quote ID: ' . $quote->getId());
+            } catch (\Exception $tagError) {
+                $this->logger->error('Tag processing error: ' . $tagError->getMessage());
+                // Continue even if tag processing fails
+            }
 
             // Award XP for creating a quote
             try {

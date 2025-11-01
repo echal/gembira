@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>Card Inspirasi - Component</title>
+
+    <!-- Tailwind CSS CDN (untuk demo, production pakai build) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        /* Custom animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .slide-in-right {
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        .slide-in-left {
+            animation: slideInLeft 0.3s ease-out;
+        }
+
+        /* Prevent image background issues */
+        img {
+            background-color: transparent;
+        }
+
+        /* Smooth transitions for carousel */
+        .carousel-container {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Touch action for swipe */
+        .swipeable {
+            touch-action: pan-y pinch-zoom;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-purple-50 via-pink-50 to-sky-50 min-h-screen p-4">
+
+<!-- Container untuk Multiple Cards (bisa diloop) -->
+<div class="max-w-2xl mx-auto space-y-4">
+
+    <!-- ========================================
+         CARD INSPIRASI - Single Component
+         ======================================== -->
+    <div class="card-inspirasi bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 relative overflow-visible">
+
+        <!-- Header -->
+        <div class="p-4 pb-3 relative z-20 flex items-center justify-between">
+            <!-- Left: Profile Info -->
+            <div class="flex items-center gap-2">
+                <!-- Profile Photo -->
+                <div class="w-10 h-10 rounded-full border-2 border-purple-500 flex items-center justify-center bg-gradient-to-br from-purple-400 to-pink-400 text-white font-bold">
+                    A
+                </div>
+                <!-- User Info -->
+                <div>
+                    <h3 class="font-semibold text-gray-900 text-sm">ABDUNNAFI H, S.Kom</h3>
+                    <p class="text-xs text-gray-500">6 menit yang lalu</p>
+                </div>
+            </div>
+
+            <!-- Right: Save & Menu -->
+            <div class="flex items-center gap-2 relative z-30">
+                <!-- Save Button -->
+                <button class="save-btn transition-transform hover:scale-110 text-gray-400 hover:text-yellow-500"
+                        title="Simpan ke favorit">
+                    <span class="text-xl">🔖</span>
+                </button>
+
+                <!-- Three-Dots Menu -->
+                <div class="relative menu-container">
+                    <button class="menu-btn p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+                            title="Opsi lainnya">
+                        <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+                        </svg>
+                    </button>
+
+                    <!-- Dropdown Menu -->
+                    <div class="menu-dropdown hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-[100]">
+                        <button class="w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors flex items-center gap-3 text-gray-700">
+                            <span class="text-lg">✏️</span>
+                            <span class="text-sm font-medium">Edit Inspirasi</span>
+                        </button>
+                        <button class="w-full text-left px-4 py-2.5 hover:bg-red-50 transition-colors flex items-center gap-3 text-red-600">
+                            <span class="text-lg">🗑️</span>
+                            <span class="text-sm font-medium">Hapus Inspirasi</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Photo Carousel Container -->
+        <div class="relative px-4 pb-3">
+            <!-- Carousel Wrapper -->
+            <div class="photo-carousel relative rounded-lg overflow-hidden bg-transparent" style="height: 300px;">
+
+                <!-- Photos Container (sliding) -->
+                <div class="carousel-container swipeable flex transition-transform duration-300 ease-out h-full"
+                     data-current-slide="0">
+
+                    <!-- Photo 1 -->
+                    <div class="carousel-slide w-full flex-shrink-0 h-full">
+                        <img src="https://images.unsplash.com/photo-1511688878353-3a2f5be94cd7?w=600&h=400&fit=crop"
+                             alt="Inspirasi 1"
+                             class="w-full h-full object-cover rounded-lg cursor-pointer"
+                             style="background: transparent; display: block;"
+                             loading="lazy"
+                             onclick="openPhotoModal(this.src)">
+                    </div>
+
+                    <!-- Photo 2 -->
+                    <div class="carousel-slide w-full flex-shrink-0 h-full">
+                        <img src="https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=600&h=400&fit=crop"
+                             alt="Inspirasi 2"
+                             class="w-full h-full object-cover rounded-lg cursor-pointer"
+                             style="background: transparent; display: block;"
+                             loading="lazy"
+                             onclick="openPhotoModal(this.src)">
+                    </div>
+                </div>
+
+                <!-- Navigation Buttons (only show if multiple photos) -->
+                <div class="carousel-nav absolute inset-0 flex items-center justify-between px-2 pointer-events-none">
+                    <button class="prev-btn pointer-events-auto w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm shadow-lg hover:bg-white transition-all flex items-center justify-center text-gray-700 hover:scale-110 active:scale-95"
+                            title="Foto sebelumnya">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                    </button>
+                    <button class="next-btn pointer-events-auto w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm shadow-lg hover:bg-white transition-all flex items-center justify-center text-gray-700 hover:scale-110 active:scale-95"
+                            title="Foto berikutnya">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Dots Indicator -->
+                <div class="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex gap-1.5 z-10">
+                    <div class="dot w-2 h-2 rounded-full bg-white/80 backdrop-blur-sm transition-all duration-300"></div>
+                    <div class="dot w-2 h-2 rounded-full bg-white/40 backdrop-blur-sm transition-all duration-300"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quote Content -->
+        <div class="px-6 pt-2 pb-4">
+            <blockquote class="text-gray-800 text-base md:text-lg leading-relaxed italic font-light mb-3">
+                "Mari kita semangat bersama! Hari ini adalah kesempatan baru untuk berbuat lebih baik. 💪"
+            </blockquote>
+
+            <!-- Category Badge -->
+            <div class="flex items-center justify-between">
+                <span class="inline-block bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-medium">
+                    🚀 Gaspul
+                </span>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="px-4 pb-4">
+            <div class="flex items-center justify-around border-t border-gray-100 pt-3">
+                <!-- Like Button -->
+                <button class="like-btn flex items-center gap-2 px-4 py-2 rounded-lg transition-all hover:bg-red-50 text-gray-600">
+                    <span class="text-xl">🤍</span>
+                    <span class="text-sm font-medium">Suka</span>
+                </button>
+
+                <!-- Comment Button -->
+                <button class="comment-btn flex items-center gap-2 px-4 py-2 rounded-lg transition-all hover:bg-purple-50 text-gray-600">
+                    <span class="text-xl">💬</span>
+                    <span class="text-sm font-medium">Komentar</span>
+                </button>
+
+                <!-- Share Button -->
+                <button class="share-btn flex items-center gap-2 px-4 py-2 rounded-lg transition-all hover:bg-blue-50 text-gray-600">
+                    <span class="text-xl">🔗</span>
+                    <span class="text-sm font-medium">Bagikan</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Bagikan Semangat Button (Bottom) -->
+        <div class="px-6 pb-4">
+            <button class="bagikan-btn w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-700 hover:via-pink-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl transition-all font-extrabold text-base shadow-lg hover:shadow-xl active:scale-[0.98]"
+                    style="text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); letter-spacing: 0.5px;">
+                🚀 Bagikan Semangat
+            </button>
+        </div>
+    </div>
+
+    <!-- END CARD INSPIRASI -->
+
+</div>
+
+<!-- ========================================
+     PHOTO MODAL - Fullscreen Preview
+     ======================================== -->
+<div id="photoModal"
+     class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[99999] flex items-center justify-center p-4"
+     onclick="closePhotoModal()"
+     style="backdrop-filter: blur(4px);">
+
+    <!-- Close Button -->
+    <button class="absolute top-4 right-4 text-white hover:text-gray-300 transition-all z-[100000] bg-black/50 rounded-full p-3 hover:bg-black/70 active:scale-95"
+            onclick="closePhotoModal(); event.stopPropagation();"
+            title="Tutup (ESC)">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+    </button>
+
+    <!-- Image Container -->
+    <div class="relative max-w-full max-h-full flex items-center justify-center" onclick="event.stopPropagation()">
+        <img id="photoModalImg"
+             src=""
+             alt="Preview Foto"
+             class="max-w-[95vw] max-h-[95vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
+             style="background: transparent; display: block;">
+    </div>
+
+    <!-- Tap to close hint for mobile -->
+    <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 text-white text-xs sm:text-sm bg-black/60 px-4 py-2 rounded-full backdrop-blur-sm md:hidden">
+        👆 Ketuk di luar gambar untuk menutup
+    </div>
+</div>
+
+<!-- ========================================
+     JAVASCRIPT - Vanilla JS (No Dependencies)
+     ======================================== -->
+<script>
+(function() {
+    'use strict';
+
+    console.log('🚀 Card Inspirasi Component Loaded');
+
+    // ==========================================
+    // PHOTO CAROUSEL FUNCTIONALITY
+    // ==========================================
+
+    document.querySelectorAll('.photo-carousel').forEach(carousel => {
+        const container = carousel.querySelector('.carousel-container');
+        const slides = carousel.querySelectorAll('.carousel-slide');
+        const prevBtn = carousel.querySelector('.prev-btn');
+        const nextBtn = carousel.querySelector('.next-btn');
+        const dots = carousel.querySelectorAll('.dot');
+        const nav = carousel.querySelector('.carousel-nav');
+
+        let currentSlide = 0;
+        const totalSlides = slides.length;
+
+        // Hide navigation if only 1 photo
+        if (totalSlides <= 1) {
+            if (nav) nav.style.display = 'none';
+            dots.forEach(dot => dot.style.display = 'none');
+            return;
+        }
+
+        // Update carousel position
+        function updateCarousel(animate = true) {
+            if (!animate) {
+                container.style.transition = 'none';
+            }
+            container.style.transform = `translateX(-${currentSlide * 100}%)`;
+
+            if (!animate) {
+                setTimeout(() => {
+                    container.style.transition = '';
+                }, 50);
+            }
+
+            // Update dots
+            dots.forEach((dot, index) => {
+                if (index === currentSlide) {
+                    dot.classList.remove('bg-white/40');
+                    dot.classList.add('bg-white/80', 'w-6');
+                } else {
+                    dot.classList.remove('bg-white/80', 'w-6');
+                    dot.classList.add('bg-white/40');
+                }
+            });
+        }
+
+        // Next slide
+        function nextSlide() {
+            currentSlide = (currentSlide + 1) % totalSlides;
+            updateCarousel();
+        }
+
+        // Previous slide
+        function prevSlide() {
+            currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+            updateCarousel();
+        }
+
+        // Event listeners for buttons
+        if (nextBtn) nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            nextSlide();
+        });
+
+        if (prevBtn) prevBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            prevSlide();
+        });
+
+        // ==========================================
+        // SWIPE GESTURE SUPPORT
+        // ==========================================
+
+        let touchStartX = 0;
+        let touchEndX = 0;
+        let touchStartTime = 0;
+        const minSwipeDistance = 50;
+        const maxSwipeTime = 300;
+
+        container.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartTime = Date.now();
+        }, { passive: true });
+
+        container.addEventListener('touchmove', (e) => {
+            // Allow vertical scrolling
+            touchEndX = e.touches[0].clientX;
+        }, { passive: true });
+
+        container.addEventListener('touchend', () => {
+            const swipeDistance = touchStartX - touchEndX;
+            const swipeTime = Date.now() - touchStartTime;
+
+            // Check if it's a valid swipe (fast enough and long enough)
+            if (Math.abs(swipeDistance) > minSwipeDistance && swipeTime < maxSwipeTime) {
+                if (swipeDistance > 0) {
+                    // Swipe left - next slide
+                    nextSlide();
+                } else {
+                    // Swipe right - previous slide
+                    prevSlide();
+                }
+            }
+        });
+
+        // Initialize
+        updateCarousel(false);
+    });
+
+    // ==========================================
+    // PHOTO MODAL FUNCTIONALITY
+    // ==========================================
+
+    window.openPhotoModal = function(photoSrc) {
+        const modal = document.getElementById('photoModal');
+        const img = document.getElementById('photoModalImg');
+
+        if (modal && img) {
+            img.src = photoSrc;
+            modal.classList.remove('hidden');
+
+            // Prevent body scroll
+            document.body.style.overflow = 'hidden';
+            document.body.style.position = 'fixed';
+            document.body.style.width = '100%';
+
+            console.log('Modal opened:', photoSrc);
+        }
+    };
+
+    window.closePhotoModal = function() {
+        const modal = document.getElementById('photoModal');
+        const img = document.getElementById('photoModalImg');
+
+        if (modal && img) {
+            modal.classList.add('hidden');
+
+            setTimeout(() => {
+                img.src = '';
+            }, 300);
+
+            // Restore body scroll
+            document.body.style.overflow = '';
+            document.body.style.position = '';
+            document.body.style.width = '';
+
+            console.log('Modal closed');
+        }
+    };
+
+    // Close modal with ESC key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closePhotoModal();
+        }
+    });
+
+    // ==========================================
+    // MENU DROPDOWN FUNCTIONALITY
+    // ==========================================
+
+    document.querySelectorAll('.menu-container').forEach(container => {
+        const btn = container.querySelector('.menu-btn');
+        const dropdown = container.querySelector('.menu-dropdown');
+
+        if (btn && dropdown) {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+
+                // Close other dropdowns
+                document.querySelectorAll('.menu-dropdown').forEach(d => {
+                    if (d !== dropdown) d.classList.add('hidden');
+                });
+
+                // Toggle current dropdown
+                dropdown.classList.toggle('hidden');
+            });
+        }
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.menu-container')) {
+            document.querySelectorAll('.menu-dropdown').forEach(dropdown => {
+                dropdown.classList.add('hidden');
+            });
+        }
+    });
+
+    // ==========================================
+    // ACTION BUTTONS FUNCTIONALITY
+    // ==========================================
+
+    // Like button
+    document.querySelectorAll('.like-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const icon = this.querySelector('span:first-child');
+            const text = this.querySelector('span:last-child');
+            const isLiked = icon.textContent === '❤️';
+
+            if (isLiked) {
+                icon.textContent = '🤍';
+                text.textContent = 'Suka';
+                this.classList.remove('text-red-500');
+                this.classList.add('text-gray-600');
+            } else {
+                icon.textContent = '❤️';
+                text.textContent = 'Disukai';
+                this.classList.remove('text-gray-600');
+                this.classList.add('text-red-500');
+            }
+
+            console.log('Like toggled:', !isLiked);
+        });
+    });
+
+    // Save button
+    document.querySelectorAll('.save-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const icon = this.querySelector('span');
+            const isSaved = icon.textContent === '📌';
+
+            if (isSaved) {
+                icon.textContent = '🔖';
+                this.classList.remove('text-yellow-500');
+                this.classList.add('text-gray-400');
+            } else {
+                icon.textContent = '📌';
+                this.classList.remove('text-gray-400');
+                this.classList.add('text-yellow-500');
+            }
+
+            console.log('Save toggled:', !isSaved);
+        });
+    });
+
+    // Comment button
+    document.querySelectorAll('.comment-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            console.log('Comment clicked');
+            alert('Fitur komentar akan segera hadir! 💬');
+        });
+    });
+
+    // Share button
+    document.querySelectorAll('.share-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            console.log('Share clicked');
+
+            // Get quote text from card
+            const card = this.closest('.card-inspirasi');
+            const quote = card.querySelector('blockquote').textContent.trim();
+
+            // Share via Web Share API if available
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Inspirasi Hari Ini',
+                    text: quote,
+                    url: window.location.href
+                }).then(() => {
+                    console.log('Shared successfully');
+                }).catch(err => {
+                    console.log('Share cancelled', err);
+                });
+            } else {
+                // Fallback: Copy to clipboard
+                navigator.clipboard.writeText(quote).then(() => {
+                    alert('📋 Quote berhasil disalin ke clipboard!');
+                });
+            }
+        });
+    });
+
+    // Bagikan Semangat button
+    document.querySelectorAll('.bagikan-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            console.log('Bagikan Semangat clicked');
+
+            // Add loading state
+            const originalText = this.innerHTML;
+            this.disabled = true;
+            this.innerHTML = '⏳ Membagikan...';
+
+            // Simulate API call
+            setTimeout(() => {
+                this.disabled = false;
+                this.innerHTML = originalText;
+                alert('🎉 Semangat berhasil dibagikan!');
+            }, 1500);
+        });
+    });
+
+    console.log('✅ All event listeners attached');
+
+})();
+</script>
+
+</body>
+</html>

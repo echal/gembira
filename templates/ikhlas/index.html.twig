@@ -351,7 +351,11 @@ document.addEventListener('click', function(event) {
                                     <!-- Share Option -->
                                     <button class="menu-share-quote w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors flex items-center gap-3 text-gray-700 border-t border-gray-100"
                                             data-quote-id="{{ quote.id }}">
-                                        <span class="text-lg">📤</span>
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                                            <polyline points="16 6 12 2 8 6"></polyline>
+                                            <line x1="12" y1="2" x2="12" y2="15"></line>
+                                        </svg>
                                         <span class="text-sm font-medium">Bagikan Quote</span>
                                     </button>
                                 </div>
@@ -517,20 +521,19 @@ document.addEventListener('click', function(event) {
                             <span class="text-xs sm:text-sm font-medium comment-toggle-text hidden sm:inline">Lihat Komentar</span>
                         </button>
 
-                        <!-- Share Button - WhatsApp Green Style -->
-                        <button class="share-btn flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg transition-all text-white font-medium"
-                                style="background-color: #25D366; box-shadow: 0 2px 4px rgba(37, 211, 102, 0.3);"
-                                onmouseover="this.style.backgroundColor='#20BA5A'; this.style.transform='scale(1.05)'"
-                                onmouseout="this.style.backgroundColor='#25D366'; this.style.transform='scale(1)'"
+                        <!-- Share Button -->
+                        <button class="share-btn flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg transition-all hover:bg-green-50 text-gray-600"
                                 data-quote-id="{{ quote.id }}"
                                 data-content="{{ quote.content }}"
                                 data-author="{{ quote.author ?? 'Anonim' }}"
                                 data-category="{{ quote.category ?? 'Gaspul' }}"
                                 data-level="{{ item.authorLevel }}">
-                            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                                <polyline points="16 6 12 2 8 6"></polyline>
+                                <line x1="12" y1="2" x2="12" y2="15"></line>
                             </svg>
-                            <span class="text-xs sm:text-sm hidden sm:inline">WhatsApp</span>
+                            <span class="text-xs sm:text-sm font-medium hidden sm:inline">Bagikan</span>
                         </button>
                     </div>
                 </div>
@@ -610,6 +613,80 @@ document.addEventListener('click', function(event) {
 
 <!-- Toast Notification Container -->
 <div id="toastContainer" class="fixed bottom-24 right-4 z-50 space-y-2"></div>
+
+<!-- Share Modal - Bottom Sheet -->
+<div id="shareModal" class="hidden fixed inset-0 z-50" onclick="closeShareModal()">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+
+    <!-- Bottom Sheet -->
+    <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl"
+         onclick="event.stopPropagation()"
+         style="animation: slideUp 0.3s ease-out;">
+
+        <!-- Handle Bar -->
+        <div class="flex justify-center pt-3 pb-2">
+            <div class="w-12 h-1.5 bg-gray-300 rounded-full"></div>
+        </div>
+
+        <!-- Title -->
+        <div class="px-6 py-3 border-b border-gray-100">
+            <h3 class="text-lg font-bold text-gray-800">Bagikan ke</h3>
+        </div>
+
+        <!-- Share Options -->
+        <div class="p-6 grid grid-cols-3 gap-4">
+            <!-- WhatsApp -->
+            <button onclick="shareToWhatsApp()" class="flex flex-col items-center gap-2 p-4 rounded-2xl hover:bg-gray-50 transition-colors active:scale-95">
+                <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center">
+                    <svg class="w-9 h-9 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                    </svg>
+                </div>
+                <span class="text-sm font-medium text-gray-700">WhatsApp</span>
+            </button>
+
+            <!-- Status WhatsApp -->
+            <button onclick="shareToWhatsAppStatus()" class="flex flex-col items-center gap-2 p-4 rounded-2xl hover:bg-gray-50 transition-colors active:scale-95">
+                <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center">
+                    <svg class="w-9 h-9 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                    </svg>
+                </div>
+                <span class="text-sm font-medium text-gray-700">Status</span>
+            </button>
+
+            <!-- Copy Link -->
+            <button onclick="copyShareLink()" class="flex flex-col items-center gap-2 p-4 rounded-2xl hover:bg-gray-50 transition-colors active:scale-95">
+                <div class="w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                </div>
+                <span class="text-sm font-medium text-gray-700">Salin Tautan</span>
+            </button>
+        </div>
+
+        <!-- Cancel Button -->
+        <div class="px-6 pb-6 pt-2">
+            <button onclick="closeShareModal()" class="w-full py-3 text-gray-600 font-medium hover:bg-gray-50 rounded-xl transition-colors">
+                Batal
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+</style>
 
 <!-- Photo Modal - Fullscreen View dengan Navigasi (Z-INDEX TERTINGGI - FIXED!) -->
 <div id="photoModal"
@@ -1535,6 +1612,153 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Setup Share Buttons - Direct WhatsApp Share (Universal Format)
+    // Global variable to store current share data
+    let currentShareData = null;
+
+    // Open Share Modal
+    window.openShareModal = function(content, author, category, level, quoteId) {
+        currentShareData = {
+            content: content,
+            author: author,
+            category: category,
+            level: level,
+            quoteId: quoteId
+        };
+
+        const modal = document.getElementById('shareModal');
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    };
+
+    // Close Share Modal
+    window.closeShareModal = function() {
+        const modal = document.getElementById('shareModal');
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+        currentShareData = null;
+    };
+
+    // Share to WhatsApp
+    window.shareToWhatsApp = function() {
+        if (!currentShareData) return;
+
+        const levelBadges = {
+            1: '⭐', // Bintang Emas
+            2: '🐂', // Banteng
+            3: '⛓️', // Rantai
+            4: '🌳', // Pohon Beringin
+            5: '🌾'  // Padi & Kapas
+        };
+
+        const badge = levelBadges[currentShareData.level] || '⭐';
+        const shareText = `${currentShareData.category}:\n${currentShareData.content}\n\n- ${currentShareData.author}\n${badge} Dibagikan dari GEMBIRA`;
+        const shareUrl = window.location.origin + '/ikhlas';
+        const fullMessage = shareText + '\n\n' + shareUrl;
+        const encodedMessage = encodeURIComponent(fullMessage);
+
+        // Use universal WhatsApp Web format
+        const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+
+        closeShareModal();
+
+        try {
+            const whatsappWindow = window.open(whatsappUrl, '_blank');
+            if (!whatsappWindow || whatsappWindow.closed || typeof whatsappWindow.closed === 'undefined') {
+                window.location.href = whatsappUrl;
+            } else {
+                showToast('🔗 Membuka WhatsApp...', 'success');
+            }
+        } catch (error) {
+            window.location.href = whatsappUrl;
+        }
+    };
+
+    // Share to WhatsApp Status
+    window.shareToWhatsAppStatus = function() {
+        if (!currentShareData) return;
+
+        const levelBadges = {
+            1: '⭐', // Bintang Emas
+            2: '🐂', // Banteng
+            3: '⛓️', // Rantai
+            4: '🌳', // Pohon Beringin
+            5: '🌾'  // Padi & Kapas
+        };
+
+        const badge = levelBadges[currentShareData.level] || '⭐';
+        const shareText = `${currentShareData.category}:\n${currentShareData.content}\n\n- ${currentShareData.author}\n${badge} Dibagikan dari GEMBIRA`;
+        const shareUrl = window.location.origin + '/ikhlas';
+        const fullMessage = shareText + '\n\n' + shareUrl;
+        const encodedMessage = encodeURIComponent(fullMessage);
+
+        // Try WhatsApp Status deep link (works on mobile)
+        const whatsappStatusUrl = `whatsapp://send?text=${encodedMessage}`;
+
+        closeShareModal();
+
+        try {
+            window.location.href = whatsappStatusUrl;
+            showToast('📱 Membuka WhatsApp Status...', 'success');
+        } catch (error) {
+            // Fallback to regular WhatsApp
+            window.location.href = `https://wa.me/?text=${encodedMessage}`;
+        }
+    };
+
+    // Copy Share Link
+    window.copyShareLink = function() {
+        if (!currentShareData) return;
+
+        const levelBadges = {
+            1: '⭐', // Bintang Emas
+            2: '🐂', // Banteng
+            3: '⛓️', // Rantai
+            4: '🌳', // Pohon Beringin
+            5: '🌾'  // Padi & Kapas
+        };
+
+        const badge = levelBadges[currentShareData.level] || '⭐';
+        const shareText = `${currentShareData.category}:\n${currentShareData.content}\n\n- ${currentShareData.author}\n${badge} Dibagikan dari GEMBIRA`;
+        const shareUrl = window.location.origin + '/ikhlas';
+        const fullMessage = shareText + '\n\n' + shareUrl;
+
+        // Try modern clipboard API
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(fullMessage)
+                .then(() => {
+                    closeShareModal();
+                    showToast('✅ Teks berhasil disalin!', 'success');
+                })
+                .catch(() => {
+                    // Fallback to old method
+                    copyToClipboardFallback(fullMessage);
+                });
+        } else {
+            copyToClipboardFallback(fullMessage);
+        }
+    };
+
+    // Fallback copy method for older browsers
+    function copyToClipboardFallback(text) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+
+        try {
+            document.execCommand('copy');
+            closeShareModal();
+            showToast('✅ Teks berhasil disalin!', 'success');
+        } catch (error) {
+            closeShareModal();
+            showToast('❌ Gagal menyalin teks', 'error');
+        }
+
+        document.body.removeChild(textarea);
+    }
+
     function setupShareButtons() {
         // Level badge icons (Garuda Pancasila theme)
         const levelBadges = {
@@ -1551,36 +1775,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const author = this.dataset.author;
                 const category = this.dataset.category || 'Gaspul';
                 const level = parseInt(this.dataset.level) || 1;
-                const badge = levelBadges[level] || '⭐';
+                const quoteId = this.dataset.quoteId;
 
-                // Format share text
-                const shareText = `${category}:\n${content}\n\n- ${author}\n${badge} Dibagikan dari GEMBIRA`;
-                const shareUrl = window.location.origin + '/ikhlas';
-
-                // Combine text and URL
-                const fullMessage = shareText + '\n\n' + shareUrl;
-
-                // Encode for URL - simple and reliable
-                const encodedMessage = encodeURIComponent(fullMessage);
-
-                // Use universal WhatsApp Web format - works on all devices
-                const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
-
-                // Direct open - no complex logic
-                try {
-                    // Try opening in new window (works on desktop and most mobile browsers)
-                    const whatsappWindow = window.open(whatsappUrl, '_blank');
-
-                    // If popup was blocked or failed, use direct navigation
-                    if (!whatsappWindow || whatsappWindow.closed || typeof whatsappWindow.closed === 'undefined') {
-                        window.location.href = whatsappUrl;
-                    } else {
-                        showToast('🔗 Membuka WhatsApp...', 'success');
-                    }
-                } catch (error) {
-                    // Fallback to direct navigation
-                    window.location.href = whatsappUrl;
-                }
+                // Open share modal instead of direct WhatsApp
+                openShareModal(content, author, category, level, quoteId);
             });
         });
     }
@@ -1720,7 +1918,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 const quoteId = this.dataset.quoteId;
                 const shareBtn = document.querySelector(`.share-btn[data-quote-id="${quoteId}"]`);
                 if (shareBtn) {
-                    shareBtn.click(); // Trigger existing share button
+                    // Get share data and open modal
+                    const content = shareBtn.dataset.content;
+                    const author = shareBtn.dataset.author;
+                    const category = shareBtn.dataset.category || 'Gaspul';
+                    const level = parseInt(shareBtn.dataset.level) || 1;
+                    openShareModal(content, author, category, level, quoteId);
                 }
                 // Close dropdown
                 this.closest('.quote-menu-dropdown').classList.add('hidden');

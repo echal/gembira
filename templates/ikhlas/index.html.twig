@@ -627,29 +627,6 @@ document.addEventListener('click', function(event) {
         </svg>
     </button>
 
-    <!-- Navigation Buttons (Hidden untuk single photo) -->
-    <div id="modalNavigation" class="hidden">
-        <!-- Previous Button -->
-        <button class="absolute left-4 top-1/2 transform -translate-y-1/2 text-white bg-black/50 rounded-full p-3 hover:bg-black/70 transition-all hover:scale-110 active:scale-95"
-                style="z-index: 100000 !important;"
-                onclick="navigateModalPhoto(-1); event.stopPropagation();"
-                title="Foto sebelumnya">
-            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
-            </svg>
-        </button>
-
-        <!-- Next Button -->
-        <button class="absolute right-4 top-1/2 transform -translate-y-1/2 text-white bg-black/50 rounded-full p-3 hover:bg-black/70 transition-all hover:scale-110 active:scale-95"
-                style="z-index: 100000 !important;"
-                onclick="navigateModalPhoto(1); event.stopPropagation();"
-                title="Foto berikutnya">
-            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
-            </svg>
-        </button>
-    </div>
-
     <!-- Image Container with Pinch-to-Zoom Support -->
     <div id="photoModalContainer" class="relative max-w-full max-h-full flex items-center justify-center overflow-hidden touch-none"
          onclick="event.stopPropagation()"
@@ -657,7 +634,7 @@ document.addEventListener('click', function(event) {
         <img id="photoModalImg"
              src=""
              alt="Preview Foto Inspirasi"
-             class="max-w-[95vw] max-h-[95vh] w-auto h-auto object-contain rounded-lg shadow-2xl transition-transform duration-100"
+             class="max-w-[95vw] max-h-[95vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
              style="background: transparent; display: block; transform-origin: center center;">
     </div>
 
@@ -668,7 +645,7 @@ document.addEventListener('click', function(event) {
 
     <!-- Mobile Hint - Positioned at bottom -->
     <div class="absolute bottom-0 left-0 right-0 text-white text-xs bg-black/80 px-4 py-3 text-center md:hidden">
-        👆 Ketuk di luar gambar untuk menutup • Swipe untuk ganti foto • Pinch untuk zoom • Tap 2x untuk zoom in/out
+        👆 Ketuk di luar gambar untuk menutup • Swipe untuk ganti foto • Pinch untuk zoom • Tap 2x untuk perbesar (2x-3x-4x)
     </div>
 </div>
 
@@ -1955,7 +1932,6 @@ let modalCurrentIndex = 0; // Current photo index
 function openPhotoModalWithGallery(clickedElement, startIndex) {
     const modal = document.getElementById('photoModal');
     const img = document.getElementById('photoModalImg');
-    const navigation = document.getElementById('modalNavigation');
     const counter = document.getElementById('modalCounter');
 
     if (!modal || !img) return;
@@ -1971,13 +1947,11 @@ function openPhotoModalWithGallery(clickedElement, startIndex) {
     // Update UI
     updateModalPhoto();
 
-    // Show/hide navigation based on photo count
+    // Show/hide counter based on photo count
     if (modalPhotos.length > 1) {
-        navigation.classList.remove('hidden');
         counter.classList.remove('hidden');
         updateModalCounter();
     } else {
-        navigation.classList.add('hidden');
         counter.classList.add('hidden');
     }
 
@@ -2087,6 +2061,7 @@ function resetImageZoom() {
         imageScale = 1;
         imageTranslateX = 0;
         imageTranslateY = 0;
+        img.style.transition = 'none';
         img.style.transform = `scale(${imageScale}) translate(${imageTranslateX}px, ${imageTranslateY}px)`;
     }
 }
@@ -2129,19 +2104,27 @@ function setupPinchToZoom() {
 
     // Touch move
     container.addEventListener('touchmove', function(e) {
+        // Get current img element
+        const currentImg = document.getElementById('photoModalImg');
+        if (!currentImg) return;
+
         if (e.touches.length === 2) {
-            // Pinch zoom
+            // Pinch zoom - remove transition for smooth pinch
             e.preventDefault();
+            currentImg.style.transition = 'none';
+
             const currentDistance = getTouchDistance(e.touches);
             const scale = (currentDistance / initialDistance) * initialScale;
 
             // Limit zoom between 1x and 4x
             imageScale = Math.min(Math.max(1, scale), 4);
 
-            img.style.transform = `scale(${imageScale}) translate(${imageTranslateX}px, ${imageTranslateY}px)`;
+            currentImg.style.transform = `scale(${imageScale}) translate(${imageTranslateX}px, ${imageTranslateY}px)`;
         } else if (e.touches.length === 1 && isDragging && imageScale > 1) {
-            // Pan image
+            // Pan image - remove transition for instant response
             e.preventDefault();
+            currentImg.style.transition = 'none';
+
             const deltaX = e.touches[0].clientX - lastTouchX;
             const deltaY = e.touches[0].clientY - lastTouchY;
 
@@ -2151,7 +2134,7 @@ function setupPinchToZoom() {
             lastTouchX = e.touches[0].clientX;
             lastTouchY = e.touches[0].clientY;
 
-            img.style.transform = `scale(${imageScale}) translate(${imageTranslateX}px, ${imageTranslateY}px)`;
+            currentImg.style.transform = `scale(${imageScale}) translate(${imageTranslateX}px, ${imageTranslateY}px)`;
         }
     }, { passive: false });
 
@@ -2202,7 +2185,7 @@ function setupPinchToZoom() {
         }
     });
 
-    // Double tap to zoom
+    // Double tap to zoom progressively
     let lastTap = 0;
     container.addEventListener('touchend', function(e) {
         const currentTime = new Date().getTime();
@@ -2210,16 +2193,36 @@ function setupPinchToZoom() {
 
         if (tapLength < 300 && tapLength > 0) {
             e.preventDefault();
+
+            // Get current img element (in case it changed)
+            const currentImg = document.getElementById('photoModalImg');
+            if (!currentImg) return;
+
+            // Add smooth transition for double tap zoom
+            currentImg.style.transition = 'transform 0.2s ease-out';
+
+            // Progressive zoom: 1x → 2x → 3x → 4x → back to 1x
             if (imageScale === 1) {
-                // Zoom in to 2x
                 imageScale = 2;
-                imageTranslateX = 0;
-                imageTranslateY = 0;
+            } else if (imageScale === 2) {
+                imageScale = 3;
+            } else if (imageScale === 3) {
+                imageScale = 4;
             } else {
-                // Reset zoom
-                resetImageZoom();
+                // Reset zoom back to 1x
+                imageScale = 1;
             }
-            img.style.transform = `scale(${imageScale}) translate(${imageTranslateX}px, ${imageTranslateY}px)`;
+
+            // Center the image when zooming
+            imageTranslateX = 0;
+            imageTranslateY = 0;
+
+            currentImg.style.transform = `scale(${imageScale}) translate(${imageTranslateX}px, ${imageTranslateY}px)`;
+
+            // Remove transition after animation completes
+            setTimeout(function() {
+                currentImg.style.transition = 'none';
+            }, 200);
         }
         lastTap = currentTime;
     });
@@ -2599,15 +2602,6 @@ img {
     background-opacity: 0.1;
 }
 
-/* Modal navigation buttons */
-#modalNavigation button {
-    transition: all 0.2s ease;
-}
-
-#modalNavigation button:hover {
-    transform: scale(1.1) translateY(-50%);
-}
-
 /* Responsive adjustments */
 @media (max-width: 640px) {
     .quote-card blockquote {
@@ -2644,18 +2638,6 @@ img {
     #photoModalImg {
         max-w-[98vw] !important;
         max-h-[98vh] !important;
-    }
-
-    /* Modal navigation on mobile - smaller buttons */
-    #modalNavigation button {
-        width: 44px !important;
-        height: 44px !important;
-        padding: 10px !important;
-    }
-
-    #modalNavigation button svg {
-        width: 24px !important;
-        height: 24px !important;
     }
 
     /* Modal counter on mobile */

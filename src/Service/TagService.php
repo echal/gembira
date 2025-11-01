@@ -48,11 +48,28 @@ class TagService
     }
 
     /**
+     * Remove hashtags from text content
+     * Returns clean text without any hashtags
+     */
+    public function removeHashtagsFromContent(string $content): string
+    {
+        // Remove all hashtags but preserve spacing
+        $cleaned = preg_replace('/#[\p{L}\p{N}_]+/u', '', $content);
+
+        // Clean up multiple spaces
+        $cleaned = preg_replace('/\s+/', ' ', $cleaned);
+
+        // Trim leading/trailing spaces
+        return trim($cleaned);
+    }
+
+    /**
      * Process quote and sync its tags
      * This will:
      * 1. Extract hashtags from content
-     * 2. Find or create Tag entities
-     * 3. Update quote's tags relationship
+     * 2. Remove hashtags from content (clean the text)
+     * 3. Find or create Tag entities
+     * 4. Update quote's tags relationship
      */
     public function processQuoteTags(Quote $quote): void
     {
@@ -62,8 +79,21 @@ class TagService
             return;
         }
 
-        // Extract hashtags from content
+        // Extract hashtags from content BEFORE cleaning
         $hashtagNames = $this->extractHashtags($content);
+
+        // Clean the content (remove hashtags)
+        $cleanContent = $this->removeHashtagsFromContent($content);
+
+        // Update quote content with cleaned version
+        if ($cleanContent !== $content) {
+            $quote->setContent($cleanContent);
+            $this->logger->info('Cleaned hashtags from content', [
+                'quote_id' => $quote->getId(),
+                'original' => $content,
+                'cleaned' => $cleanContent
+            ]);
+        }
 
         $this->logger->info('Extracted hashtags', [
             'quote_id' => $quote->getId(),

@@ -47,30 +47,39 @@
 
                 <!-- User Avatar/Menu -->
                 <div class="relative">
-                    {# Level-based border colors #}
+                    {# Level-based border colors (only for Pegawai) #}
                     {% set levelBorder = 'border-gray-300' %}
-                    {% if app.user.currentLevel == 1 %}
-                        {% set levelBorder = 'border-purple-500' %}
-                    {% elseif app.user.currentLevel == 2 %}
-                        {% set levelBorder = 'border-green-500' %}
-                    {% elseif app.user.currentLevel == 3 %}
-                        {% set levelBorder = 'border-blue-500' %}
-                    {% elseif app.user.currentLevel == 4 %}
-                        {% set levelBorder = 'border-yellow-400' %}
-                    {% elseif app.user.currentLevel == 5 %}
-                        {% set levelBorder = 'border-amber-500' %}
+                    {% set userLevel = 1 %}
+                    {% set userLevelTitle = 'User' %}
+                    {% set isPegawai = app.user.currentLevel is defined %}
+
+                    {% if isPegawai %}
+                        {% set userLevel = app.user.currentLevel %}
+                        {% set userLevelTitle = app.user.levelTitle %}
+
+                        {% if userLevel == 1 %}
+                            {% set levelBorder = 'border-purple-500' %}
+                        {% elseif userLevel == 2 %}
+                            {% set levelBorder = 'border-green-500' %}
+                        {% elseif userLevel == 3 %}
+                            {% set levelBorder = 'border-blue-500' %}
+                        {% elseif userLevel == 4 %}
+                            {% set levelBorder = 'border-yellow-400' %}
+                        {% elseif userLevel == 5 %}
+                            {% set levelBorder = 'border-amber-500' %}
+                        {% endif %}
                     {% endif %}
 
                     <button id="userMenuButton"
                             onclick="toggleUserDropdown()"
                             class="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 bg-gray-100 hover:bg-gray-200 rounded-full transition-all duration-200 hover:scale-110 active:scale-95">
-                        {% if app.user.photo %}
+                        {% if isPegawai and app.user.photo %}
                             <img src="/uploads/photos/{{ app.user.photo }}"
                                  alt="{{ app.user.nama }}"
                                  class="w-6 h-6 md:w-7 md:h-7 object-cover rounded-full border-4 {{ levelBorder }}"
-                                 title="Level {{ app.user.currentLevel }} - {{ app.user.levelTitle }}">
+                                 title="Level {{ userLevel }} - {{ userLevelTitle }}">
                         {% else %}
-                            <span class="text-xl md:text-2xl">👤</span>
+                            <span class="text-xl md:text-2xl" title="{% if isPegawai %}{{ app.user.nama }}{% else %}Admin{% endif %}">👤</span>
                         {% endif %}
                     </button>
 

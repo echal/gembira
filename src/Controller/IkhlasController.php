@@ -45,13 +45,15 @@ class IkhlasController extends AbstractController
         /** @var Pegawai $user */
         $user = $this->getUser();
 
-        // Award daily login bonus (only once per day)
-        $dailyBonus = $this->gamificationService->awardDailyLogin($user);
-        if ($dailyBonus && $dailyBonus['level_up']) {
-            $this->addFlash('level_up', [
-                'level' => $dailyBonus['new_level'],
-                'badge' => $dailyBonus['badge_info']
-            ]);
+        // Award daily login bonus (only for Pegawai, not Admin)
+        if ($user instanceof Pegawai) {
+            $dailyBonus = $this->gamificationService->awardDailyLogin($user);
+            if ($dailyBonus && $dailyBonus['level_up']) {
+                $this->addFlash('level_up', [
+                    'level' => $dailyBonus['new_level'],
+                    'badge' => $dailyBonus['badge_info']
+                ]);
+            }
         }
 
         // Get ALL quotes ordered by newest first
@@ -67,8 +69,13 @@ class IkhlasController extends AbstractController
         // Prepare quotes with user interaction data
         $quotesWithData = [];
         foreach ($allQuotes as $quote) {
-            $hasLiked = $this->interactionRepository->hasUserLiked($user, $quote);
-            $hasSaved = $this->interactionRepository->hasUserSaved($user, $quote);
+            // Check user interactions only for Pegawai
+            $hasLiked = false;
+            $hasSaved = false;
+            if ($user instanceof Pegawai) {
+                $hasLiked = $this->interactionRepository->hasUserLiked($user, $quote);
+                $hasSaved = $this->interactionRepository->hasUserSaved($user, $quote);
+            }
 
             // Get users who liked this quote (for Facebook-style display)
             $likedByUsers = $this->interactionRepository->getUsersWhoLiked($quote, 1); // Get last 1 user
@@ -101,18 +108,20 @@ class IkhlasController extends AbstractController
             ];
         }
 
-        // Award view points (once for visiting the page)
-        $this->gamificationService->addPoints($user, GamificationService::POINTS_VIEW_QUOTE, 'View quotes feed');
+        // Award view points and mark as viewed (only for Pegawai)
+        if ($user instanceof Pegawai) {
+            $this->gamificationService->addPoints($user, GamificationService::POINTS_VIEW_QUOTE, 'View quotes feed');
 
-        // Mark all displayed quotes as viewed by this user
-        foreach ($allQuotes as $quote) {
-            $interaction = $this->interactionRepository->findOrCreateInteraction($user, $quote);
-            if (!$interaction->isViewed()) {
-                $interaction->setViewed(true);
-                $this->em->persist($interaction);
+            // Mark all displayed quotes as viewed by this user
+            foreach ($allQuotes as $quote) {
+                $interaction = $this->interactionRepository->findOrCreateInteraction($user, $quote);
+                if (!$interaction->isViewed()) {
+                    $interaction->setViewed(true);
+                    $this->em->persist($interaction);
+                }
             }
+            $this->em->flush();
         }
-        $this->em->flush();
 
         return $this->render('ikhlas/index.html.twig', [
             'quotes' => $quotesWithData

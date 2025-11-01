@@ -52,6 +52,7 @@
                     {% set userLevel = 1 %}
                     {% set userLevelTitle = 'User' %}
                     {% set isPegawai = app.user.currentLevel is defined %}
+                    {% set userName = isPegawai ? app.user.nama : app.user.namaLengkap %}
 
                     {% if isPegawai %}
                         {% set userLevel = app.user.currentLevel %}
@@ -75,11 +76,11 @@
                             class="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 bg-gray-100 hover:bg-gray-200 rounded-full transition-all duration-200 hover:scale-110 active:scale-95">
                         {% if isPegawai and app.user.photo %}
                             <img src="/uploads/photos/{{ app.user.photo }}"
-                                 alt="{{ app.user.nama }}"
+                                 alt="{{ userName }}"
                                  class="w-6 h-6 md:w-7 md:h-7 object-cover rounded-full border-4 {{ levelBorder }}"
                                  title="Level {{ userLevel }} - {{ userLevelTitle }}">
                         {% else %}
-                            <span class="text-xl md:text-2xl" title="{% if isPegawai %}{{ app.user.nama }}{% else %}Admin{% endif %}">👤</span>
+                            <span class="text-xl md:text-2xl" title="{{ userName }}">👤</span>
                         {% endif %}
                     </button>
 
@@ -88,10 +89,14 @@
                          class="hidden absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-xl min-w-[220px] z-50 transform opacity-0 scale-95 transition-all duration-200">
                         <!-- User Info Section -->
                         <div class="p-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-                            <div class="text-sm font-medium text-gray-900 truncate">{{ app.user.nama|default('User') }}</div>
-                            <div class="text-xs text-gray-500 truncate">{{ app.user.jabatan|default('Pegawai') }}</div>
-                            {% if app.user.unitKerja %}
-                            <div class="text-xs text-gray-400 truncate">{{ app.user.unitKerja }}</div>
+                            <div class="text-sm font-medium text-gray-900 truncate">{{ userName }}</div>
+                            {% if isPegawai %}
+                                <div class="text-xs text-gray-500 truncate">{{ app.user.jabatan|default('Pegawai') }}</div>
+                                {% if app.user.unitKerja %}
+                                <div class="text-xs text-gray-400 truncate">{{ app.user.unitKerja }}</div>
+                                {% endif %}
+                            {% else %}
+                                <div class="text-xs text-gray-500 truncate">Administrator</div>
                             {% endif %}
                         </div>
 
@@ -342,7 +347,7 @@ document.addEventListener('click', function(event) {
                                     </button>
 
                                     <!-- Edit Option (Only for author) -->
-                                    {% if quote.author == app.user.nama %}
+                                    {% if isPegawai and quote.author == app.user.nama %}
                                     <button class="menu-edit-quote w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors flex items-center gap-3 text-gray-700"
                                             data-quote-id="{{ quote.id }}">
                                         <span class="text-lg">✏️</span>
@@ -556,10 +561,10 @@ document.addEventListener('click', function(event) {
                                 <!-- User Photo - Smaller -->
                                 <div class="flex-shrink-0">
                                     <div class="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold text-xs">
-                                        {% if app.user.photo %}
-                                            <img src="/uploads/photos/{{ app.user.photo }}" alt="{{ app.user.nama }}" class="w-full h-full object-cover">
+                                        {% if isPegawai and app.user.photo %}
+                                            <img src="/uploads/photos/{{ app.user.photo }}" alt="{{ userName }}" class="w-full h-full object-cover">
                                         {% else %}
-                                            {{ app.user.nama|first|upper }}
+                                            {{ userName|first|upper }}
                                         {% endif %}
                                     </div>
                                 </div>

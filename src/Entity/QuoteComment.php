@@ -212,7 +212,7 @@ class QuoteComment
             'user' => [
                 'id' => $this->user->getId(),
                 'name' => $this->user->getNama(),
-                'photo' => $this->user->getPhoto() ?? '/images/default-user.png',
+                'photo' => $this->user->getPhoto() ? '/uploads/pegawai/' . $this->user->getPhoto() : '/images/default-user.png',
                 'jabatan' => $this->user->getJabatan() ?? '-',
                 'unit_kerja' => $this->user->getUnitKerja() ?? '-'
             ],

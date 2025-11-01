@@ -113,4 +113,29 @@ class UserQuoteInteractionRepository extends ServiceEntityRepository
 
         return array_column($interactions, 'nama');
     }
+
+    /**
+     * Count unviewed quotes for user (quotes yang belum pernah dilihat)
+     * Menghitung quotes yang:
+     * 1. Tidak ada interaction record untuk user ini, atau
+     * 2. Ada interaction tapi viewed = false
+     */
+    public function countUnviewedQuotes(Pegawai $user): int
+    {
+        // Get all quote IDs
+        $em = $this->getEntityManager();
+        $totalQuotes = $em->getRepository(Quote::class)->count([]);
+
+        // Count quotes that have been viewed by this user
+        $viewedCount = $this->createQueryBuilder('i')
+            ->select('COUNT(DISTINCT i.quote)')
+            ->where('i.user = :user')
+            ->andWhere('i.viewed = :viewed')
+            ->setParameter('user', $user)
+            ->setParameter('viewed', true)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return max(0, $totalQuotes - $viewedCount);
+    }
 }

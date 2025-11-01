@@ -34,8 +34,16 @@
 
         <!-- Inspirasi -->
         <a href="{{ path('app_ikhlas') }}"
-           class="flex flex-col items-center py-3 px-2 {% if active_menu == 'ikhlas' %}text-white bg-sky-600{% else %}text-gray-200 hover:text-white hover:bg-sky-500{% endif %} transition-colors rounded-lg mx-1">
-            <div class="text-lg mb-1">💡</div>
+           class="flex flex-col items-center py-3 px-2 {% if active_menu == 'ikhlas' %}text-white bg-sky-600{% else %}text-gray-200 hover:text-white hover:bg-sky-500{% endif %} transition-colors rounded-lg mx-1 relative">
+            <div class="text-lg mb-1 relative">
+                💡
+                {% set unviewed_count = unviewed_quotes_count() %}
+                {% if unviewed_count > 0 %}
+                    <span class="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow-lg">
+                        {{ unviewed_count > 99 ? '99+' : unviewed_count }}
+                    </span>
+                {% endif %}
+            </div>
             <div class="text-xs {% if active_menu == 'ikhlas' %}font-medium{% endif %}">Inspirasi</div>
         </a>
 

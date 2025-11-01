@@ -104,6 +104,16 @@ class IkhlasController extends AbstractController
         // Award view points (once for visiting the page)
         $this->gamificationService->addPoints($user, GamificationService::POINTS_VIEW_QUOTE, 'View quotes feed');
 
+        // Mark all displayed quotes as viewed by this user
+        foreach ($allQuotes as $quote) {
+            $interaction = $this->interactionRepository->findOrCreateInteraction($user, $quote);
+            if (!$interaction->isViewed()) {
+                $interaction->setViewed(true);
+                $this->em->persist($interaction);
+            }
+        }
+        $this->em->flush();
+
         return $this->render('ikhlas/index.html.twig', [
             'quotes' => $quotesWithData
         ]);

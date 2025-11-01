@@ -1691,17 +1691,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const fullMessage = shareText + '\n\n' + shareUrl;
         const encodedMessage = encodeURIComponent(fullMessage);
 
-        // Try WhatsApp Status deep link (works on mobile)
-        const whatsappStatusUrl = `whatsapp://send?text=${encodedMessage}`;
+        // Use universal WhatsApp Web format (same as regular WhatsApp)
+        const whatsappStatusUrl = `https://wa.me/?text=${encodedMessage}`;
 
         closeShareModal();
 
+        // Open WhatsApp with the same method as regular share
         try {
-            window.location.href = whatsappStatusUrl;
-            showToast('📱 Membuka WhatsApp Status...', 'success');
+            const whatsappWindow = window.open(whatsappStatusUrl, '_blank');
+            if (!whatsappWindow || whatsappWindow.closed || typeof whatsappWindow.closed === 'undefined') {
+                window.location.href = whatsappStatusUrl;
+            } else {
+                showToast('📱 Membuka WhatsApp Status...', 'success');
+            }
         } catch (error) {
-            // Fallback to regular WhatsApp
-            window.location.href = `https://wa.me/?text=${encodedMessage}`;
+            window.location.href = whatsappStatusUrl;
         }
     };
 

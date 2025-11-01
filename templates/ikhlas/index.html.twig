@@ -613,8 +613,8 @@ document.addEventListener('click', function(event) {
 
 <!-- Photo Modal - Fullscreen View dengan Navigasi (Z-INDEX TERTINGGI - FIXED!) -->
 <div id="photoModal"
-     class="hidden fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
-     style="z-index: 99999 !important; backdrop-filter: blur(4px);"
+     class="hidden fixed inset-0 bg-black flex items-center justify-center p-4"
+     style="z-index: 99999 !important;"
      onclick="closePhotoModal()">
 
     <!-- Close Button -->
@@ -668,7 +668,7 @@ document.addEventListener('click', function(event) {
 
     <!-- Mobile Hint - Positioned at bottom -->
     <div class="absolute bottom-0 left-0 right-0 text-white text-xs bg-black/80 px-4 py-3 text-center md:hidden">
-        👆 Ketuk di luar gambar untuk menutup • Pinch untuk zoom • Tap 2x untuk zoom in/out
+        👆 Ketuk di luar gambar untuk menutup • Swipe untuk ganti foto • Pinch untuk zoom • Tap 2x untuk zoom in/out
     </div>
 </div>
 
@@ -2077,6 +2077,9 @@ let initialScale = 1;
 let lastTouchX = 0;
 let lastTouchY = 0;
 let isDragging = false;
+let swipeStartX = 0;
+let swipeStartY = 0;
+let swipeStartTime = 0;
 
 function resetImageZoom() {
     const img = document.getElementById('photoModalImg');
@@ -2116,6 +2119,11 @@ function setupPinchToZoom() {
             isDragging = true;
             lastTouchX = e.touches[0].clientX;
             lastTouchY = e.touches[0].clientY;
+        } else if (e.touches.length === 1 && imageScale === 1) {
+            // Capture swipe start position (only when not zoomed)
+            swipeStartX = e.touches[0].clientX;
+            swipeStartY = e.touches[0].clientY;
+            swipeStartTime = new Date().getTime();
         }
     }, { passive: false });
 
@@ -2158,6 +2166,38 @@ function setupPinchToZoom() {
             // Reset if zoomed out to 1x or less
             if (imageScale <= 1) {
                 resetImageZoom();
+            }
+
+            // Detect swipe gesture (only when not zoomed)
+            if (imageScale === 1 && swipeStartTime > 0) {
+                const swipeEndX = e.changedTouches[0].clientX;
+                const swipeEndY = e.changedTouches[0].clientY;
+                const swipeEndTime = new Date().getTime();
+
+                const deltaX = swipeEndX - swipeStartX;
+                const deltaY = swipeEndY - swipeStartY;
+                const deltaTime = swipeEndTime - swipeStartTime;
+
+                const absDeltaX = Math.abs(deltaX);
+                const absDeltaY = Math.abs(deltaY);
+
+                // Check if it's a horizontal swipe
+                // Criteria: horizontal distance > 50px, more horizontal than vertical, quick swipe < 500ms
+                if (absDeltaX > 50 && absDeltaX > absDeltaY && deltaTime < 500) {
+                    e.preventDefault();
+                    if (deltaX > 0) {
+                        // Swipe right - go to previous photo
+                        navigateModalPhoto(-1);
+                    } else {
+                        // Swipe left - go to next photo
+                        navigateModalPhoto(1);
+                    }
+                }
+
+                // Reset swipe tracking
+                swipeStartX = 0;
+                swipeStartY = 0;
+                swipeStartTime = 0;
             }
         }
     });

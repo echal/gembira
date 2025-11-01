@@ -538,6 +538,32 @@ class IkhlasController extends AbstractController
                             );
                         }
                     }
+                } elseif (!$newStatus && $oldStatus) {
+                    // Just unliked - subtract XP from the user who unliked
+                    $this->userXpService->subtractXp(
+                        $user,
+                        UserXpService::XP_LIKE_QUOTE,
+                        'unlike_quote',
+                        'Unlike quote',
+                        $quoteId
+                    );
+
+                    // Subtract XP from quote author for losing a like (-5 XP)
+                    $quoteAuthorName = $quote->getAuthor();
+                    if ($quoteAuthorName) {
+                        $quoteAuthor = $this->em->getRepository(Pegawai::class)
+                            ->findOneBy(['nama' => $quoteAuthorName]);
+
+                        if ($quoteAuthor && $quoteAuthor->getId() !== $user->getId()) {
+                            $this->userXpService->subtractXp(
+                                $quoteAuthor,
+                                5, // -5 XP for losing like
+                                'lose_like',
+                                'Quote Anda kehilangan like',
+                                $quoteId
+                            );
+                        }
+                    }
                 }
 
                 return new JsonResponse([
@@ -545,8 +571,8 @@ class IkhlasController extends AbstractController
                     'action' => 'like',
                     'status' => $newStatus,
                     'totalLikes' => $quote->getTotalLikes(),
-                    'message' => $newStatus ? '❤️ Anda menyukai quote ini! +' . UserXpService::XP_LIKE_QUOTE . ' XP' : 'Like dibatalkan',
-                    'xp_earned' => $newStatus ? UserXpService::XP_LIKE_QUOTE : 0,
+                    'message' => $newStatus ? '❤️ Anda menyukai quote ini! +' . UserXpService::XP_LIKE_QUOTE . ' XP' : '💔 Like dibatalkan (-' . UserXpService::XP_LIKE_QUOTE . ' XP)',
+                    'xp_earned' => $newStatus ? UserXpService::XP_LIKE_QUOTE : -UserXpService::XP_LIKE_QUOTE,
                     'level_up' => $levelUpInfo
                 ]);
             } elseif ($action === 'save') {
@@ -878,6 +904,17 @@ class IkhlasController extends AbstractController
             // Count total comments to delete (parent + all nested replies)
             $totalToDelete = $this->countCommentWithReplies($comment);
 
+            // Subtract XP for each deleted comment (parent + replies)
+            // Each comment = 5 XP, so total = totalToDelete * 5
+            $xpToSubtract = $totalToDelete * UserXpService::XP_COMMENT_QUOTE;
+            $this->userXpService->subtractXp(
+                $user,
+                $xpToSubtract,
+                'delete_comment',
+                'Komentar dihapus oleh author',
+                $comment->getId()
+            );
+
             // Delete the comment (replies will be cascade deleted by database)
             $this->em->remove($comment);
 
@@ -889,9 +926,10 @@ class IkhlasController extends AbstractController
 
             return new JsonResponse([
                 'success' => true,
-                'message' => '🗑️ Komentar berhasil dihapus' . ($totalToDelete > 1 ? " ({$totalToDelete} komentar)" : ''),
+                'message' => '🗑️ Komentar berhasil dihapus' . ($totalToDelete > 1 ? " ({$totalToDelete} komentar)" : '') . " (-{$xpToSubtract} XP)",
                 'totalComments' => $quote->getTotalComments(),
-                'deletedCount' => $totalToDelete
+                'deletedCount' => $totalToDelete,
+                'xp_subtracted' => $xpToSubtract
             ]);
 
         } catch (\Exception $e) {

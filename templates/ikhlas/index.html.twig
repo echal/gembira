@@ -650,13 +650,15 @@ document.addEventListener('click', function(event) {
         </button>
     </div>
 
-    <!-- Image Container -->
-    <div class="relative max-w-full max-h-full flex items-center justify-center" onclick="event.stopPropagation()">
+    <!-- Image Container with Pinch-to-Zoom Support -->
+    <div id="photoModalContainer" class="relative max-w-full max-h-full flex items-center justify-center overflow-hidden touch-none"
+         onclick="event.stopPropagation()"
+         style="touch-action: none;">
         <img id="photoModalImg"
              src=""
              alt="Preview Foto Inspirasi"
-             class="max-w-[95vw] max-h-[95vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
-             style="background: transparent; display: block;">
+             class="max-w-[95vw] max-h-[95vh] w-auto h-auto object-contain rounded-lg shadow-2xl transition-transform duration-100"
+             style="background: transparent; display: block; transform-origin: center center;">
     </div>
 
     <!-- Photo Counter (Hidden untuk single photo) -->
@@ -664,9 +666,9 @@ document.addEventListener('click', function(event) {
         <span id="modalCurrentIndex">1</span> / <span id="modalTotalPhotos">1</span>
     </div>
 
-    <!-- Mobile Hint -->
-    <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 text-white text-xs bg-black/60 px-4 py-2 rounded-full md:hidden">
-        👆 Ketuk di luar gambar untuk menutup
+    <!-- Mobile Hint - Positioned at bottom -->
+    <div class="absolute bottom-0 left-0 right-0 text-white text-xs bg-black/80 px-4 py-3 text-center md:hidden">
+        👆 Ketuk di luar gambar untuk menutup • Pinch untuk zoom • Tap 2x untuk zoom in/out
     </div>
 </div>
 
@@ -1988,6 +1990,9 @@ function openPhotoModalWithGallery(clickedElement, startIndex) {
     document.body.style.position = 'fixed';
     document.body.style.width = '100%';
 
+    // Setup pinch-to-zoom
+    setupPinchToZoom();
+
     console.log('Modal opened with gallery:', modalPhotos.length, 'photos, starting at:', startIndex);
 }
 
@@ -2000,6 +2005,9 @@ function navigateModalPhoto(direction) {
 
     // Calculate new index (loop around)
     modalCurrentIndex = (modalCurrentIndex + direction + modalPhotos.length) % modalPhotos.length;
+
+    // Reset zoom when changing photo
+    resetImageZoom();
 
     // Update photo
     updateModalPhoto();
@@ -2045,6 +2053,8 @@ function closePhotoModal() {
             img.src = '';
             modalPhotos = [];
             modalCurrentIndex = 0;
+            // Reset zoom
+            resetImageZoom();
         }, 300);
 
         // Restore body scroll
@@ -2054,6 +2064,125 @@ function closePhotoModal() {
 
         console.log('Modal closed');
     }
+}
+
+/**
+ * Pinch-to-Zoom functionality for photo modal
+ */
+let imageScale = 1;
+let imageTranslateX = 0;
+let imageTranslateY = 0;
+let initialDistance = 0;
+let initialScale = 1;
+let lastTouchX = 0;
+let lastTouchY = 0;
+let isDragging = false;
+
+function resetImageZoom() {
+    const img = document.getElementById('photoModalImg');
+    if (img) {
+        imageScale = 1;
+        imageTranslateX = 0;
+        imageTranslateY = 0;
+        img.style.transform = `scale(${imageScale}) translate(${imageTranslateX}px, ${imageTranslateY}px)`;
+    }
+}
+
+function getTouchDistance(touches) {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+function setupPinchToZoom() {
+    const img = document.getElementById('photoModalImg');
+    const container = document.getElementById('photoModalContainer');
+
+    if (!img || !container) return;
+
+    // Reset zoom when image changes
+    resetImageZoom();
+
+    // Touch start
+    container.addEventListener('touchstart', function(e) {
+        if (e.touches.length === 2) {
+            // Pinch gesture
+            e.preventDefault();
+            initialDistance = getTouchDistance(e.touches);
+            initialScale = imageScale;
+        } else if (e.touches.length === 1 && imageScale > 1) {
+            // Pan gesture (only when zoomed)
+            e.preventDefault();
+            isDragging = true;
+            lastTouchX = e.touches[0].clientX;
+            lastTouchY = e.touches[0].clientY;
+        }
+    }, { passive: false });
+
+    // Touch move
+    container.addEventListener('touchmove', function(e) {
+        if (e.touches.length === 2) {
+            // Pinch zoom
+            e.preventDefault();
+            const currentDistance = getTouchDistance(e.touches);
+            const scale = (currentDistance / initialDistance) * initialScale;
+
+            // Limit zoom between 1x and 4x
+            imageScale = Math.min(Math.max(1, scale), 4);
+
+            img.style.transform = `scale(${imageScale}) translate(${imageTranslateX}px, ${imageTranslateY}px)`;
+        } else if (e.touches.length === 1 && isDragging && imageScale > 1) {
+            // Pan image
+            e.preventDefault();
+            const deltaX = e.touches[0].clientX - lastTouchX;
+            const deltaY = e.touches[0].clientY - lastTouchY;
+
+            imageTranslateX += deltaX / imageScale;
+            imageTranslateY += deltaY / imageScale;
+
+            lastTouchX = e.touches[0].clientX;
+            lastTouchY = e.touches[0].clientY;
+
+            img.style.transform = `scale(${imageScale}) translate(${imageTranslateX}px, ${imageTranslateY}px)`;
+        }
+    }, { passive: false });
+
+    // Touch end
+    container.addEventListener('touchend', function(e) {
+        if (e.touches.length < 2) {
+            initialDistance = 0;
+        }
+        if (e.touches.length === 0) {
+            isDragging = false;
+
+            // Reset if zoomed out to 1x or less
+            if (imageScale <= 1) {
+                resetImageZoom();
+            }
+        }
+    });
+
+    // Double tap to zoom
+    let lastTap = 0;
+    container.addEventListener('touchend', function(e) {
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTap;
+
+        if (tapLength < 300 && tapLength > 0) {
+            e.preventDefault();
+            if (imageScale === 1) {
+                // Zoom in to 2x
+                imageScale = 2;
+                imageTranslateX = 0;
+                imageTranslateY = 0;
+            } else {
+                // Reset zoom
+                resetImageZoom();
+            }
+            img.style.transform = `scale(${imageScale}) translate(${imageTranslateX}px, ${imageTranslateY}px)`;
+        }
+        lastTap = currentTime;
+    });
 }
 
 /**

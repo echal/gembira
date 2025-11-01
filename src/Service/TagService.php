@@ -10,11 +10,16 @@ use Psr\Log\LoggerInterface;
 
 class TagService
 {
+    private array $blocklist;
+
     public function __construct(
         private EntityManagerInterface $entityManager,
         private TagRepository $tagRepository,
-        private LoggerInterface $logger
+        private LoggerInterface $logger,
+        array $tagBlocklist = []
     ) {
+        // Convert blocklist to lowercase for case-insensitive matching
+        $this->blocklist = array_map('mb_strtolower', $tagBlocklist);
     }
 
     /**
@@ -64,6 +69,57 @@ class TagService
     }
 
     /**
+     * Check if tag name is in blocklist
+     */
+    public function isBlocklisted(string $tagName): bool
+    {
+        $tagLower = mb_strtolower($tagName, 'UTF-8');
+
+        // Check exact match
+        if (in_array($tagLower, $this->blocklist)) {
+            return true;
+        }
+
+        // Check if tag contains blocklisted word
+        foreach ($this->blocklist as $blocked) {
+            if (str_contains($tagLower, $blocked)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Filter out blocklisted tags
+     */
+    public function filterBlocklistedTags(array $tagNames): array
+    {
+        $filtered = [];
+        $blocked = [];
+
+        foreach ($tagNames as $tagName) {
+            if ($this->isBlocklisted($tagName)) {
+                $blocked[] = $tagName;
+                $this->logger->warning('Blocklisted tag filtered out', [
+                    'tag' => $tagName
+                ]);
+            } else {
+                $filtered[] = $tagName;
+            }
+        }
+
+        if (!empty($blocked)) {
+            $this->logger->info('Tags filtered', [
+                'blocked' => $blocked,
+                'allowed' => $filtered
+            ]);
+        }
+
+        return $filtered;
+    }
+
+    /**
      * Process quote and sync its tags
      * This will:
      * 1. Extract hashtags from content
@@ -81,6 +137,9 @@ class TagService
 
         // Extract hashtags from content BEFORE cleaning
         $hashtagNames = $this->extractHashtags($content);
+
+        // Filter out blocklisted tags
+        $hashtagNames = $this->filterBlocklistedTags($hashtagNames);
 
         // Clean the content (remove hashtags)
         $cleanContent = $this->removeHashtagsFromContent($content);
@@ -100,7 +159,7 @@ class TagService
             'hashtags' => $hashtagNames
         ]);
 
-        // If no hashtags found, clear existing tags
+        // If no hashtags found (after filtering), clear existing tags
         if (empty($hashtagNames)) {
             $this->clearQuoteTags($quote);
             return;

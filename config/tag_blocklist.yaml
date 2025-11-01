@@ -1,0 +1,42 @@
+# Tag Blocklist Configuration
+# Daftar kata yang tidak diperbolehkan sebagai tagar
+
+parameters:
+    tag.blocklist:
+        # Kata-kata tidak pantas/vulgar
+        - 'anjing'
+        - 'babi'
+        - 'kontol'
+        - 'memek'
+        - 'bangsat'
+        - 'bajingan'
+        - 'tolol'
+        - 'bodoh'
+        - 'goblok'
+        - 'tai'
+        - 'setan'
+        - 'iblis'
+
+        # Kata-kata SARA
+        - 'kafir'
+        - 'murtad'
+
+        # Kata-kata negatif lainnya
+        - 'korupsi'
+        - 'suap'
+        - 'pungli'
+        - 'kolusi'
+        - 'nepotisme'
+
+        # Politik sensitif
+        - 'demo'
+        - 'unjukrasa'
+        - 'mogok'
+
+        # Spam/Iklan
+        - 'jualbeli'
+        - 'bisnis'
+        - 'mlm'
+        - 'investasi'
+        - 'trading'
+        - 'forex'

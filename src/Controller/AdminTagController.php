@@ -159,4 +159,46 @@ final class AdminTagController extends AbstractController
             'quotes' => $quotes,
         ]);
     }
+
+    /**
+     * Export tags to CSV
+     */
+    #[Route('/export/csv', name: 'app_admin_tag_export_csv', methods: ['GET'])]
+    public function exportCsv(): Response
+    {
+        $tags = $this->tagRepository->findAllByPopularity();
+
+        // Create CSV content
+        $csv = [];
+        $csv[] = ['No', 'Nama Tagar', 'Jumlah Quotes', 'Dibuat'];
+
+        $no = 1;
+        foreach ($tags as $tag) {
+            $csv[] = [
+                $no++,
+                '#' . $tag->getName(),
+                $tag->getUsageCount(),
+                $tag->getCreatedAt()->format('d-m-Y H:i')
+            ];
+        }
+
+        // Generate CSV file
+        $filename = 'tag_export_' . date('Y-m-d_His') . '.csv';
+
+        $response = new Response();
+        $response->headers->set('Content-Type', 'text/csv');
+        $response->headers->set('Content-Disposition', 'attachment; filename="' . $filename . '"');
+
+        $output = fopen('php://temp', 'w+');
+
+        foreach ($csv as $row) {
+            fputcsv($output, $row);
+        }
+
+        rewind($output);
+        $response->setContent(stream_get_contents($output));
+        fclose($output);
+
+        return $response;
+    }
 }

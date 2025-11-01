@@ -125,6 +125,13 @@
             <span class="font-medium">XP & Badge</span>
         </a>
 
+        <!-- Manajemen Tagar -->
+        <a href="{{ path('app_admin_tag_index') }}"
+           class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 border-l-4 {{ app.request.attributes.get('_route') starts with 'app_admin_tag' ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-transparent hover:border-blue-500' }}">
+            <span class="text-lg mr-3">📌</span>
+            <span class="font-medium">Manajemen Tagar</span>
+        </a>
+
         <!-- Validasi Absen - Badge hanya tampil jika ada data pending -->
         <a href="{{ path('app_admin_validasi_absen') }}"
            class="flex items-center px-4 py-3 border-l-4 {{ app.request.attributes.get('_route') starts with 'app_admin_validasi_absen' ? 'text-white bg-orange-500 border-orange-600' : 'text-gray-700 hover:bg-gray-50 border-transparent hover:border-orange-500' }}">

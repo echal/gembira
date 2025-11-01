@@ -2,6 +2,10 @@
 
 {% block title %}Manajemen Tagar - Admin{% endblock %}
 
+{% block stylesheets %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
 {% block body %}
 <div class="min-h-screen bg-gray-50">
     <!-- Header -->
@@ -62,14 +66,23 @@
 
         <!-- Action Buttons -->
         <div class="bg-white rounded-lg shadow p-6 mb-6">
-            <div class="flex gap-4">
+            <div class="flex flex-wrap gap-4">
                 <button onclick="recalculateUsage()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
                     🔄 Perbarui Jumlah Penggunaan
                 </button>
                 <button onclick="cleanupOrphaned()" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition">
                     🗑️ Hapus Tag Tidak Terpakai
                 </button>
+                <a href="{{ path('app_admin_tag_export_csv') }}" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition inline-flex items-center gap-2">
+                    📥 Export CSV
+                </a>
             </div>
+        </div>
+
+        <!-- Top Tags Chart -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Top 10 Tagar Terpopuler</h2>
+            <canvas id="topTagsChart" height="80"></canvas>
         </div>
 
         <!-- Tags Table -->
@@ -151,6 +164,51 @@
 </div>
 
 <script>
+// Initialize Chart
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('topTagsChart');
+    if (ctx) {
+        // Get top 10 tags
+        const tags = {{ tags|slice(0, 10)|json_encode|raw }};
+        const labels = tags.map(tag => '#' + tag.name);
+        const data = tags.map(tag => tag.usageCount);
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Jumlah Quotes',
+                    data: data,
+                    backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    title: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+
 function changeSorting(select) {
     const value = select.value;
     const [sort, order] = value.split('_');

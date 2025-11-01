@@ -1,29 +1,17 @@
-{% extends 'base.html.twig' %}
+{% extends 'admin/_layout.html.twig' %}
 
 {% block title %}Manajemen Tagar - Admin{% endblock %}
 
-{% block stylesheets %}
+{% block page_icon %}📌{% endblock %}
+{% block page_title %}Manajemen Tagar{% endblock %}
+{% block page_description %}Kelola tagar (hashtag) dari quotes inspirasi{% endblock %}
+
+{% block admin_stylesheets %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 {% endblock %}
 
-{% block body %}
-<div class="min-h-screen bg-gray-50">
-    <!-- Header -->
-    <div class="bg-white shadow">
-        <div class="container mx-auto px-4 py-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-800">Manajemen Tagar</h1>
-                    <p class="text-gray-600 mt-1">Kelola tagar (hashtag) dari quotes inspirasi</p>
-                </div>
-                <a href="{{ path('app_admin_dashboard') }}" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
-                    Kembali ke Dashboard
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <div class="container mx-auto px-4 py-8">
+{% block admin_content %}
+    <div class="space-y-6">
         <!-- Statistics Cards -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div class="bg-white rounded-lg shadow p-6">
@@ -161,8 +149,9 @@
             </div>
         </div>
     </div>
-</div>
+{% endblock %}
 
+{% block admin_javascripts %}
 <script>
 // Initialize Chart
 document.addEventListener('DOMContentLoaded', function() {

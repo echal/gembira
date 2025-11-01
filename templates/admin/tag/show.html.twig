@@ -1,25 +1,19 @@
-{% extends 'base.html.twig' %}
+{% extends 'admin/_layout.html.twig' %}
 
 {% block title %}Detail Tag #{{ tag.name }} - Admin{% endblock %}
 
-{% block body %}
-<div class="min-h-screen bg-gray-50">
-    <!-- Header -->
-    <div class="bg-white shadow">
-        <div class="container mx-auto px-4 py-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-800">Detail Tagar: #{{ tag.name }}</h1>
-                    <p class="text-gray-600 mt-1">Melihat semua quotes dengan tag ini</p>
-                </div>
-                <a href="{{ path('app_admin_tag_index') }}" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
-                    Kembali
-                </a>
-            </div>
-        </div>
-    </div>
+{% block page_icon %}📌{% endblock %}
+{% block page_title %}Detail Tagar: #{{ tag.name }}{% endblock %}
+{% block page_description %}Melihat semua quotes dengan tag ini{% endblock %}
 
-    <div class="container mx-auto px-4 py-8">
+{% block header_actions %}
+    <a href="{{ path('app_admin_tag_index') }}" class="px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm">
+        ← Kembali
+    </a>
+{% endblock %}
+
+{% block admin_content %}
+    <div class="space-y-6">
         <!-- Tag Info Card -->
         <div class="bg-white rounded-lg shadow p-6 mb-6">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">

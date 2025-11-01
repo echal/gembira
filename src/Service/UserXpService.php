@@ -131,6 +131,100 @@ class UserXpService
     }
 
     /**
+     * Subtract XP from user (e.g., when deleting a quote)
+     *
+     * @param Pegawai $user User to subtract XP from
+     * @param int $xp Amount of XP to subtract
+     * @param string $activityType Type of activity (e.g., 'delete_quote')
+     * @param string|null $description Optional description
+     * @param int|null $relatedId Related entity ID (e.g., quote_id)
+     * @return array Result with level_down info if applicable
+     */
+    public function subtractXp(
+        Pegawai $user,
+        int $xp,
+        string $activityType,
+        ?string $description = null,
+        ?int $relatedId = null
+    ): array {
+        try {
+            // Get current level before subtracting XP
+            $oldLevel = $user->getCurrentLevel();
+            $oldXp = $user->getTotalXp();
+
+            // Create XP log entry with negative XP
+            $xpLog = new UserXpLog();
+            $xpLog->setUser($user);
+            $xpLog->setXpEarned(-$xp); // Negative value
+            $xpLog->setActivityType($activityType);
+            $xpLog->setDescription($description);
+            $xpLog->setRelatedId($relatedId);
+
+            $this->em->persist($xpLog);
+
+            // Update user's total XP (ensure it doesn't go below 0)
+            $newXp = max(0, $oldXp - $xp);
+            $user->setTotalXp($newXp);
+
+            // Calculate new level
+            $newLevel = $this->calculateLevel($newXp);
+            $levelDown = false;
+
+            if ($newLevel < $oldLevel) {
+                $user->setCurrentLevel($newLevel);
+                $user->setCurrentBadge($this->getBadgeForLevel($newLevel));
+                $levelDown = true;
+            }
+
+            // Update monthly leaderboard (subtract XP)
+            $currentDate = new \DateTime();
+            $month = (int) $currentDate->format('n');
+            $year = (int) $currentDate->format('Y');
+
+            $this->leaderboardRepository->updateUserXpMonthly($user, -$xp, $month, $year);
+
+            // Flush all changes
+            $this->em->flush();
+
+            $result = [
+                'success' => true,
+                'xp_subtracted' => $xp,
+                'total_xp' => $newXp,
+                'old_level' => $oldLevel,
+                'new_level' => $newLevel,
+                'level_down' => $levelDown,
+                'current_badge' => $user->getCurrentBadge(),
+                'level_title' => $this->getTitleForLevel($newLevel),
+                'level_julukan' => $this->getJulukanForLevel($newLevel)
+            ];
+
+            if ($levelDown) {
+                $this->logger->info('User leveled down', [
+                    'user_id' => $user->getId(),
+                    'old_level' => $oldLevel,
+                    'new_level' => $newLevel,
+                    'total_xp' => $newXp
+                ]);
+            }
+
+            return $result;
+
+        } catch (\Exception $e) {
+            $this->logger->error('Error subtracting XP', [
+                'user_id' => $user->getId(),
+                'xp' => $xp,
+                'activity' => $activityType,
+                'error' => $e->getMessage()
+            ]);
+
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
      * Calculate level based on total XP
      */
     public function calculateLevel(int $totalXp): int

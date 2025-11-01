@@ -1017,6 +1017,15 @@ class IkhlasController extends AbstractController
         }
 
         try {
+            // Subtract XP from user (refund the XP earned when creating the quote)
+            $this->userXpService->subtractXp(
+                $user,
+                UserXpService::XP_CREATE_QUOTE,
+                'delete_quote',
+                'Quote dihapus oleh author',
+                $id
+            );
+
             // Delete all related interactions
             $interactions = $this->interactionRepository->findBy(['quote' => $quote]);
             foreach ($interactions as $interaction) {
@@ -1035,7 +1044,7 @@ class IkhlasController extends AbstractController
 
             return new JsonResponse([
                 'success' => true,
-                'message' => 'Quote berhasil dihapus'
+                'message' => 'Quote berhasil dihapus (-' . UserXpService::XP_CREATE_QUOTE . ' XP)'
             ]);
         } catch (\Exception $e) {
             return new JsonResponse([
